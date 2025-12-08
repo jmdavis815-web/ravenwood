@@ -14,6 +14,24 @@ const supabaseClient = window.supabase.createClient(
 // LocalStorage key (optional helper)
 const RAVENWOOD_EMAIL_KEY = "ravenwoodEmail";
 
+const RAVENWOOD_SECRETS_KEY = "ravenwoodTownSecrets";
+
+function loadSecrets() {
+  try {
+    return JSON.parse(localStorage.getItem(RAVENWOOD_SECRETS_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSecrets(secrets) {
+  try {
+    localStorage.setItem(RAVENWOOD_SECRETS_KEY, JSON.stringify(secrets));
+  } catch {
+    // ignore
+  }
+}
+
 // ---------- SMALL DOM HELPERS ----------
 function $(sel) {
   return document.querySelector(sel);
@@ -236,6 +254,7 @@ function initLoginPage() {
 }
 
 // ---------- PAGE INIT: WORLD (MAIN HUB) ----------
+// ---------- PAGE INIT: WORLD (MAIN HUB / TOWN) ----------
 async function initWorldPage() {
   const nameEl = $("#rwUserName");
   const archEl = $("#rwUserArchetype");
@@ -268,6 +287,7 @@ async function initWorldPage() {
       return;
     }
 
+    // Basic identity
     if (nameEl) nameEl.textContent = char.display_name || "Guest";
 
     if (archEl) {
@@ -284,14 +304,13 @@ async function initWorldPage() {
       archEl.textContent = map[char.archetype] || "Circle Walker";
     }
 
-    // Summary panel on the right
+    // Snapshot on the right
     const summaryName = $("#rwSummaryName");
     const summaryArch = $("#rwSummaryArchetype");
     const summaryAffinity = $("#rwSummaryAffinity");
     const summaryTone = $("#rwSummaryTone");
 
     if (summaryName) summaryName.textContent = char.display_name;
-
     if (summaryArch) {
       summaryArch.textContent = archEl ? archEl.textContent : "";
     }
@@ -300,8 +319,8 @@ async function initWorldPage() {
       const affMap = {
         stone: "Stone · Wards & Foundations",
         water: "Water · Memory & Dream",
-        flame: "Flame · Courage & Calling",
-        wind: "Wind · Messages & Change",
+        flame: "Flame · Will & Transformation",
+        wind: "Wind · Messages & Thresholds",
         shadow: "Shadow · Secrets & Thresholds",
       };
       summaryAffinity.textContent =
@@ -335,6 +354,140 @@ async function initWorldPage() {
         window.location.href = "login.html";
       }
     });
+  }
+
+  // ---------- Town Map & Secrets wiring ----------
+
+  const detailTitleEl = $("#rwLocationDetailTitle");
+  const detailBodyEl = $("#rwLocationDetailBody");
+  const detailHintEl = $("#rwLocationDetailHint");
+  const secretsListEl = $("#rwSecretsList");
+
+  // Location definitions (you can tweak copy any time)
+  const locations = {
+    square: {
+      title: "Town Square",
+      body:
+        "Lanterns cast soft halos over the uneven stones. A cracked fountain burbles with water that never quite freezes. Notices for missing cats, moonlit meetings, and half-torn prophecy fragments flap on the board.",
+      hint:
+        "Sometimes someone pins a note here meant only for Circle eyes.",
+      secretKey: "squareNotice",
+      secretText:
+        "In the Town Square, you noticed a torn notice about a 'gathering under a silver moon' with no date.",
+    },
+    moonwell: {
+      title: "The Moonwell",
+      body:
+        "The well’s water reflects the moon even when clouds smother the sky. Old offerings line the stone lip: rusted rings, knotted cords, pressed flowers that never quite rot.",
+      hint:
+        "Drop a wish in, but listen closely to what the echo gives back.",
+      secretKey: "moonwellEcho",
+      secretText:
+        "At the Moonwell, you heard an echo whisper a name that no one has spoken in years — maybe your own.",
+    },
+    market: {
+      title: "Market Lane",
+      body:
+        "Stalls crowd close together, thick with incense and the clink of charms. Vendors offer powders that remember your dreams and trinkets that insist they belonged to queens.",
+      hint:
+        "One stall sells objects that feel suspiciously like they fell out of your own story.",
+      secretKey: "marketCharm",
+      secretText:
+        "In Market Lane, a charm seller pressed something into your palm and said, 'You’re late.' You never paid.",
+    },
+    chapel: {
+      title: "Old Chapel",
+      body:
+        "Candles still burn where no one admits to lighting them. The stained glass throws fractured light that makes new symbols on the floor — symbols the old Circle once used.",
+      hint:
+        "Sit in the back pew if you want the ghosts to talk instead of stare.",
+      secretKey: "chapelPew",
+      secretText:
+        "In the Old Chapel, you sat in the back pew and felt someone sit beside you, though the seat stayed empty.",
+    },
+    witchwood: {
+      title: "Witchwood Edge",
+      body:
+        "The first trees of the Witchwood lean toward the path, crowns whispering together. Runes carved into bark glow faintly whenever the wind comes from the manor’s direction.",
+      hint:
+        "The Witchwood doesn’t mind visitors — only liars.",
+      secretKey: "witchwoodRune",
+      secretText:
+        "At Witchwood Edge, a rune flared warm under your palm, recognizing something in your blood.",
+    },
+    fogwalk: {
+      title: "Fogwalk Alley",
+      body:
+        "A narrow, twisting alley that smells of rain and old paper. Doors without handles, windows without glass, and a single lantern that flickers only when someone lies nearby.",
+      hint:
+        "This alley shouldn’t exist, and yet here you are.",
+      secretKey: "fogwalkLantern",
+      secretText:
+        "In Fogwalk Alley, the lantern flared when you thought about turning back — as if warning you that some paths only go one way.",
+    },
+  };
+
+  // Secrets load + render
+  let discoveredSecrets = loadSecrets();
+
+  function renderSecrets() {
+    if (!secretsListEl) return;
+
+    secretsListEl.innerHTML = "";
+
+    if (!discoveredSecrets.length) {
+      const li = document.createElement("li");
+      li.className = "rw-secret-empty text-muted small";
+      li.textContent = "No secrets yet. The town is still deciding if it trusts you.";
+      secretsListEl.appendChild(li);
+      return;
+    }
+
+    discoveredSecrets.forEach((s) => {
+      const li = document.createElement("li");
+      li.textContent = s;
+      secretsListEl.appendChild(li);
+    });
+  }
+
+  function addSecret(secretKey, secretText) {
+    if (!secretKey || !secretText) return;
+
+    // Avoid duplicates using key stored alongside text
+    const exists = discoveredSecrets.some((s) => s === secretText);
+    if (exists) return;
+
+    discoveredSecrets.push(secretText);
+    saveSecrets(discoveredSecrets);
+    renderSecrets();
+  }
+
+  renderSecrets();
+
+  // Location click handling
+  const locationButtons = document.querySelectorAll("[data-location]");
+  locationButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-location");
+      const loc = locations[key];
+      if (!loc) return;
+
+      if (detailTitleEl) detailTitleEl.textContent = loc.title;
+      if (detailBodyEl) detailBodyEl.textContent = loc.body;
+      if (detailHintEl) detailHintEl.textContent = loc.hint;
+
+      // Each click has a chance to “offer” the secret; here we just give it on first visit
+      if (loc.secretKey && loc.secretText) {
+        addSecret(loc.secretKey, loc.secretText);
+      }
+    });
+  });
+
+  // Optionally: auto-select Town Square on load
+  if (detailTitleEl && detailBodyEl && detailHintEl && locations.square) {
+    detailTitleEl.textContent = locations.square.title;
+    detailBodyEl.textContent = locations.square.body;
+    detailHintEl.textContent = locations.square.hint;
   }
 }
 

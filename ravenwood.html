@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Ravenwood · Manor Hub</title>
+  <title>Ravenwood · Town & Manor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Bootstrap CSS -->
@@ -37,17 +37,27 @@
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
             <a class="nav-link rw-nav-link active" href="ravenwood.html">
+              Town
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link rw-nav-link" href="#manor">
               Manor
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link rw-nav-link" href="#books">
-              Books
+              Library
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link rw-nav-link" href="#adventures">
-              Adventures
+            <a class="nav-link rw-nav-link" href="#market">
+              Market Lane
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link rw-nav-link" href="#witchwood">
+              Witchwood Edge
             </a>
           </li>
         </ul>
@@ -69,22 +79,149 @@
   <!-- MAIN CONTENT -->
   <main class="rw-main container py-4 py-md-5">
     <div class="row g-4">
+      <!-- LEFT: Town & Places -->
       <div class="col-lg-8">
-        <section class="rw-panel mb-4">
-          <h2 class="rw-panel-title mb-2">Welcome back to the Manor</h2>
-          <p class="rw-panel-body mb-3">
-            The wards recognize your footsteps.
-            Candles gutter and then flare as you cross the threshold.
-            Somewhere, the Circle whispers your name.
-          </p>
-          <p class="rw-panel-body">
-            From here you can descend into the <strong>Library of Tomes</strong>
-            to read the books in order, or slip sideways into
-            <strong>Adventures</strong> — interactive scenes where your choices
-            shift the mist.
+        <!-- Town Intro -->
+        <section class="rw-panel mb-4" id="manor">
+          <h2 class="rw-panel-title mb-2">The Town of Ravenwood</h2>
+          <p class="rw-panel-body mb-0">
+            Ravenwood isn’t only the manor on the hill. It is the crooked streets,
+            the lantern-lit square, the old chapel that should be abandoned but
+            never quite is. It is the Moonwell where wishes go missing, the
+            Witchwood edge where the trees lean in to listen, and the fog-thin
+            alleys that remember every footstep.
           </p>
         </section>
 
+        <!-- Town Map Grid -->
+        <section class="rw-panel mb-4" id="rwTown">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="rw-panel-subtitle mb-0">Town Map</h3>
+            <span class="rw-tag">Explore</span>
+          </div>
+
+          <div class="row g-3 rw-town-grid" id="rwTownMap">
+            <!-- Town Square -->
+            <div class="col-md-6 col-xl-4">
+              <button
+                class="rw-location-card w-100 text-start"
+                type="button"
+                data-location="square"
+              >
+                <div class="rw-location-header d-flex justify-content-between align-items-center">
+                  <span class="rw-location-name">Town Square</span>
+                  <span class="rw-location-badge">Lanterns</span>
+                </div>
+                <p class="rw-location-blurb mb-0">
+                  Cobblestones, a cracked fountain, and notices pinned where no one admits to reading them.
+                </p>
+              </button>
+            </div>
+
+            <!-- Moonwell -->
+            <div class="col-md-6 col-xl-4">
+              <button
+                class="rw-location-card w-100 text-start"
+                type="button"
+                data-location="moonwell"
+              >
+                <div class="rw-location-header d-flex justify-content-between align-items-center">
+                  <span class="rw-location-name">The Moonwell</span>
+                  <span class="rw-location-badge">Waters</span>
+                </div>
+                <p class="rw-location-blurb mb-0">
+                  A stone-ringed well that reflects the moon even when the sky is empty.
+                </p>
+              </button>
+            </div>
+
+            <!-- Market Lane -->
+            <div class="col-md-6 col-xl-4" id="market">
+              <button
+                class="rw-location-card w-100 text-start"
+                type="button"
+                data-location="market"
+              >
+                <div class="rw-location-header d-flex justify-content-between align-items-center">
+                  <span class="rw-location-name">Market Lane</span>
+                  <span class="rw-location-badge">Charms</span>
+                </div>
+                <p class="rw-location-blurb mb-0">
+                  Stalls of incense, half-truths, and talismans that may or may not be sleeping gods.
+                </p>
+              </button>
+            </div>
+
+            <!-- Old Chapel -->
+            <div class="col-md-6 col-xl-4">
+              <button
+                class="rw-location-card w-100 text-start"
+                type="button"
+                data-location="chapel"
+              >
+                <div class="rw-location-header d-flex justify-content-between align-items-center">
+                  <span class="rw-location-name">Old Chapel</span>
+                  <span class="rw-location-badge">Echoes</span>
+                </div>
+                <p class="rw-location-blurb mb-0">
+                  Stained glass saints watch over pews where the Circle once met in secret.
+                </p>
+              </button>
+            </div>
+
+            <!-- Witchwood Edge -->
+            <div class="col-md-6 col-xl-4" id="witchwood">
+              <button
+                class="rw-location-card w-100 text-start"
+                type="button"
+                data-location="witchwood"
+              >
+                <div class="rw-location-header d-flex justify-content-between align-items-center">
+                  <span class="rw-location-name">Witchwood Edge</span>
+                  <span class="rw-location-badge">Forest</span>
+                </div>
+                <p class="rw-location-blurb mb-0">
+                  Trees that lean toward you as you pass, as if deciding whether to let you leave.
+                </p>
+              </button>
+            </div>
+
+            <!-- Fogwalk (Hidden Alley) -->
+            <div class="col-md-6 col-xl-4">
+              <button
+                class="rw-location-card w-100 text-start rw-location-secret"
+                type="button"
+                data-location="fogwalk"
+              >
+                <div class="rw-location-header d-flex justify-content-between align-items-center">
+                  <span class="rw-location-name">Fogwalk Alley</span>
+                  <span class="rw-location-badge">Secret</span>
+                </div>
+                <p class="rw-location-blurb mb-0">
+                  You only find this alley when you’re not looking for it. It never looks quite the same twice.
+                </p>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Location Detail / “You Are Here” -->
+        <section class="rw-panel mb-4" id="rwLocationDetail">
+          <h3 class="rw-panel-subtitle mb-2" id="rwLocationDetailTitle">
+            Town Square
+          </h3>
+          <p class="rw-panel-body mb-2" id="rwLocationDetailBody">
+            Lanterns sway over the cracked stone fountain. A notice flaps on the board,
+            its ink blurred by mist. Somewhere a bell tolls the wrong hour, and you’re
+            almost certain it’s for you.
+          </p>
+          <p class="rw-panel-body small mb-0" id="rwLocationDetailHint">
+            Tip: click different locations on the map above to see what they reveal.
+            Some places may whisper secrets that the town will remember for you.
+          </p>
+        </section>
+
+        <!-- Library & Adventures (kept from old version) -->
         <section id="books" class="rw-panel mb-4">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="rw-panel-subtitle mb-0">Library of Tomes</h3>
@@ -164,8 +301,9 @@
         </section>
       </div>
 
-      <!-- SIDE PANEL -->
+      <!-- RIGHT: Snapshot & Secrets -->
       <div class="col-lg-4">
+        <!-- Snapshot stays -->
         <aside class="rw-panel rw-side mb-4">
           <h3 class="rw-panel-subtitle mb-2">Your Circle Snapshot</h3>
           <p class="rw-panel-body mb-2">
@@ -175,8 +313,25 @@
             <strong>Journey Tone:</strong> <span id="rwSummaryTone">—</span>
           </p>
           <p class="rw-panel-body small mb-0">
-            These choices can help you tailor reading order and adventure difficulty
-            later. For now, they simply let Ravenwood know who’s walking its halls.
+            Your choices may change how certain places feel in later adventures.
+            For now, they help Ravenwood recognize which threads belong to you.
+          </p>
+        </aside>
+
+        <!-- Whispers & Secrets -->
+        <aside class="rw-panel rw-side mb-4">
+          <h3 class="rw-panel-subtitle mb-2">Whispers & Secrets</h3>
+          <p class="rw-panel-body small mb-2">
+            Certain locations will offer you a secret the first time you step
+            there. This town remembers what you’ve uncovered on this device.
+          </p>
+          <ul class="rw-secrets-list mb-2" id="rwSecretsList">
+            <li class="rw-secret-empty text-muted small">
+              No secrets yet. The town is still deciding if it trusts you.
+            </li>
+          </ul>
+          <p class="rw-panel-body rw-secret-hint small mb-0" id="rwSecretsHint">
+            Hint: Fogwalk Alley doesn’t always appear. When it does, listen closely.
           </p>
         </aside>
       </div>
@@ -185,14 +340,13 @@
 
   <!-- Bootstrap JS bundle -->
   <script
-  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-></script>
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+  ></script>
 
-<!-- Supabase JS (v2) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase JS (v2) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Your app logic -->
-<script src="app.js" defer></script>
-
+  <!-- Your app logic -->
+  <script src="app.js" defer></script>
 </body>
 </html>
