@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ravenwood · Manor Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="world">
+  <div class="rw-bg-overlay"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg rw-navbar">
+    <div class="container">
+      <a class="navbar-brand rw-brand" href="ravenwood.html">
+        Ravenwood
+      </a>
+
+      <button
+        title="collapse"
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#rwNav"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="rwNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link rw-nav-link active" href="ravenwood.html">
+              Manor
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link rw-nav-link" href="#books">
+              Books
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link rw-nav-link" href="#adventures">
+              Adventures
+            </a>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2">
+          <div class="rw-user-pill">
+            <span class="rw-user-icon">✶</span>
+            <span id="rwUserName">Guest</span>
+            <span class="rw-user-tag" id="rwUserArchetype">Wanderer</span>
+          </div>
+          <button class="btn btn-sm btn-outline-light" id="rwResetBtn">
+            Reset Character
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="rw-main container py-4 py-md-5">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <section class="rw-panel mb-4">
+          <h2 class="rw-panel-title mb-2">Welcome back to the Manor</h2>
+          <p class="rw-panel-body mb-3">
+            The wards recognize your footsteps.
+            Candles gutter and then flare as you cross the threshold.
+            Somewhere, the Circle whispers your name.
+          </p>
+          <p class="rw-panel-body">
+            From here you can descend into the <strong>Library of Tomes</strong>
+            to read the books in order, or slip sideways into
+            <strong>Adventures</strong> — interactive scenes where your choices
+            shift the mist.
+          </p>
+        </section>
+
+        <section id="books" class="rw-panel mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="rw-panel-subtitle mb-0">Library of Tomes</h3>
+            <span class="rw-tag">Books</span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="card rw-card shadow-sm h-100">
+                <div class="card-body">
+                  <h5 class="rw-card-title">Daughters of the Circle</h5>
+                  <p class="rw-card-text">
+                    Enter the core Ravenwood saga. Read the books in sequence,
+                    keep track of prophecies, and unlock lore notes as you go.
+                  </p>
+                  <button class="btn btn-outline-light w-100" type="button">
+                    View Books (placeholder)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="card rw-card shadow-sm h-100">
+                <div class="card-body">
+                  <h5 class="rw-card-title">Sons of the Dark Mother</h5>
+                  <p class="rw-card-text">
+                    Step into the darker mirror of the Circle: starborne
+                    princes, old wars, and the shadows beneath the wards.
+                  </p>
+                  <button class="btn btn-outline-light w-100" type="button">
+                    View Books (placeholder)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="adventures" class="rw-panel mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="rw-panel-subtitle mb-0">Adventures</h3>
+            <span class="rw-tag">Interactive</span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="card rw-card shadow-sm h-100">
+                <div class="card-body">
+                  <h5 class="rw-card-title">The Whispering Gate</h5>
+                  <p class="rw-card-text">
+                    Relive Jes’s first night at the Ravenwood gate — this time
+                    with you standing beside her. Choose what you say to the wards.
+                  </p>
+                  <button class="btn btn-outline-light w-100" type="button">
+                    Begin Adventure (placeholder)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="card rw-card shadow-sm h-100">
+                <div class="card-body">
+                  <h5 class="rw-card-title">The Library After Midnight</h5>
+                  <p class="rw-card-text">
+                    The shelves rearrange themselves after dark. Follow a living
+                    book and see where it leads.
+                  </p>
+                  <button class="btn btn-outline-light w-100" type="button">
+                    Begin Adventure (placeholder)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- SIDE PANEL -->
+      <div class="col-lg-4">
+        <aside class="rw-panel rw-side mb-4">
+          <h3 class="rw-panel-subtitle mb-2">Your Circle Snapshot</h3>
+          <p class="rw-panel-body mb-2">
+            <strong>Name:</strong> <span id="rwSummaryName">—</span><br />
+            <strong>Archetype:</strong> <span id="rwSummaryArchetype">—</span><br />
+            <strong>Affinity:</strong> <span id="rwSummaryAffinity">—</span><br />
+            <strong>Journey Tone:</strong> <span id="rwSummaryTone">—</span>
+          </p>
+          <p class="rw-panel-body small mb-0">
+            These choices can help you tailor reading order and adventure difficulty
+            later. For now, they simply let Ravenwood know who’s walking its halls.
+          </p>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bootstrap JS bundle -->
+  <script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+></script>
+
+<!-- Supabase JS (v2) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Your app logic -->
+<script src="app.js" defer></script>
+
+</body>
+</html>

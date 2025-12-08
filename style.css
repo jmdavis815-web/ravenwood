@@ -1,0 +1,272 @@
+/* Background & global look */
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(148, 163, 255, 0.32) 0, transparent 40%),
+    radial-gradient(circle at bottom, rgba(15, 23, 42, 0.85) 0, #020617 45%);
+  color: #e5e7eb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.rw-bg-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(248, 250, 252, 0.1) 0, transparent 40%),
+    radial-gradient(circle at 80% 10%, rgba(244, 244, 255, 0.12) 0, transparent 45%),
+    radial-gradient(circle at 60% 80%, rgba(15, 23, 42, 0.85) 0, transparent 45%);
+  opacity: 0.9;
+  mix-blend-mode: screen;
+  z-index: -1;
+}
+
+/* Typography bits */
+.rw-tagline {
+  letter-spacing: 0.18em;
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.rw-title {
+  font-family: "Cormorant Garamond", "Garamond", serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 1.7rem;
+  color: #f9fafb;
+}
+
+.rw-title span {
+  color: #fed7aa;
+}
+
+.rw-subtitle {
+  font-size: 0.95rem;
+  color: #cbd5f5;
+}
+
+.rw-body {
+  font-size: 0.94rem;
+  color: #e5e7eb;
+}
+
+/* Buttons */
+.rw-btn-main {
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  border: none;
+  color: #111827;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+}
+
+.rw-btn-main:hover {
+  background: linear-gradient(135deg, #facc15, #fb923c);
+  color: #020617;
+}
+
+/* Landing card */
+.rw-card-landing {
+  border-radius: 1.25rem;
+  background: radial-gradient(circle at top, #111827 0, #020617 50%, #020617 100%);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(56, 189, 248, 0.15);
+}
+
+.rw-divider {
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+/* Character form card */
+.rw-card-form {
+  border-radius: 1.25rem;
+  background: radial-gradient(circle at top, #111827 0, #020617 50%);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  color: #e5e7eb;
+}
+
+/* Form styling */
+.rw-form .form-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #9ca3af;
+}
+
+.rw-form .form-control,
+.rw-form .form-select {
+  background-color: rgba(15, 23, 42, 0.9);
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  color: #e5e7eb;
+  font-size: 0.9rem;
+}
+
+.rw-form .form-control:focus,
+.rw-form .form-select:focus {
+  background-color: #020617;
+  border-color: #facc15;
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.5);
+  color: #f9fafb;
+}
+
+.rw-form-hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.rw-pill-check {
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  padding: 0.35rem 0.7rem;
+}
+
+.rw-pill-check .form-check-input {
+  margin-right: 0.25rem;
+  accent-color: #facc15;
+}
+
+.rw-pill-check .form-check-label {
+  font-size: 0.85rem;
+  color: #e5e7eb;
+}
+
+.rw-link-muted {
+  color: #9ca3af;
+  text-decoration: none;
+}
+
+.rw-link-muted:hover {
+  color: #facc15;
+}
+
+/* Navbar & world layout */
+.rw-navbar {
+  background: linear-gradient(to right, #020617, rgba(15, 23, 42, 0.95));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.rw-brand {
+  font-family: "Cormorant Garamond", "Garamond", serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 1rem;
+  color: #f9fafb;
+}
+
+.rw-brand:hover {
+  color: #facc15;
+}
+
+.rw-nav-link {
+  color: #e5e7eb;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.rw-nav-link.active,
+.rw-nav-link:hover {
+  color: #facc15;
+}
+
+.rw-main {
+  color: #e5e7eb;
+}
+
+/* Panels */
+.rw-panel {
+  border-radius: 1.25rem;
+  padding: 1.25rem 1.4rem;
+  background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 100%);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+}
+
+.rw-panel-title {
+  font-family: "Cormorant Garamond", "Garamond", serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rw-panel-subtitle {
+  font-size: 0.95rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.rw-panel-body {
+  font-size: 0.92rem;
+}
+
+/* Cards on world page */
+.rw-card {
+  background: radial-gradient(circle at top, #020617 0, #020617 60%);
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+}
+
+.rw-card-title {
+  font-family: "Cormorant Garamond", "Garamond", serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rw-card-text {
+  font-size: 0.9rem;
+}
+
+/* Tags, user pill */
+.rw-tag {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  font-size: 0.75rem;
+  padding: 0.1rem 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #cbd5f5;
+}
+
+.rw-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.9);
+  font-size: 0.8rem;
+  color: #f9fafb;
+}
+
+.rw-user-icon {
+  font-size: 0.85rem;
+}
+
+.rw-user-tag {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #a5b4fc;
+}
+
+/* Side panel */
+.rw-side {
+  background: radial-gradient(circle at top, #020617 0, #020617 60%);
+}
+
+/* Small helpers */
+.text-light-50 {
+  color: rgba(249, 250, 251, 0.7);
+}
