@@ -541,6 +541,9 @@ async function initWorldPage() {
       return;
     }
 
+    // Remove outdated localStorage manor flag (Supabase is the source of truth now)
+    localStorage.removeItem("ravenwoodManorUnlocked");
+
     // Stash identity + current progress for helpers
     window.rwEmail = email;
     window.rwInitialSecrets = Array.isArray(char.secrets) ? char.secrets : [];
@@ -549,10 +552,8 @@ async function initWorldPage() {
       : [];
 
     // manor unlock state (Supabase first, localStorage as fallback)
-    window.rwManorUnlocked =
-      typeof char.manor_unlocked === "boolean"
-        ? char.manor_unlocked
-        : localStorage.getItem("ravenwoodManorUnlocked") === "true";
+    // Supabase is the ONLY source of truth now
+    window.rwManorUnlocked = !!char.manor_unlocked;
 
     playerArchetype = char.archetype || null;
     playerAffinity = char.affinity || null;
@@ -1029,25 +1030,50 @@ async function initWorldPage() {
     if (detailTitleEl) detailTitleEl.textContent = loc.title;
 
     if (detailBodyEl) {
-      let html = bodyText;
+  let html = "";
 
-      // After you've heard the Moonwell secret, a notice appears in the square
-      // but it vanishes once you've visited the manor at least once.
-      if (
-        key === "square" &&
-        hasSecretFromLocation("moonwell") &&
-        !hasSecretFromLocation("manor")
-      ) {
-        html +=
-          '<div class="mt-3 p-2 border border-warning rounded small">' +
-          "<strong>NOTICE FROM RAVENWOOD MANOR:</strong> To any Circle-touched souls still walking these streets.<br>" +
-          "An old bronze talisman bearing the Triquetra has gone missing from the manor under deeply suspicious circumstances. It was not misplaced, and those of us who keep the wards know when something is taken. If this talisman has found its way into your hands, I ask—no, urge—you to return it at once. The wards have grown restless since it vanished, and there are doors I would rather keep closed. A generous reward in coin, favor, and protection from the manor’s Lady will be granted to any who return it discreetly.<br><br>" +
-          "Signed,<br>Mira Ashbourne" +
-          "</div>";
-      }
+  // ✅ Special first-visit description for Ravenwood Overlook
+  if (key === "overlook" && !hasSecretFromLocation("overlook")) {
+    html += `
+      <p>${bodyText}</p>
+      <p>
+        As you edge closer to the cliff, something sharp and bright winks up
+        from the moss-dark stone. Kneeling, you brush aside damp leaves and
+        grit until your fingers close on a small, weighty disc of metal.
+      </p>
+      <p>
+        It’s an old bronze talisman, its surface worn smooth by years of wind
+        and rain, but the etched Triquetra at its center is still clear enough
+        to prickle along your skin. The metal hums faintly against your palm,
+        as if it recognizes you—or has been waiting.
+      </p>
+      <p>
+        You slip the talisman into your pocket. Far below, the town’s lights
+        blur in the mist, and for a heartbeat the distant shape of Ravenwood
+        Manor feels almost awake, like a house that just heard its name.
+      </p>
+    `;
+  } else {
+    // Normal behavior for all other visits / locations
+    html += `<p>${bodyText}</p>`;
+  }
 
-      detailBodyEl.innerHTML = html;
-    }
+  // 🪧 Manor notice in the square (unchanged)
+  if (
+    key === "square" &&
+    hasSecretFromLocation("moonwell") &&
+    !hasSecretFromLocation("manor")
+  ) {
+    html +=
+      '<div class="mt-3 p-2 border border-warning rounded small">' +
+      "<strong>NOTICE FROM RAVENWOOD MANOR:</strong> To any Circle-touched souls still walking these streets.<br>" +
+      "An old bronze talisman bearing the Triquetra has gone missing from the manor under deeply suspicious circumstances. It was not misplaced, and those of us who keep the wards know when something is taken. If this talisman has found its way into your hands, I ask—no, urge—you to return it at once. The wards have grown restless since it vanished, and there are doors I would rather keep closed. A generous reward in coin, favor, and protection from the manor’s Lady will be granted to any who return it discreetly.<br><br>" +
+      "Signed,<br>Mira Ashbourne" +
+      "</div>";
+  }
+
+  detailBodyEl.innerHTML = html;
+}
 
     if (detailHintEl) detailHintEl.textContent = hintText;
 
@@ -1112,8 +1138,7 @@ async function initWorldPage() {
     // 2) Manor unlocks once Overlook is discovered
     // OR from the saved persistent flag (rwManorUnlocked)
     const manorRequirementsMet =
-      locations.manor &&
-      (window.rwManorUnlocked || hasSecretFromLocation("overlook"));
+  locations.manor && window.rwManorUnlocked;
 
     // If requirements are met and the card isn't on the grid yet, add it
     if (
