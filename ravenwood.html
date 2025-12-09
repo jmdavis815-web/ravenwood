@@ -128,6 +128,58 @@
             Your choices may change how certain places feel in later adventures.
             For now, they help Ravenwood recognize which threads belong to you.
           </p>
+
+            <!-- Inventory Preview -->
+  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+    <h4 class="rw-panel-subtitle mb-0">Inventory</h4>
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-light"
+      id="rwInventoryBtn"
+    >
+      Open
+    </button>
+  </div>
+
+  <!-- Inventory Modal -->
+<div class="modal fade" id="rwInventoryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content rw-panel rw-panel-inventory">
+      <div class="modal-header border-0">
+        <h5 class="modal-title rw-panel-subtitle">Inventory</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body pt-0">
+        <p class="rw-panel-body small mb-3">
+          Items you’ve picked up in Ravenwood will appear here.
+        </p>
+
+        <!-- Backpack + grid -->
+        <div class="rw-inventory-wrapper">
+          <div class="rw-inventory-grid" id="rwInventoryGrid">
+            <!-- JS fills slots here; NO <img> here in HTML -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-0">
+        <button
+          type="button"
+          class="btn btn-outline-light btn-sm"
+          data-bs-dismiss="modal"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
         
           <!-- RAVENWOOD WORLD MAP PANEL -->
 <section class="rw-panel mb-3 mt-1">

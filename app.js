@@ -15,6 +15,7 @@ const supabaseClient = window.supabase.createClient(
 const RAVENWOOD_EMAIL_KEY = "ravenwoodEmail";
 const RAVENWOOD_SECRETS_KEY = "ravenwoodTownSecrets";
 const DEFAULT_AVATAR = "f-mystic";
+const RAVENWOOD_INVENTORY_KEY = "ravenwoodInventory";
 
 // ---------- SECRETS STORAGE ----------
 function loadSecrets() {
@@ -35,6 +36,71 @@ function saveSecrets(secrets) {
     localStorage.setItem(RAVENWOOD_SECRETS_KEY, JSON.stringify(secrets));
   } catch {
     // ignore storage errors
+  }
+}
+
+// ---------- INVENTORY HELPERS (localStorage) ----------
+
+// ---------- INVENTORY HELPERS ----------
+
+function loadInventory() {
+  try {
+    const raw = localStorage.getItem(RAVENWOOD_INVENTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.warn("Failed to load inventory from localStorage:", e);
+    return [];
+  }
+}
+
+function saveInventory(items) {
+  try {
+    localStorage.setItem(RAVENWOOD_INVENTORY_KEY, JSON.stringify(items || []));
+  } catch (e) {
+    console.warn("Failed to save inventory to localStorage:", e);
+  }
+}
+
+// Draw the inventory inside #rwInventoryGrid
+function renderInventory(items = []) {
+  const grid = document.getElementById("rwInventoryGrid");
+  if (!grid) return;
+
+  const maxSlots = 16; // 4×4 grid
+  grid.innerHTML = "";
+
+  // Ensure we always have an array
+  const safeItems = Array.isArray(items) ? items : [];
+
+  safeItems.forEach((item) => {
+    const slot = document.createElement("div");
+    slot.className = "rw-inventory-slot";
+
+    if (item && item.icon) {
+      const img = document.createElement("img");
+      img.src = item.icon;                  // e.g. "raven-mote.png"
+      img.alt = item.name || "Item";
+      img.className = "rw-inventory-item-icon";
+      slot.appendChild(img);
+    }
+
+    if (item && item.quantity && item.quantity > 1) {
+      const badge = document.createElement("span");
+      badge.className = "rw-inventory-qty";
+      badge.textContent = item.quantity;
+      slot.appendChild(badge);
+    }
+
+    grid.appendChild(slot);
+  });
+
+  // Fill remaining empty slots
+  for (let i = safeItems.length; i < maxSlots; i++) {
+    const emptySlot = document.createElement("div");
+    emptySlot.className = "rw-inventory-slot";
+    grid.appendChild(emptySlot);
   }
 }
 
@@ -616,7 +682,7 @@ async function initWorldPage() {
     },
   };
 
-  // ---- Secrets: load, render, mutate ----
+    // ---- Secrets: load, render, mutate ----
 
   let discoveredSecrets = loadSecrets();
 
@@ -662,8 +728,54 @@ async function initWorldPage() {
 
   renderSecrets();
 
-  // ---- Dynamic locations (unlockables) ----
+  // ---------- Inventory wiring ----------
+  const inventoryBtn = document.getElementById("rwInventoryBtn");
+  const inventoryModalEl = document.getElementById("rwInventoryModal");
+  let inventoryModal = null;
 
+  if (inventoryModalEl && window.bootstrap && bootstrap.Modal) {
+    inventoryModal = new bootstrap.Modal(inventoryModalEl);
+  }
+
+  // Local inventory state for this page
+  let inventory = loadInventory();
+  renderInventory(inventory);
+
+  if (inventoryBtn && inventoryModal) {
+    inventoryBtn.addEventListener("click", () => {
+      // Refresh from storage each time you open the bag
+      inventory = loadInventory();
+      renderInventory(inventory);
+      inventoryModal.show();
+    });
+  }
+
+  // Public helper you can call later from quests / locations:
+  //   window.addItemToInventory({ id: "moon-token", name: "Moonwell Token", icon: "moon-token.png", quantity: 1 })
+  window.addItemToInventory = function (newItem) {
+    if (!newItem || !newItem.id) return;
+
+    // Always start from latest stored inventory
+    inventory = loadInventory();
+
+    const existing = inventory.find((i) => i.id === newItem.id);
+    if (existing) {
+      existing.quantity =
+        (existing.quantity || 1) + (newItem.quantity || 1);
+    } else {
+      inventory.push({
+        id: newItem.id,
+        name: newItem.name || "Unknown item",
+        icon: newItem.icon || "",
+        quantity: newItem.quantity || 1,
+      });
+    }
+
+    saveInventory(inventory);
+    renderInventory(inventory);
+  };
+
+  // ---- Dynamic locations (unlockables) ----
   function wireLocationButton(btn) {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-location");
