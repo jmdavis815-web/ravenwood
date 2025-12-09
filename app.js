@@ -18,6 +18,19 @@ const DEFAULT_AVATAR = "f-mystic";
 const RAVENWOOD_INVENTORY_KEY = "ravenwoodInventory";
 const RAVENWOOD_LOCATION_KEY = "ravenwoodLocation";
 
+// DEV NOTE:
+// If you want to fully clear local dev saves ONCE, you can run
+// localStorage.removeItem(...) manually in the console.
+// We *won't* auto-wipe on every load so Supabase progress can stick.
+// -----------------------------------------------------------
+// try {
+//   localStorage.removeItem(RAVENWOOD_SECRETS_KEY);
+//   localStorage.removeItem(RAVENWOOD_INVENTORY_KEY);
+//   localStorage.removeItem(RAVENWOOD_LOCATION_KEY);
+// } catch (e) {
+//   console.warn("Couldn't clear local dev storage:", e);
+// }
+
 // ---------- ONLINE PROGRESS HELPERS (Supabase) ----------
 
 async function syncSecretsToSupabase(secrets) {
@@ -28,8 +41,12 @@ async function syncSecretsToSupabase(secrets) {
       .from("data")
       .update({ secrets })
       .eq("email", email);
+
     if (error) {
       console.error("Failed to sync secrets:", error);
+    } else {
+      // also cache locally (new saves only, not old)
+      saveSecrets(secrets);
     }
   } catch (err) {
     console.error("Unexpected secrets sync error:", err);
@@ -42,11 +59,14 @@ async function syncInventoryToSupabase(inventory) {
   try {
     const { error } = await supabaseClient
       .from("data")
-      .update({ inventory })  // ← THIS LINE
-      .eq("email", email);    // ← AND THIS LINE
+      .update({ inventory })
+      .eq("email", email);
 
     if (error) {
       console.error("Failed to sync inventory:", error);
+    } else {
+      // also cache locally (new saves only, not old)
+      saveInventory(inventory);
     }
   } catch (err) {
     console.error("Unexpected inventory sync error:", err);
@@ -291,6 +311,8 @@ function initCreatePage() {
         return;
       }
 
+      console.log("Auth created:", signUpData);
+
       // 2) Create character profile row in "data" table
       const payload = {
         email,
@@ -301,8 +323,8 @@ function initCreatePage() {
         journey_tone: journeyTone || null,
         avatar,
         created_at: new Date().toISOString(),
-        secrets: [],
-        inventory: [],
+        secrets: [],      // start empty
+        inventory: [],    // start empty
         manor_unlocked: false,
       };
 
@@ -341,7 +363,7 @@ function initLoginPage() {
   const statusEl = $("#rwLoginStatus");
 
   // Pre-fill email if saved
-  theSaved = getSavedEmail();
+  const theSaved = getSavedEmail();
   if (theSaved && $("#loginEmail")) {
     $("#loginEmail").value = theSaved;
   }
@@ -477,15 +499,14 @@ async function initWorldPage() {
       return;
     }
 
-    // NEW: stash identity + current progress for later helpers
-        // NEW: stash identity + current progress for later helpers
+    // Stash identity + current progress for helpers
     window.rwEmail = email;
     window.rwInitialSecrets = Array.isArray(char.secrets) ? char.secrets : [];
     window.rwInitialInventory = Array.isArray(char.inventory)
       ? char.inventory
       : [];
 
-    // NEW: manor unlock state (Supabase first, localStorage as fallback)
+    // manor unlock state (Supabase first, localStorage as fallback)
     window.rwManorUnlocked =
       typeof char.manor_unlocked === "boolean"
         ? char.manor_unlocked
@@ -779,15 +800,15 @@ async function initWorldPage() {
     ? window.rwInitialSecrets
     : [];
 
-  // One-time migration: if Supabase is empty but old localStorage has data,
-  // pull it in and push it up to the cloud.
-  if (!discoveredSecrets.length) {
-    const legacy = loadSecrets(); // from localStorage
-    if (Array.isArray(legacy) && legacy.length) {
-      discoveredSecrets = legacy;
-      syncSecretsToSupabase(discoveredSecrets);
-    }
-  }
+  // IMPORTANT: we do NOT migrate old localStorage into Supabase anymore.
+  // That avoids "ghost" saves from before.
+  //
+  // If you *really* need to rescue old local secrets on this device:
+  // const legacy = loadSecrets();
+  // if (!discoveredSecrets.length && Array.isArray(legacy) && legacy.length) {
+  //   discoveredSecrets = legacy;
+  //   syncSecretsToSupabase(discoveredSecrets);
+  // }
 
   function hasSecretFromLocation(locKey) {
     const loc = locations[locKey];
@@ -816,7 +837,7 @@ async function initWorldPage() {
     });
   }
 
-    // Permanently unlock the manor (once)
+  // Permanently unlock the manor (once)
   async function unlockManor() {
     if (window.rwManorUnlocked) return; // already unlocked
 
@@ -861,20 +882,20 @@ async function initWorldPage() {
     ? window.rwInitialInventory
     : [];
 
-  // One-time migration from old localStorage
-  if (!inventory.length) {
-    const legacyInv = loadInventory(); // from localStorage
-    if (Array.isArray(legacyInv) && legacyInv.length) {
-      inventory = legacyInv;
-      syncInventoryToSupabase(inventory);
-    }
-  }
+  // We do NOT backfill from old localStorage; Supabase is truth.
+  // If you ever need to rescue local inventory on THIS device:
+  // if (!inventory.length) {
+  //   const legacyInv = loadInventory();
+  //   if (Array.isArray(legacyInv) && legacyInv.length) {
+  //     inventory = legacyInv;
+  //     syncInventoryToSupabase(inventory);
+  //   }
+  // }
 
   renderInventory(inventory);
 
   if (inventoryBtn && inventoryModal) {
     inventoryBtn.addEventListener("click", () => {
-      // Refresh from Supabase initial state + any local changes we’ve made
       renderInventory(inventory);
       inventoryModal.show();
     });
@@ -902,12 +923,12 @@ async function initWorldPage() {
       });
     }
 
-    // Save to Supabase instead of localStorage
+    // Save to Supabase (+ cache locally)
     syncInventoryToSupabase(inventory);
     renderInventory(inventory);
   };
 
-    function addSecretFromLocation(locKey) {
+  function addSecretFromLocation(locKey) {
     const loc = locations[locKey];
     if (!loc || !loc.secretText) return;
 
@@ -919,7 +940,7 @@ async function initWorldPage() {
 
     discoveredSecrets.push({ key: locKey, text: loc.secretText });
 
-    // Save to Supabase
+    // Save to Supabase (+ cache locally)
     syncSecretsToSupabase(discoveredSecrets);
     renderSecrets();
 
@@ -931,7 +952,7 @@ async function initWorldPage() {
       }
     }
 
-    // NEW: when the Overlook secret is first discovered, permanently unlock the manor
+    // When the Overlook secret is first discovered, permanently unlock the manor
     if (locKey === "overlook") {
       unlockManor();
     }
@@ -942,7 +963,7 @@ async function initWorldPage() {
   renderSecrets();
 
   // ---- Dynamic locations (unlockables) ----
-    // ---- Dynamic locations (unlockables) ----
+
   function renderLocationDetail(key) {
     const loc = locations[key];
     if (!loc) return;
@@ -964,19 +985,19 @@ async function initWorldPage() {
       let html = bodyText;
 
       // After you've heard the Moonwell secret, a notice appears in the square
-// but it vanishes once you've visited the manor at least once.
-if (
-  key === "square" &&
-  hasSecretFromLocation("moonwell") &&
-  !hasSecretFromLocation("manor")
-) {
-  html +=
-    '<div class="mt-3 p-2 border border-warning rounded small">' +
-    "<strong>NOTICE FROM RAVENWOOD MANOR:</strong> To any Circle-touched souls still walking these streets.<br>" +
-    "An old bronze talisman bearing the Triquetra has gone missing from the manor under deeply suspicious circumstances. It was not misplaced, and those of us who keep the wards know when something is taken. If this talisman has found its way into your hands, I ask—no, urge—you to return it at once. The wards have grown restless since it vanished, and there are doors I would rather keep closed. A generous reward in coin, favor, and protection from the manor’s Lady will be granted to any who return it discreetly.<br><br>" +
-    "Signed,<br>Mira Ashbourne" +
-    "</div>";
-}
+      // but it vanishes once you've visited the manor at least once.
+      if (
+        key === "square" &&
+        hasSecretFromLocation("moonwell") &&
+        !hasSecretFromLocation("manor")
+      ) {
+        html +=
+          '<div class="mt-3 p-2 border border-warning rounded small">' +
+          "<strong>NOTICE FROM RAVENWOOD MANOR:</strong> To any Circle-touched souls still walking these streets.<br>" +
+          "An old bronze talisman bearing the Triquetra has gone missing from the manor under deeply suspicious circumstances. It was not misplaced, and those of us who keep the wards know when something is taken. If this talisman has found its way into your hands, I ask—no, urge—you to return it at once. The wards have grown restless since it vanished, and there are doors I would rather keep closed. A generous reward in coin, favor, and protection from the manor’s Lady will be granted to any who return it discreetly.<br><br>" +
+          "Signed,<br>Mira Ashbourne" +
+          "</div>";
+      }
 
       detailBodyEl.innerHTML = html;
     }
@@ -1091,25 +1112,24 @@ if (
   locationButtons.forEach((btn) => wireLocationButton(btn));
 
   // Wire map nodes so clicking the map moves you
-  // Wire map nodes so clicking the map moves you
-const mapNodes = document.querySelectorAll(".rw-map-node");
-mapNodes.forEach((node) => wireMapNode(node));
+  const mapNodes = document.querySelectorAll(".rw-map-node");
+  mapNodes.forEach((node) => wireMapNode(node));
 
-// Spawn any unlockable locations based on already-known secrets / items
-maybeSpawnDynamicLocations();
+  // Spawn any unlockable locations based on already-known secrets / items
+  maybeSpawnDynamicLocations();
 
-// Starting view:
-//  - First time: Town Square
-//  - Later: last visited valid location
-let startingKey = loadSavedLocation();
-if (!startingKey || !locations[startingKey]) {
-  startingKey = "square";      // first time, use Town Square
-  saveLocationKey(startingKey); // remember it for next time
-}
+  // Starting view:
+  //  - First time: Town Square
+  //  - Later: last visited valid location
+  let startingKey = loadSavedLocation();
+  if (!startingKey || !locations[startingKey]) {
+    startingKey = "square";       // first time, use Town Square
+    saveLocationKey(startingKey); // remember it for next time
+  }
 
-if (detailTitleEl && detailBodyEl && detailHintEl && locations[startingKey]) {
-  renderLocationDetail(startingKey);
-}
+  if (detailTitleEl && detailBodyEl && detailHintEl && locations[startingKey]) {
+    renderLocationDetail(startingKey);
+  }
 }
 
 // ---------- LANDING PAGE ----------
