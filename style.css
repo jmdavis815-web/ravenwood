@@ -460,5 +460,240 @@ body {
   text-underline-offset: 2px;
 }
 
+/* ============================
+   Ravenwood Lantern — Clear Shape, Centered Flame
+   ============================ */
+
+.rw-lantern {
+  position: relative;
+  width: 44px;
+  height: 120px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 0.5rem;
+}
+
+/* Chain / hanging rod */
+.rw-lantern-hook {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 26px;
+  background: linear-gradient(to bottom, #020617, #111827);
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+}
+
+/* Lantern frame: main body */
+.rw-lantern-frame {
+  position: absolute;
+  top: 24px;
+  width: 38px;
+  height: 78px;
+  border-radius: 6px;
+  background: radial-gradient(circle at 20% 0, #4b5563 0, #020617 80%);
+  box-shadow:
+    0 0 6px rgba(0, 0, 0, 0.9),
+    0 0 14px rgba(15, 23, 42, 0.9);
+  transform-origin: top center;
+  animation: rw-lantern-swing 3.4s infinite ease-in-out;
+}
+
+/* Top cap + bottom base */
+.rw-lantern-frame::before,
+.rw-lantern-frame::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Top cap (roof) */
+.rw-lantern-frame::before {
+  top: -10px;
+  width: 30px;
+  height: 10px;
+  border-radius: 8px 8px 2px 2px;
+  background: linear-gradient(to bottom, #9ca3af, #111827);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* Bottom base */
+.rw-lantern-frame::after {
+  bottom: -6px;
+  width: 32px;
+  height: 6px;
+  border-radius: 2px 2px 8px 8px;
+  background: linear-gradient(to top, #020617, #111827);
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* Glass chamber */
+.rw-lantern-glass {
+  position: absolute;
+  inset: 8px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 23, 42, 0.85),
+    rgba(15, 23, 42, 0.95)
+  );
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 0 2px rgba(148, 163, 184, 0.5),
+    0 0 10px rgba(250, 204, 21, 0.2);
+}
+
+/* Vertical cage bars */
+.rw-lantern-glass::before,
+.rw-lantern-glass::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    rgba(148, 163, 184, 0.5),
+    rgba(55, 65, 81, 0.8)
+  );
+}
+
+.rw-lantern-glass::before {
+  left: 9px;
+}
+
+.rw-lantern-glass::after {
+  right: 9px;
+}
+
+/* Flame container — centered at bottom */
+.rw-lantern-flame {
+  position: absolute;
+  bottom: 4px;              /* sits just above the inner base */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 32px;
+  transform-origin: 50% 100%;
+
+  /* strong glow */
+  filter:
+    drop-shadow(0 0 5px rgba(253, 230, 138, 0.9))
+    drop-shadow(0 0 10px rgba(251, 191, 36, 0.95))
+    drop-shadow(0 0 14px rgba(245, 158, 11, 1))
+    drop-shadow(0 0 24px rgba(234, 88, 12, 0.9));
+
+  animation:
+    rw-flame-sway 2.1s infinite ease-in-out,
+    rw-flame-breathe 1.6s infinite ease-in-out;
+}
+
+/* Inner white-hot core */
+.rw-lantern-flame::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 65%;
+  height: 70%;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 45% 45%;
+  background: radial-gradient(
+    circle at 50% 10%,
+    #ffffff 0%,
+    #fff6bf 25%,
+    #fede7b 55%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  animation:
+    rw-flame-core 0.12s infinite alternate,
+    rw-flame-pulse 1.2s infinite ease-in-out;
+}
+
+/* Outer flame halo */
+.rw-lantern-flame::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 45% 45%;
+  background: radial-gradient(
+    circle at 50% 0,
+    rgba(255, 240, 200, 0.8) 0%,
+    #fbbf24 40%,
+    #fb923c 70%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  opacity: 1;
+  animation:
+    rw-flame-outer 0.18s infinite alternate,
+    rw-flame-glow 1.8s infinite ease-in-out;
+}
+
+/* Animations */
+
+@keyframes rw-lantern-swing {
+  0%   { transform: rotate(0deg); }
+  20%  { transform: rotate(-3deg); }
+  45%  { transform: rotate(2deg); }
+  70%  { transform: rotate(-2deg); }
+  100% { transform: rotate(1deg); }
+}
+
+@keyframes rw-flame-core {
+  0% {
+    transform: scaleY(0.96) scaleX(1);
+    opacity: 0.92;
+  }
+  100% {
+    transform: scaleY(1.07) scaleX(0.97) translateX(-0.5px);
+    opacity: 1;
+  }
+}
+
+@keyframes rw-flame-outer {
+  0% {
+    transform: scaleY(0.97) scaleX(1.02);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scaleY(1.10) scaleX(0.96) translateX(0.5px);
+    opacity: 1;
+  }
+}
+
+@keyframes rw-flame-sway {
+  0%   { transform: translateX(-1px) rotate(-1deg); }
+  25%  { transform: translateX(1px) rotate(1deg); }
+  50%  { transform: translateX(0px) rotate(0deg); }
+  75%  { transform: translateX(-0.5px) rotate(-0.5deg); }
+  100% { transform: translateX(0.5px) rotate(0.7deg); }
+}
+
+@keyframes rw-flame-breathe {
+  0%   { transform: scaleY(0.96); }
+  50%  { transform: scaleY(1.08); }
+  100% { transform: scaleY(0.98); }
+}
+
+@keyframes rw-flame-glow {
+  0%   { opacity: 0.9; filter: brightness(1); }
+  50%  { opacity: 1;   filter: brightness(1.35); }
+  100% { opacity: 0.92; filter: brightness(1.1); }
+}
+
+@keyframes rw-flame-pulse {
+  0%   { transform: scale(1);   opacity: 0.9; }
+  50%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(0.97); opacity: 0.95; }
+}
+
+
 
 
