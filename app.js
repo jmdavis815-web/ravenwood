@@ -18,7 +18,14 @@ const RAVENWOOD_SECRETS_KEY = "ravenwoodTownSecrets";
 
 function loadSecrets() {
   try {
-    return JSON.parse(localStorage.getItem(RAVENWOOD_SECRETS_KEY)) || [];
+    const raw = JSON.parse(localStorage.getItem(RAVENWOOD_SECRETS_KEY));
+    if (!Array.isArray(raw)) return [];
+    // Backwards-compatible: allow old string-only arrays
+    return raw.map((item) =>
+      typeof item === "string"
+        ? { key: null, text: item }
+        : item
+    );
   } catch {
     return [];
   }
@@ -28,8 +35,20 @@ function saveSecrets(secrets) {
   try {
     localStorage.setItem(RAVENWOOD_SECRETS_KEY, JSON.stringify(secrets));
   } catch {
-    // ignore
+    // ignore storage errors
   }
+}
+
+function getVariantText(map, archetype, affinity) {
+  if (!map) return "";
+  const combo = (archetype || "") + ":" + (affinity || "");
+  return (
+    map[combo] ||
+    (affinity && map[affinity]) ||
+    (archetype && map[archetype]) ||
+    map.default ||
+    ""
+  );
 }
 
 // ---------- SMALL DOM HELPERS ----------
@@ -253,11 +272,15 @@ function initLoginPage() {
   });
 }
 
-// ---------- PAGE INIT: WORLD (MAIN HUB) ----------
+// ---------- PAGE INIT: WORLD (MAIN HUB / TOWN) ----------
 // ---------- PAGE INIT: WORLD (MAIN HUB / TOWN) ----------
 async function initWorldPage() {
   const nameEl = $("#rwUserName");
   const archEl = $("#rwUserArchetype");
+
+  // we’ll use these later for variants
+  let playerArchetype = null;
+  let playerAffinity = null;
 
   // Check current authenticated user via Supabase Auth
   const {
@@ -287,15 +310,14 @@ async function initWorldPage() {
       return;
     }
 
+    playerArchetype = char.archetype || null;
+    playerAffinity = char.affinity || null;
+
     // Basic identity
     if (nameEl) nameEl.textContent = char.display_name || "Guest";
 
     if (archEl) {
       const map = {
-        seer: "Seer of the Veil",
-        warden: "Warden of the Gates",
-        wanderer: "Wanderer Between",
-        chronicler: "Chronicler of Echoes",
         "shadow-witch": "Shadow Witch",
         "scholar-of-runes": "Scholar of Runes",
         "guardian-of-gates": "Guardian of Gates",
@@ -321,7 +343,6 @@ async function initWorldPage() {
         water: "Water · Memory & Dream",
         flame: "Flame · Will & Transformation",
         wind: "Wind · Messages & Thresholds",
-        shadow: "Shadow · Secrets & Thresholds",
       };
       summaryAffinity.textContent =
         affMap[char.affinity] || String(char.affinity);
@@ -363,72 +384,137 @@ async function initWorldPage() {
   const detailHintEl = $("#rwLocationDetailHint");
   const secretsListEl = $("#rwSecretsList");
 
-  // Location definitions (you can tweak copy any time)
+  // Location definitions, with archetype/affinity variants + secrets
   const locations = {
     square: {
       title: "Town Square",
-      body:
-        "Lanterns cast soft halos over the uneven stones. A cracked fountain burbles with water that never quite freezes. Notices for missing cats, moonlit meetings, and half-torn prophecy fragments flap on the board.",
-      hint:
-        "Sometimes someone pins a note here meant only for Circle eyes.",
-      secretKey: "squareNotice",
+      body: {
+        default:
+          "Lanterns cast soft halos over the uneven stones. A cracked fountain burbles with water that never quite freezes. Notices for missing cats, moonlit meetings, and half-torn prophecy fragments flap on the board.",
+        "scholar-of-runes":
+          "You notice the way the fountain spray lands in repeating patterns — almost a sigil, if you had time to sketch it.",
+        "shadow-witch":
+          "You feel eyes on you from nowhere in particular. The square remembers who used to rule its shadows.",
+      },
+      hint: {
+        default:
+          "Sometimes someone pins a note here meant only for Circle eyes.",
+        "guardian-of-gates":
+          "Old gate-keys are sometimes traded quietly here, if you know who to nod to.",
+      },
       secretText:
         "In the Town Square, you noticed a torn notice about a 'gathering under a silver moon' with no date.",
     },
     moonwell: {
       title: "The Moonwell",
-      body:
-        "The well’s water reflects the moon even when clouds smother the sky. Old offerings line the stone lip: rusted rings, knotted cords, pressed flowers that never quite rot.",
-      hint:
-        "Drop a wish in, but listen closely to what the echo gives back.",
-      secretKey: "moonwellEcho",
+      body: {
+        default:
+          "The well’s water reflects the moon even when clouds smother the sky. Old offerings line the stone lip: rusted rings, knotted cords, pressed flowers that never quite rot.",
+        water:
+          "The water thrums against your senses, as if something beneath the surface is breathing slowly in time with you.",
+        "seer-of-moons":
+          "You catch flickers of futures on the surface, like someone flipping through your life as if it were a book.",
+      },
+      hint: {
+        default:
+          "Drop a wish in, but listen closely to what the echo gives back.",
+        "seer-of-moons":
+          "You know better than to trust the first vision that rises here.",
+      },
       secretText:
         "At the Moonwell, you heard an echo whisper a name that no one has spoken in years — maybe your own.",
     },
     market: {
       title: "Market Lane",
-      body:
-        "Stalls crowd close together, thick with incense and the clink of charms. Vendors offer powders that remember your dreams and trinkets that insist they belonged to queens.",
-      hint:
-        "One stall sells objects that feel suspiciously like they fell out of your own story.",
-      secretKey: "marketCharm",
+      body: {
+        default:
+          "Stalls crowd close together, thick with incense and the clink of charms. Vendors offer powders that remember your dreams and trinkets that insist they belonged to queens.",
+        flame:
+          "Heat rolls off cauldrons and braziers. Every stall feels like a different kind of trial by fire.",
+      },
+      hint: {
+        default:
+          "One stall sells objects that feel suspiciously like they fell out of your own story.",
+      },
       secretText:
         "In Market Lane, a charm seller pressed something into your palm and said, 'You’re late.' You never paid.",
     },
     chapel: {
       title: "Old Chapel",
-      body:
-        "Candles still burn where no one admits to lighting them. The stained glass throws fractured light that makes new symbols on the floor — symbols the old Circle once used.",
-      hint:
-        "Sit in the back pew if you want the ghosts to talk instead of stare.",
-      secretKey: "chapelPew",
+      body: {
+        default:
+          "Candles still burn where no one admits to lighting them. The stained glass throws fractured light that makes new symbols on the floor — symbols the old Circle once used.",
+        "scholar-of-runes":
+          "You recognize half-remembered sigils in the colored light, as if the windows are quietly finishing a lesson you never got.",
+      },
+      hint: {
+        default:
+          "Sit in the back pew if you want the ghosts to talk instead of stare.",
+      },
       secretText:
         "In the Old Chapel, you sat in the back pew and felt someone sit beside you, though the seat stayed empty.",
     },
     witchwood: {
       title: "Witchwood Edge",
-      body:
-        "The first trees of the Witchwood lean toward the path, crowns whispering together. Runes carved into bark glow faintly whenever the wind comes from the manor’s direction.",
-      hint:
-        "The Witchwood doesn’t mind visitors — only liars.",
-      secretKey: "witchwoodRune",
+      body: {
+        default:
+          "The first trees of the Witchwood lean toward the path, crowns whispering together. Runes carved into bark glow faintly whenever the wind comes from the manor’s direction.",
+        "shadow-witch":
+          "The shadows between the trees part for you just a little, as if recognizing an old friend.",
+        stone:
+          "You feel the press of bedrock under your feet like a steady hand at your back.",
+      },
+      hint: {
+        default: "The Witchwood doesn’t mind visitors — only liars.",
+      },
       secretText:
         "At Witchwood Edge, a rune flared warm under your palm, recognizing something in your blood.",
     },
     fogwalk: {
       title: "Fogwalk Alley",
-      body:
-        "A narrow, twisting alley that smells of rain and old paper. Doors without handles, windows without glass, and a single lantern that flickers only when someone lies nearby.",
-      hint:
-        "This alley shouldn’t exist, and yet here you are.",
-      secretKey: "fogwalkLantern",
+      body: {
+        default:
+          "A narrow, twisting alley that smells of rain and old paper. Doors without handles, windows without glass, and a single lantern that flickers only when someone lies nearby.",
+        "shadow-witch":
+          "The fog wraps around your ankles like a familiar cat, purring with mischief you almost remember.",
+      },
+      hint: {
+        default:
+          "This alley shouldn’t exist, and yet here you are.",
+      },
       secretText:
         "In Fogwalk Alley, the lantern flared when you thought about turning back — as if warning you that some paths only go one way.",
     },
+    overlook: {
+      // UNLOCKED after the Moonwell secret
+      title: "Ravenwood Overlook",
+      body: {
+        default:
+          "A narrow path climbs above the town to a rocky outcrop. From here you can see the manor, the Moonwell, and the dark border of the Witchwood, all held together by a thin silver mist.",
+        wind:
+          "The wind tugs at your clothes like an impatient guide, pointing out roads and rooftops as if drawing a map only you can read.",
+        "guardian-of-gates":
+          "From here you can see every threshold at once. It feels uncomfortably like responsibility.",
+      },
+      hint: {
+        default:
+          "Places like this are where circles begin, and where they break.",
+      },
+      secretText:
+        "At Ravenwood Overlook, you realized the town is shaped like a sigil — and that you are standing at its center point.",
+      requiresSecretFrom: "moonwell", // unlock condition
+    },
   };
 
-  // Secrets load + render
+  // ---- Secrets: load, render, mutate ----
+
   let discoveredSecrets = loadSecrets();
+
+  function hasSecretFromLocation(locKey) {
+    const loc = locations[locKey];
+    if (!loc || !loc.secretText) return false;
+    return discoveredSecrets.some((s) => s.text === loc.secretText);
+  }
 
   function renderSecrets() {
     if (!secretsListEl) return;
@@ -438,56 +524,116 @@ async function initWorldPage() {
     if (!discoveredSecrets.length) {
       const li = document.createElement("li");
       li.className = "rw-secret-empty text-muted small";
-      li.textContent = "No secrets yet. The town is still deciding if it trusts you.";
+      li.textContent =
+        "No secrets yet. The town is still deciding if it trusts you.";
       secretsListEl.appendChild(li);
       return;
     }
 
     discoveredSecrets.forEach((s) => {
       const li = document.createElement("li");
-      li.textContent = s;
+      li.textContent = s.text;
       secretsListEl.appendChild(li);
     });
   }
 
-  function addSecret(secretKey, secretText) {
-    if (!secretKey || !secretText) return;
+  function addSecretFromLocation(locKey) {
+    const loc = locations[locKey];
+    if (!loc || !loc.secretText) return;
 
-    // Avoid duplicates using key stored alongside text
-    const exists = discoveredSecrets.some((s) => s === secretText);
+    const exists = discoveredSecrets.some((s) => s.text === loc.secretText);
     if (exists) return;
 
-    discoveredSecrets.push(secretText);
+    discoveredSecrets.push({ key: locKey, text: loc.secretText });
     saveSecrets(discoveredSecrets);
     renderSecrets();
+    maybeSpawnDynamicLocations();
   }
 
   renderSecrets();
 
-  // Location click handling
-  const locationButtons = document.querySelectorAll("[data-location]");
-  locationButtons.forEach((btn) => {
+  // ---- Dynamic locations (unlockables) ----
+
+  function wireLocationButton(btn) {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-location");
       const loc = locations[key];
       if (!loc) return;
 
+      const bodyText = getVariantText(
+        loc.body,
+        playerArchetype,
+        playerAffinity
+      );
+      const hintText = getVariantText(
+        loc.hint,
+        playerArchetype,
+        playerAffinity
+      );
+
       if (detailTitleEl) detailTitleEl.textContent = loc.title;
-      if (detailBodyEl) detailBodyEl.textContent = loc.body;
-      if (detailHintEl) detailHintEl.textContent = loc.hint;
+      if (detailBodyEl) detailBodyEl.textContent = bodyText;
+      if (detailHintEl) detailHintEl.textContent = hintText;
 
-      // Each click has a chance to “offer” the secret; here we just give it on first visit
-      if (loc.secretKey && loc.secretText) {
-        addSecret(loc.secretKey, loc.secretText);
-      }
+      // grant secret on first real visit
+      addSecretFromLocation(key);
     });
-  });
+  }
 
-  // Optionally: auto-select Town Square on load
+  function maybeSpawnDynamicLocations() {
+    const townMap = document.querySelector("#rwTownMap");
+    if (!townMap) return;
+
+    // Overlook unlocks once Moonwell’s secret is discovered
+    const needOverlook =
+      locations.overlook &&
+      hasSecretFromLocation("moonwell") &&
+      !document.querySelector("[data-location='overlook']");
+
+    if (needOverlook) {
+      const col = document.createElement("div");
+      col.className = "col-md-6 col-xl-4";
+      col.innerHTML = `
+        <button
+          class="rw-location-card w-100 text-start"
+          type="button"
+          data-location="overlook"
+        >
+          <div class="rw-location-header d-flex justify-content-between align-items-center">
+            <span class="rw-location-name">Ravenwood Overlook</span>
+            <span class="rw-location-badge">Unlocked</span>
+          </div>
+          <p class="rw-location-blurb mb-0">
+            A narrow path above the town that only appears once you’ve truly listened to the Moonwell.
+          </p>
+        </button>
+      `;
+      townMap.appendChild(col);
+      const btn = col.querySelector("[data-location='overlook']");
+      if (btn) wireLocationButton(btn);
+    }
+  }
+
+  // Wire existing location buttons
+  const locationButtons = document.querySelectorAll("[data-location]");
+  locationButtons.forEach((btn) => wireLocationButton(btn));
+
+  // Spawn any unlockable locations based on already-known secrets
+  maybeSpawnDynamicLocations();
+
+  // Optionally set a default view
   if (detailTitleEl && detailBodyEl && detailHintEl && locations.square) {
     detailTitleEl.textContent = locations.square.title;
-    detailBodyEl.textContent = locations.square.body;
-    detailHintEl.textContent = locations.square.hint;
+    detailBodyEl.textContent = getVariantText(
+      locations.square.body,
+      playerArchetype,
+      playerAffinity
+    );
+    detailHintEl.textContent = getVariantText(
+      locations.square.hint,
+      playerArchetype,
+      playerAffinity
+    );
   }
 }
 
