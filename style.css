@@ -490,6 +490,9 @@ body {
 /* ============================
    Ravenwood Avatars — Larger, Not Cut Off
    ============================ */
+  .avatar-container {
+    border: 1px solid rgba(148, 163, 184, 0.5);
+  }
 
 /* Standard avatar circle */
 .rw-avatar-circle {

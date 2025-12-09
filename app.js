@@ -17,6 +17,40 @@ const RAVENWOOD_SECRETS_KEY = "ravenwoodTownSecrets";
 const DEFAULT_AVATAR = "f-mystic";
 const RAVENWOOD_INVENTORY_KEY = "ravenwoodInventory";
 
+// ---------- ONLINE PROGRESS HELPERS (Supabase) ----------
+
+async function syncSecretsToSupabase(secrets) {
+  const email = window.rwEmail;
+  if (!email) return;
+  try {
+    const { error } = await supabaseClient
+      .from("data")
+      .update({ secrets })
+      .eq("email", email);
+    if (error) {
+      console.error("Failed to sync secrets:", error);
+    }
+  } catch (err) {
+    console.error("Unexpected secrets sync error:", err);
+  }
+}
+
+async function syncInventoryToSupabase(inventory) {
+  const email = window.rwEmail;
+  if (!email) return;
+  try {
+    const { error } = await supabaseClient
+      .from("data")
+      .update({ inventory })
+      .eq("email", email);
+    if (error) {
+      console.error("Failed to sync inventory:", error);
+    }
+  } catch (err) {
+    console.error("Unexpected inventory sync error:", err);
+  }
+}
+
 // ---------- SECRETS STORAGE ----------
 function loadSecrets() {
   try {
@@ -247,6 +281,8 @@ function initCreatePage() {
         journey_tone: journeyTone || null,
         avatar,
         created_at: new Date().toISOString(),
+        secrets: [],
+        inventory: [],
       };
 
       const inserted = await createCharacterOnSupabase(payload);
@@ -412,17 +448,21 @@ async function initWorldPage() {
   const email = user.email.toLowerCase();
 
   try {
-    const char = await fetchCharacterByEmail(email);
+        const char = await fetchCharacterByEmail(email);
 
     if (!char) {
-      // No character row, but user is logged in: reset & push to create?
       console.warn("No character profile found for", email);
       window.location.href = "create.html";
       return;
     }
 
+    // NEW: stash identity + current progress for later helpers
+    window.rwEmail            = email;
+    window.rwInitialSecrets   = Array.isArray(char.secrets)   ? char.secrets   : [];
+    window.rwInitialInventory = Array.isArray(char.inventory) ? char.inventory : [];
+
     playerArchetype = char.archetype || null;
-    playerAffinity = char.affinity || null;
+    playerAffinity  = char.affinity  || null;
 
     // Basic identity
     if (nameEl) nameEl.textContent = char.display_name || "Guest";
@@ -684,7 +724,20 @@ async function initWorldPage() {
 
     // ---- Secrets: load, render, mutate ----
 
-  let discoveredSecrets = loadSecrets();
+  // Start from what Supabase has for this character
+  let discoveredSecrets = Array.isArray(window.rwInitialSecrets)
+    ? window.rwInitialSecrets
+    : [];
+
+  // One-time migration: if Supabase is empty but old localStorage has data,
+  // pull it in and push it up to the cloud.
+  if (!discoveredSecrets.length) {
+    const legacy = loadSecrets(); // from localStorage
+    if (Array.isArray(legacy) && legacy.length) {
+      discoveredSecrets = legacy;
+      syncSecretsToSupabase(discoveredSecrets);
+    }
+  }
 
   function hasSecretFromLocation(locKey) {
     const loc = locations[locKey];
@@ -720,8 +773,11 @@ async function initWorldPage() {
     const exists = discoveredSecrets.some((s) => s.text === loc.secretText);
     if (exists) return;
 
-    discoveredSecrets.push({ key: locKey, text: loc.secretText });
-    saveSecrets(discoveredSecrets);
+        discoveredSecrets.push({ key: locKey, text: loc.secretText });
+
+    // Save to Supabase (no longer local-only)
+    syncSecretsToSupabase(discoveredSecrets);
+
     renderSecrets();
     maybeSpawnDynamicLocations();
   }
@@ -737,28 +793,36 @@ async function initWorldPage() {
     inventoryModal = new bootstrap.Modal(inventoryModalEl);
   }
 
-  // Local inventory state for this page
-  let inventory = loadInventory();
+    // Local inventory state for this page, seeded from Supabase
+  let inventory = Array.isArray(window.rwInitialInventory)
+    ? window.rwInitialInventory
+    : [];
+
+  // One-time migration from old localStorage
+  if (!inventory.length) {
+    const legacyInv = loadInventory(); // from localStorage
+    if (Array.isArray(legacyInv) && legacyInv.length) {
+      inventory = legacyInv;
+      syncInventoryToSupabase(inventory);
+    }
+  }
+
   renderInventory(inventory);
 
-  if (inventoryBtn && inventoryModal) {
+    if (inventoryBtn && inventoryModal) {
     inventoryBtn.addEventListener("click", () => {
-      // Refresh from storage each time you open the bag
-      inventory = loadInventory();
+      // Refresh from Supabase initial state + any local changes we’ve made
       renderInventory(inventory);
       inventoryModal.show();
     });
   }
 
-  // Public helper you can call later from quests / locations:
-  //   window.addItemToInventory({ id: "moon-token", name: "Moonwell Token", icon: "moon-token.png", quantity: 1 })
-  window.addItemToInventory = function (newItem) {
+    window.addItemToInventory = function (newItem) {
     if (!newItem || !newItem.id) return;
 
-    // Always start from latest stored inventory
-    inventory = loadInventory();
-
+    // Work from the in-memory copy (already seeded from Supabase)
     const existing = inventory.find((i) => i.id === newItem.id);
+
     if (existing) {
       existing.quantity =
         (existing.quantity || 1) + (newItem.quantity || 1);
@@ -771,7 +835,8 @@ async function initWorldPage() {
       });
     }
 
-    saveInventory(inventory);
+    // Save to Supabase instead of localStorage
+    syncInventoryToSupabase(inventory);
     renderInventory(inventory);
   };
 
