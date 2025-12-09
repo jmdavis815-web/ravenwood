@@ -275,10 +275,6 @@ body {
    Ravenwood Town Map & Secrets
    ============================ */
 
-.rw-town-grid {
-  /* just a little gaps tuning; grid feel comes from the cards */
-}
-
 .rw-location-card {
   border-radius: 1rem;
   border: 1px solid rgba(148, 163, 184, 0.6);
@@ -365,6 +361,130 @@ body {
 .rw-secret-hint {
   color: #9ca3af;
   font-style: italic;
+}
+
+/* ============================
+   Ravenwood Paper Map
+   ============================ */
+
+.rw-map-wrapper {
+  position: relative;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  box-shadow:
+    0 20px 55px rgba(0, 0, 0, 0.85),
+    0 0 30px rgba(15, 23, 42, 0.8);
+  background: #111827;
+}
+
+.rw-map-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* subtle stylization if you want it more "old book" */
+  filter: sepia(0.12) contrast(1.05) saturate(0.95);
+}
+
+/* Base style for all pins (interactive nodes) */
+.rw-map-node.rw-map-pin {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid #facc15;
+  background:
+    radial-gradient(circle at 30% 20%, #fefce8 0, #fbbf24 55%, #a16207 100%);
+  box-shadow:
+    0 0 6px rgba(250, 204, 21, 0.9),
+    0 0 14px rgba(250, 204, 21, 0.65);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  opacity: 0.85;
+  transition:
+    transform 0.15s ease-out,
+    box-shadow 0.15s ease-out,
+    opacity 0.15s ease-out;
+}
+
+.rw-map-node.rw-map-pin:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  opacity: 1;
+}
+
+/* “You are here” active state */
+.rw-map-node.rw-map-pin.is-active {
+  box-shadow:
+    0 0 6px rgba(250, 204, 21, 1),
+    0 0 18px rgba(250, 204, 21, 0.9),
+    0 0 26px rgba(250, 204, 21, 0.75);
+  animation: rw-map-pulse 1.6s infinite ease-in-out;
+}
+
+.rw-map-node.rw-map-pin.is-active::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid rgba(250, 204, 21, 0.65);
+  box-shadow: 0 0 18px rgba(250, 204, 21, 0.6);
+}
+
+/* Pulse animation */
+@keyframes rw-map-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+}
+
+/* ============================
+   Pin positions on the map
+   (tweak these % to dial in)
+   ============================ */
+
+/* Town Square (center fountain) */
+.rw-map-node[data-map-location="square"] {
+  top: 51%;
+  left: 50%;
+}
+
+/* Moonwell (upper-right grove) */
+.rw-map-node[data-map-location="moonwell"] {
+  top: 33%;
+  left: 74%;
+}
+
+/* Market Lane (lower-middle plaza) */
+.rw-map-node[data-map-location="market"] {
+  top: 69%;
+  left: 51%;
+}
+
+/* Old Chapel (left, near small chapel) */
+.rw-map-node[data-map-location="chapel"] {
+  top: 47%;
+  left: 24%;
+}
+
+/* Witchwood (lower-left forest) */
+.rw-map-node[data-map-location="witchwood"] {
+  top: 72%;
+  left: 25%;
+}
+
+/* Ravenwood Overlook (bottom-left cliffs) */
+.rw-map-node[data-map-location="overlook"] {
+  top: 86%;
+  left: 24%;
 }
 
 /* ============================

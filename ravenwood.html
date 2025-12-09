@@ -78,11 +78,150 @@
     </div>
   </nav>
 
+  <!-- Ravenwood Lantern -->
+         <div class="col d-flex flex-row align-items-center justify-content-around mb-4">
+        <div class="rw-lantern">
+            <div class="rw-lantern-hook"></div>
+                <div class="rw-lantern-frame">
+                    <div class="rw-lantern-glass">
+                    <div class="rw-lantern-flame"></div>
+                </div>
+            </div>
+        </div>
+        <h3 class="p-4">Town</h3>
+        <!-- Ravenwood Lantern -->
+        <div class="rw-lantern">
+            <div class="rw-lantern-hook"></div>
+                <div class="rw-lantern-frame">
+                    <div class="rw-lantern-glass">
+                    <div class="rw-lantern-flame"></div>
+                </div>
+            </div>
+        </div>
+        </div>
+
   <!-- MAIN CONTENT -->
-  <main class="rw-main container py-4 py-md-5">
-    <div class="row g-4">
+  <main class="rw-main container mt-3">
+    <div class="row">
+
+        <!-- RIGHT: Snapshot & Secrets -->
+        <div id="snapshot" class="rw-panel col-12 col-lg-4">
+              <aside class="rw-side mb-4">
+          <div class="d-flex align-items-center mb-3 gap-3">
+            <div class="rw-avatar-circle rw-avatar-f-mystic rw-avatar-lg" id="rwSummaryAvatar"></div>
+            <div>
+              <h3 class="rw-panel-subtitle mb-1">Your Circle Snapshot</h3>
+              <p class="rw-panel-body small mb-0">
+                How Ravenwood currently sees you.
+              </p>
+            </div>
+          </div>
+          </aside>
+
+          <p class="rw-panel-body mb-2">
+            <strong>Name:</strong> <span id="rwSummaryName">—</span><br />
+            <strong>Archetype:</strong> <span id="rwSummaryArchetype">—</span><br />
+            <strong>Affinity:</strong> <span id="rwSummaryAffinity">—</span><br />
+            <strong>Journey Tone:</strong> <span id="rwSummaryTone">—</span>
+          </p>
+          <p class="rw-panel-body small mb-0">
+            Your choices may change how certain places feel in later adventures.
+            For now, they help Ravenwood recognize which threads belong to you.
+          </p>
+        
+          <!-- RAVENWOOD WORLD MAP PANEL -->
+<section class="rw-panel mb-3 mt-1">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div>
+      <div class="rw-panel-subtitle text-center">Ravenwood Map</div>
+      <h3 class="rw-panel-title fs-6 mb-0">Where You Are</h3>
+    </div>
+    <div class="rw-tag">
+      You are at:
+      <span id="rwMapCurrentLocation">Town Square</span>
+    </div>
+  </div>
+
+  <div class="rw-map-wrapper">
+    <!-- parchment map image -->
+    <img
+      src="ravenwood-map.png"
+      alt="Map of Ravenwood"
+      class="rw-map-img"
+    />
+
+    <!-- interactive pins layered on top of the image -->
+    <!-- Town Square (center) -->
+    <button
+        title="Town Square"
+      type="button"
+      class="rw-map-node rw-map-pin"
+      data-map-location="square"
+    ></button>
+
+    <!-- The Moonwell (upper-right) -->
+    <button
+        title="The Moonwell"
+      type="button"
+      class="rw-map-node rw-map-pin"
+      data-map-location="moonwell"
+    ></button>
+
+    <!-- Market Lane (lower-center) -->
+    <button
+    title="Market Lane"
+      type="button"
+      class="rw-map-node rw-map-pin"
+      data-map-location="market"
+    ></button>
+
+    <!-- Old Chapel (mid-left) -->
+    <button
+    title="Old Chapel"
+      type="button"
+      class="rw-map-node rw-map-pin"
+      data-map-location="chapel"
+    ></button>
+
+    <!-- Witchwood (lower-left) -->
+    <button
+    title="Witchwood"
+      type="button"
+      class="rw-map-node rw-map-pin"
+      data-map-location="witchwood"
+    ></button>
+
+    <!-- Ravenwood Overlook (bottom-left cliffs) -->
+    <button
+        title="Overlook"
+      type="button"
+      class="rw-map-node rw-map-pin"
+      data-map-location="overlook"
+    ></button>
+  </div>
+</section>
+
+        <!-- Whispers & Secrets -->
+        <aside class="rw-panel rw-side mb-4 mt-3">
+          <h3 class="rw-panel-subtitle mb-2">Whispers & Secrets</h3>
+          <p class="rw-panel-body small mb-2">
+            Certain locations will offer you a secret the first time you step
+            there. This town remembers what you’ve uncovered on this device.
+          </p>
+          <ul class="rw-secrets-list mb-2" id="rwSecretsList">
+            <li class="rw-secret-empty text-muted small">
+              No secrets yet. The town is still deciding if it trusts you.
+            </li>
+          </ul>
+          <p class="rw-panel-body rw-secret-hint small mb-0" id="rwSecretsHint">
+            Hint: Fogwalk Alley doesn’t always appear. When it does, listen closely.
+          </p>
+        </aside>
+
+    </div>
+
       <!-- LEFT: Town & Places -->
-      <div class="col-lg-8">
+      <div id="mainCol" class="col-12 col-lg-8">
         <!-- Town Intro -->
         <section class="rw-panel mb-4" id="manor">
           <h2 class="rw-panel-title mb-2">The Town of Ravenwood</h2>
@@ -223,28 +362,6 @@
           </p>
         </section>
 
-        <!-- Ravenwood Lantern -->
-         <div class="col d-flex flex-row align-items-center justify-content-around mb-4">
-        <div class="rw-lantern">
-            <div class="rw-lantern-hook"></div>
-                <div class="rw-lantern-frame">
-                    <div class="rw-lantern-glass">
-                    <div class="rw-lantern-flame"></div>
-                </div>
-            </div>
-        </div>
-        <h3 class="p-4">Quests</h3>
-        <!-- Ravenwood Lantern -->
-        <div class="rw-lantern">
-            <div class="rw-lantern-hook"></div>
-                <div class="rw-lantern-frame">
-                    <div class="rw-lantern-glass">
-                    <div class="rw-lantern-flame"></div>
-                </div>
-            </div>
-        </div>
-        </div>
-
         <!-- Library & Adventures (kept from old version) -->
         <section id="books" class="rw-panel mb-4">
           <div class="d-flex justify-content-between align-items-center mb-3">
@@ -325,51 +442,11 @@
         </section>
       </div>
 
-      <!-- RIGHT: Snapshot & Secrets -->
+      
         
-              <aside class="rw-panel rw-side mb-4 col-lg-4 h-100">
-          <div class="d-flex align-items-center mb-3 gap-3">
-            <div class="rw-avatar-circle rw-avatar-f-mystic rw-avatar-lg" id="rwSummaryAvatar"></div>
-            <div>
-              <h3 class="rw-panel-subtitle mb-1">Your Circle Snapshot</h3>
-              <p class="rw-panel-body small mb-0">
-                How Ravenwood currently sees you.
-              </p>
-            </div>
-          </div>
-
-          <p class="rw-panel-body mb-2">
-            <strong>Name:</strong> <span id="rwSummaryName">—</span><br />
-            <strong>Archetype:</strong> <span id="rwSummaryArchetype">—</span><br />
-            <strong>Affinity:</strong> <span id="rwSummaryAffinity">—</span><br />
-            <strong>Journey Tone:</strong> <span id="rwSummaryTone">—</span>
-          </p>
-          <p class="rw-panel-body small mb-0">
-            Your choices may change how certain places feel in later adventures.
-            For now, they help Ravenwood recognize which threads belong to you.
-          </p>
-        
-
-        <!-- Whispers & Secrets -->
-        <aside class="rw-panel rw-side mb-4 mt-3">
-          <h3 class="rw-panel-subtitle mb-2">Whispers & Secrets</h3>
-          <p class="rw-panel-body small mb-2">
-            Certain locations will offer you a secret the first time you step
-            there. This town remembers what you’ve uncovered on this device.
-          </p>
-          <ul class="rw-secrets-list mb-2" id="rwSecretsList">
-            <li class="rw-secret-empty text-muted small">
-              No secrets yet. The town is still deciding if it trusts you.
-            </li>
-          </ul>
-          <p class="rw-panel-body rw-secret-hint small mb-0" id="rwSecretsHint">
-            Hint: Fogwalk Alley doesn’t always appear. When it does, listen closely.
-          </p>
-        </aside>
-        
-      </div>
     </div>
   </main>
+  
 
   <!-- Bootstrap JS bundle -->
   <script

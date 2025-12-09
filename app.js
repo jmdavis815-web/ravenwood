@@ -11,21 +11,19 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_ANON_KEY
 );
 
-// LocalStorage key (optional helper)
+// LocalStorage keys
 const RAVENWOOD_EMAIL_KEY = "ravenwoodEmail";
+const RAVENWOOD_SECRETS_KEY = "ravenwoodTownSecrets";
 const DEFAULT_AVATAR = "f-mystic";
 
-const RAVENWOOD_SECRETS_KEY = "ravenwoodTownSecrets";
-
+// ---------- SECRETS STORAGE ----------
 function loadSecrets() {
   try {
     const raw = JSON.parse(localStorage.getItem(RAVENWOOD_SECRETS_KEY));
     if (!Array.isArray(raw)) return [];
     // Backwards-compatible: allow old string-only arrays
     return raw.map((item) =>
-      typeof item === "string"
-        ? { key: null, text: item }
-        : item
+      typeof item === "string" ? { key: null, text: item } : item
     );
   } catch {
     return [];
@@ -40,6 +38,7 @@ function saveSecrets(secrets) {
   }
 }
 
+// Variant helper
 function getVariantText(map, archetype, affinity) {
   if (!map) return "";
   const combo = (archetype || "") + ":" + (affinity || "");
@@ -52,7 +51,7 @@ function getVariantText(map, archetype, affinity) {
   );
 }
 
-// ---------- SMALL DOM HELPERS ----------
+// ---------- SMALL DOM & EMAIL HELPERS ----------
 function $(sel) {
   return document.querySelector(sel);
 }
@@ -70,8 +69,7 @@ function clearSavedEmail() {
   localStorage.removeItem(RAVENWOOD_EMAIL_KEY);
 }
 
-// ---------- CHARACTER TABLE HELPERS ----------
-// Uses Supabase JS instead of manual fetch
+// ---------- CHARACTER TABLE HELPERS (Supabase) ----------
 
 // Get first character row for an email from "data" table
 async function fetchCharacterByEmail(email) {
@@ -107,7 +105,7 @@ function initCreatePage() {
   const form = $("#characterForm");
   if (!form) return;
 
-  const statusEl = $("#rwStatus"); // optional status, may be null
+  const statusEl = $("#rwStatus");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -143,7 +141,7 @@ function initCreatePage() {
     }
 
     try {
-      // OPTIONAL: check if a character already exists for that email
+      // Check if a character already exists for that email
       const existing = await fetchCharacterByEmail(email);
       if (existing) {
         if (statusEl) {
@@ -173,21 +171,17 @@ function initCreatePage() {
         return;
       }
 
-      // NOTE:
-      // If email confirmation is enabled in your Supabase project,
-      // the user might need to confirm via email before they can log in.
-
       // 2) Create character profile row in "data" table
-          const payload = {
-      email,
-      display_name: displayName,
-      archetype,
-      affinity,
-      familiar_name: familiarName || null,
-      journey_tone: journeyTone || null,
-      avatar,
-      created_at: new Date().toISOString(),
-    };
+      const payload = {
+        email,
+        display_name: displayName,
+        archetype,
+        affinity,
+        familiar_name: familiarName || null,
+        journey_tone: journeyTone || null,
+        avatar,
+        created_at: new Date().toISOString(),
+      };
 
       const inserted = await createCharacterOnSupabase(payload);
       console.log("Created character:", inserted);
@@ -222,6 +216,12 @@ function initLoginPage() {
   if (!form) return;
 
   const statusEl = $("#rwLoginStatus");
+
+  // Pre-fill email if saved
+  const saved = getSavedEmail();
+  if (saved && $("#loginEmail")) {
+    $("#loginEmail").value = saved;
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -279,12 +279,11 @@ function initLoginPage() {
 }
 
 // ---------- PAGE INIT: WORLD (MAIN HUB / TOWN) ----------
-// ---------- PAGE INIT: WORLD (MAIN HUB / TOWN) ----------
 async function initWorldPage() {
   const nameEl = $("#rwUserName");
   const archEl = $("#rwUserArchetype");
 
-  const navAvatarEl = document.querySelector("#rwAvatar"); // (optional, may be null)
+  const navAvatarEl = document.querySelector("#rwAvatar");
   const summaryAvatarEl = document.querySelector("#rwSummaryAvatar");
 
   // for location variants
@@ -299,6 +298,33 @@ async function initWorldPage() {
     const extra = el.id === "rwSummaryAvatar" ? " rw-avatar-lg" : "";
     el.className = "rw-avatar-circle rw-avatar-" + avatarKey + extra;
     el.setAttribute("data-avatar", avatarKey);
+  }
+
+  // --- Map helpers: "You are here" indicator ---
+  function setActiveMapLocation(locKey, locTitle) {
+    const nodes = document.querySelectorAll(".rw-map-node");
+    nodes.forEach((node) => {
+      const key = node.getAttribute("data-map-location");
+      node.classList.toggle("is-active", key === locKey);
+    });
+
+    const labelEl = document.querySelector("#rwMapCurrentLocation");
+    if (labelEl && locTitle) {
+      labelEl.textContent = locTitle;
+    }
+  }
+
+  function wireMapNode(node) {
+    node.addEventListener("click", () => {
+      const key = node.getAttribute("data-map-location");
+      if (!key) return;
+
+      // Find matching town card button and reuse its logic
+      const btn = document.querySelector(`[data-location="${key}"]`);
+      if (btn) {
+        btn.click();
+      }
+    });
   }
 
   // Check current authenticated user via Supabase Auth
@@ -659,6 +685,9 @@ async function initWorldPage() {
       if (detailBodyEl) detailBodyEl.textContent = bodyText;
       if (detailHintEl) detailHintEl.textContent = hintText;
 
+      // reflect in the map
+      setActiveMapLocation(key, loc.title);
+
       // grant secret on first real visit
       addSecretFromLocation(key);
     });
@@ -695,6 +724,14 @@ async function initWorldPage() {
       townMap.appendChild(col);
       const btn = col.querySelector("[data-location='overlook']");
       if (btn) wireLocationButton(btn);
+
+      // also un-hide Overlook on the map if you want
+      const mapNode = document.querySelector(
+        ".rw-map-node[data-map-location='overlook']"
+      );
+      if (mapNode) {
+        mapNode.classList.remove("d-none");
+      }
     }
   }
 
@@ -702,10 +739,14 @@ async function initWorldPage() {
   const locationButtons = document.querySelectorAll("[data-location]");
   locationButtons.forEach((btn) => wireLocationButton(btn));
 
+  // Wire map nodes so clicking the map moves you
+  const mapNodes = document.querySelectorAll(".rw-map-node");
+  mapNodes.forEach((node) => wireMapNode(node));
+
   // Spawn any unlockable locations based on already-known secrets
   maybeSpawnDynamicLocations();
 
-  // Optionally set a default view
+  // Default view: Town Square + map highlight
   if (detailTitleEl && detailBodyEl && detailHintEl && locations.square) {
     detailTitleEl.textContent = locations.square.title;
     detailBodyEl.textContent = getVariantText(
@@ -718,6 +759,7 @@ async function initWorldPage() {
       playerArchetype,
       playerAffinity
     );
+    setActiveMapLocation("square", locations.square.title);
   }
 }
 
