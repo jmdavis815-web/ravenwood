@@ -964,14 +964,19 @@ async function initWorldPage() {
       let html = bodyText;
 
       // After you've heard the Moonwell secret, a notice appears in the square
-      if (key === "square" && hasSecretFromLocation("moonwell")) {
-        html +=
-          '<div class="mt-3 p-2 border border-warning rounded small">' +
-          "<strong>NOTICE FROM RAVENWOOD MANOR:</strong> To any Circle-touched souls still walking these streets...<br>" +
-          "An old bronze talisman bearing the Triquetra has gone missing from the manor under deeply suspicious circumstances. It was not misplaced, and those of us who keep the wards know when something is taken. If this talisman has found its way into your hands, I ask—no, urge—you to return it at once. The wards have grown restless since it vanished, and there are doors I would rather keep closed. A generous reward in coin, favor, and protection from the manor’s Lady will be granted to any who return it discreetly.<br><br>" +
-          "Signed,<br>Mira Ashbourne" +
-          "</div>";
-      }
+// but it vanishes once you've visited the manor at least once.
+if (
+  key === "square" &&
+  hasSecretFromLocation("moonwell") &&
+  !hasSecretFromLocation("manor")
+) {
+  html +=
+    '<div class="mt-3 p-2 border border-warning rounded small">' +
+    "<strong>NOTICE FROM RAVENWOOD MANOR:</strong> To any Circle-touched souls still walking these streets.<br>" +
+    "An old bronze talisman bearing the Triquetra has gone missing from the manor under deeply suspicious circumstances. It was not misplaced, and those of us who keep the wards know when something is taken. If this talisman has found its way into your hands, I ask—no, urge—you to return it at once. The wards have grown restless since it vanished, and there are doors I would rather keep closed. A generous reward in coin, favor, and protection from the manor’s Lady will be granted to any who return it discreetly.<br><br>" +
+    "Signed,<br>Mira Ashbourne" +
+    "</div>";
+}
 
       detailBodyEl.innerHTML = html;
     }
