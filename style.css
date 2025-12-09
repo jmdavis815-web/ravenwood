@@ -819,15 +819,19 @@ body {
    ============================ */
 
 .rw-inventory-panel {
-  max-width: 640px;
+    max-width: 540px;
   margin: 0 auto;
+}
+
+#rwInventoryModal .modal-dialog {
+  max-width: 450px;
 }
 
 /* Backpack background + aligned 4×4 grid */
 .rw-inventory-grid {
   position: relative;
   width: 100%;
-  max-width: 360px;   /* lock grid width */
+  max-width: 520px;
   margin: 0 auto;
 
   aspect-ratio: 1 / 1;
@@ -841,13 +845,14 @@ body {
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(4, 1fr);
 
-  /* scaled for 360px layout */
-  padding-top: 22%;
-  padding-right: 17%;
-  padding-bottom: 18%;
-  padding-left: 17%;
+  /* Make slots larger by reducing padding */
+  padding-top: 26%;
+  padding-right: 24%;
+  padding-bottom: 24%;
+  padding-left: 23%;
 
-  gap: 0.55rem;
+  /* Increase the space between squares */
+  gap: 0.46rem;
 }
 
 /* Empty slot */
@@ -882,23 +887,6 @@ body {
   color: #facc15;
 }
 
-/* Phone-specific fixed inventory width */
-@media (max-width: 600px) {
-  .rw-inventory-panel {
-    width: 360px;
-    max-width: 360px;
-    margin: 0 auto;
-  }
-
-  .rw-inventory-grid {
-    max-width: 360px;
-    width: 100%;
-  }
-}
-
-.rw-inventory-panel {
-  max-width: 360px !important;
-}
 
 
 
