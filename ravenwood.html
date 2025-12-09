@@ -62,16 +62,18 @@
           </li>
         </ul>
 
-        <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2">
           <div class="rw-user-pill">
-            <span class="rw-user-icon">✶</span>
-            <span id="rwUserName">Guest</span>
-            <span class="rw-user-tag" id="rwUserArchetype">Wanderer</span>
+            <div class="rw-user-meta">
+              <span id="rwUserName">Guest</span>
+              <span class="rw-user-tag" id="rwUserArchetype">Wanderer</span>
+            </div>
           </div>
           <button class="btn btn-sm btn-outline-light" id="rwResetBtn">
             Reset Character
           </button>
         </div>
+
       </div>
     </div>
   </nav>
@@ -302,10 +304,18 @@
       </div>
 
       <!-- RIGHT: Snapshot & Secrets -->
-      <div class="col-lg-4">
-        <!-- Snapshot stays -->
-        <aside class="rw-panel rw-side mb-4">
-          <h3 class="rw-panel-subtitle mb-2">Your Circle Snapshot</h3>
+        
+              <aside class="rw-panel rw-side mb-4 col-lg-4 h-100">
+          <div class="d-flex align-items-center mb-3 gap-3">
+            <div class="rw-avatar-circle rw-avatar-f-mystic rw-avatar-lg" id="rwSummaryAvatar"></div>
+            <div>
+              <h3 class="rw-panel-subtitle mb-1">Your Circle Snapshot</h3>
+              <p class="rw-panel-body small mb-0">
+                How Ravenwood currently sees you.
+              </p>
+            </div>
+          </div>
+
           <p class="rw-panel-body mb-2">
             <strong>Name:</strong> <span id="rwSummaryName">—</span><br />
             <strong>Archetype:</strong> <span id="rwSummaryArchetype">—</span><br />
@@ -316,10 +326,10 @@
             Your choices may change how certain places feel in later adventures.
             For now, they help Ravenwood recognize which threads belong to you.
           </p>
-        </aside>
+        
 
         <!-- Whispers & Secrets -->
-        <aside class="rw-panel rw-side mb-4">
+        <aside class="rw-panel rw-side mb-4 mt-3">
           <h3 class="rw-panel-subtitle mb-2">Whispers & Secrets</h3>
           <p class="rw-panel-body small mb-2">
             Certain locations will offer you a secret the first time you step
@@ -334,6 +344,7 @@
             Hint: Fogwalk Alley doesn’t always appear. When it does, listen closely.
           </p>
         </aside>
+        
       </div>
     </div>
   </main>
@@ -348,5 +359,106 @@
 
   <!-- Your app logic -->
   <script src="app.js" defer></script>
+
+    <!-- Avatar Edit Modal -->
+  <div class="modal fade" id="rwAvatarModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rw-panel">
+        <div class="modal-header border-0">
+          <h5 class="modal-title rw-panel-subtitle">Change Your Avatar</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <div class="modal-body pt-0">
+          <p class="rw-panel-body small mb-3">
+            The manor will remember the face you choose. This only changes how you
+            appear in Ravenwood.
+          </p>
+
+          <form id="rwAvatarForm" class="rw-form">
+            <div class="rw-avatar-picker">
+
+              <!-- Female Mystic -->
+              <label class="rw-avatar-option">
+                <input
+                  type="radio"
+                  name="rwAvatarChoice"
+                  value="f-mystic"
+                  checked
+                />
+                <div class="rw-avatar-chip">
+                  <div class="rw-avatar-circle rw-avatar-f-mystic"></div>
+                  <span class="text-light">Female Mystic</span>
+                </div>
+              </label>
+
+              <!-- Female Shadow Witch -->
+              <label class="rw-avatar-option">
+                <input
+                  type="radio"
+                  name="rwAvatarChoice"
+                  value="f-shadow"
+                />
+                <div class="rw-avatar-chip">
+                  <div class="rw-avatar-circle rw-avatar-f-shadow"></div>
+                  <span class="text-light">Female Shadow Witch</span>
+                </div>
+              </label>
+
+              <!-- Male Shadow Witch -->
+              <label class="rw-avatar-option">
+                <input
+                  type="radio"
+                  name="rwAvatarChoice"
+                  value="m-shadow"
+                />
+                <div class="rw-avatar-chip">
+                  <div class="rw-avatar-circle rw-avatar-m-shadow"></div>
+                  <span class="text-light">Male Shadow Witch</span>
+                </div>
+              </label>
+
+              <!-- Male Mystic -->
+              <label class="rw-avatar-option">
+                <input
+                  type="radio"
+                  name="rwAvatarChoice"
+                  value="m-mystic"
+                />
+                <div class="rw-avatar-chip">
+                  <div class="rw-avatar-circle rw-avatar-m-mystic"></div>
+                  <span class="text-light">Male Mystic</span>
+                </div>
+              </label>
+
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-footer border-0">
+          <button
+            type="button"
+            class="btn btn-outline-light btn-sm"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn rw-btn-main btn-sm"
+            id="rwAvatarSaveBtn"
+          >
+            Save Avatar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

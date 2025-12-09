@@ -13,6 +13,7 @@ const supabaseClient = window.supabase.createClient(
 
 // LocalStorage key (optional helper)
 const RAVENWOOD_EMAIL_KEY = "ravenwoodEmail";
+const DEFAULT_AVATAR = "f-mystic";
 
 const RAVENWOOD_SECRETS_KEY = "ravenwoodTownSecrets";
 
@@ -119,6 +120,10 @@ function initCreatePage() {
       "input[name='journeyTone']:checked"
     )?.value;
 
+    const avatar =
+      document.querySelector("input[name='avatar']:checked")?.value ||
+      DEFAULT_AVATAR;
+
     const email = $("#email")?.value.trim().toLowerCase();
     const password = $("#password")?.value;
 
@@ -173,15 +178,16 @@ function initCreatePage() {
       // the user might need to confirm via email before they can log in.
 
       // 2) Create character profile row in "data" table
-      const payload = {
-        email,
-        display_name: displayName,
-        archetype,
-        affinity,
-        familiar_name: familiarName || null,
-        journey_tone: journeyTone || null,
-        created_at: new Date().toISOString(),
-      };
+          const payload = {
+      email,
+      display_name: displayName,
+      archetype,
+      affinity,
+      familiar_name: familiarName || null,
+      journey_tone: journeyTone || null,
+      avatar,
+      created_at: new Date().toISOString(),
+    };
 
       const inserted = await createCharacterOnSupabase(payload);
       console.log("Created character:", inserted);
@@ -278,9 +284,22 @@ async function initWorldPage() {
   const nameEl = $("#rwUserName");
   const archEl = $("#rwUserArchetype");
 
-  // we’ll use these later for variants
+  const navAvatarEl = document.querySelector("#rwAvatar"); // (optional, may be null)
+  const summaryAvatarEl = document.querySelector("#rwSummaryAvatar");
+
+  // for location variants
   let playerArchetype = null;
   let playerAffinity = null;
+
+  // which avatar class we’re using (rw-avatar-XXXX)
+  let avatarKey = DEFAULT_AVATAR;
+
+  function applyAvatar(el) {
+    if (!el) return;
+    const extra = el.id === "rwSummaryAvatar" ? " rw-avatar-lg" : "";
+    el.className = "rw-avatar-circle rw-avatar-" + avatarKey + extra;
+    el.setAttribute("data-avatar", avatarKey);
+  }
 
   // Check current authenticated user via Supabase Auth
   const {
@@ -326,6 +345,11 @@ async function initWorldPage() {
       archEl.textContent = map[char.archetype] || "Circle Walker";
     }
 
+    // Avatar from DB (fallback to default)
+    avatarKey = char.avatar || DEFAULT_AVATAR;
+    applyAvatar(navAvatarEl);
+    applyAvatar(summaryAvatarEl);
+
     // Snapshot on the right
     const summaryName = $("#rwSummaryName");
     const summaryArch = $("#rwSummaryArchetype");
@@ -359,6 +383,66 @@ async function initWorldPage() {
     alert(
       "Ravenwood couldn’t be reached just now. Try refreshing, or step back through the gate and re-enter."
     );
+  }
+
+  // ----- Avatar edit modal wiring -----
+  const avatarModalEl = document.getElementById("rwAvatarModal");
+  let avatarModal = null;
+
+  if (avatarModalEl && window.bootstrap && bootstrap.Modal) {
+    avatarModal = new bootstrap.Modal(avatarModalEl);
+  }
+
+  if (nameEl && avatarModalEl && avatarModal) {
+    nameEl.style.cursor = "pointer";
+    nameEl.title = "Click to change your avatar";
+
+    // Open modal when clicking the name in navbar
+    nameEl.addEventListener("click", () => {
+      const radios = avatarModalEl.querySelectorAll(
+        "input[name='rwAvatarChoice']"
+      );
+      radios.forEach((input) => {
+        input.checked = input.value === avatarKey;
+      });
+      avatarModal.show();
+    });
+
+    // Save avatar + update Supabase + refresh UI
+    const saveBtn = document.getElementById("rwAvatarSaveBtn");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const selected = avatarModalEl.querySelector(
+          "input[name='rwAvatarChoice']:checked"
+        );
+        if (!selected) return;
+
+        const newAvatar = selected.value;
+
+        try {
+          const { error: updateError } = await supabaseClient
+            .from("data")
+            .update({ avatar: newAvatar })
+            .eq("email", email);
+
+          if (updateError) {
+            console.error("Avatar update failed:", updateError);
+            alert("The wards resisted that change. Try again.");
+            return;
+          }
+
+          avatarKey = newAvatar;
+          applyAvatar(navAvatarEl);
+          applyAvatar(summaryAvatarEl);
+
+          avatarModal.hide();
+        } catch (err) {
+          console.error("Unexpected avatar update error:", err);
+          alert("Something disrupted the ritual. Please try again.");
+        }
+      });
+    }
   }
 
   // Reset / sign-out button

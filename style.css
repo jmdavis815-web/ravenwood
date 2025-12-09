@@ -367,3 +367,98 @@ body {
   font-style: italic;
 }
 
+/* ============================
+   Ravenwood Avatars — Larger, Not Cut Off
+   ============================ */
+
+/* Standard avatar circle */
+.rw-avatar-circle {
+  width: 4.5rem;           /* larger size */
+  height: 4.5rem;          /* larger size */
+  border-radius: 999px;
+  overflow: hidden;
+  border: none !important;
+  box-shadow: none !important;
+
+  /* Make the whole character visible */
+  background-size: contain;     /* instead of cover */
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Large avatar (profile card) */
+.rw-avatar-lg {
+  width: 8rem;             /* increase size */
+  height: 8rem;
+  border-radius: 999px;
+  overflow: hidden;
+  border: none !important;
+  box-shadow: none !important;
+
+  /* show whole character */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Avatar images */
+.rw-avatar-f-mystic {
+  background-image: url("f-mystic.png");
+}
+
+.rw-avatar-f-shadow {
+  background-image: url("f-shadow.png");
+}
+
+.rw-avatar-m-shadow {
+  background-image: url("m-shadow.png");
+}
+
+.rw-avatar-m-mystic {
+  background-image: url("m-mystic.png");
+}
+
+/* ============================
+   Avatar Picker (Create + Modal)
+   ============================ */
+
+.rw-avatar-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rw-avatar-option {
+  display: block;
+  cursor: pointer;
+}
+
+.rw-avatar-option input[type="radio"] {
+  display: none;
+}
+
+.rw-avatar-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.9);
+  font-size: 0.85rem;
+}
+
+.rw-avatar-option input[type="radio"]:checked + .rw-avatar-chip {
+  border-color: #facc15;
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.35);
+}
+
+/* Make the navbar name look interactive */
+.rw-user-name {
+  cursor: pointer;
+  text-decoration: underline dotted rgba(148, 163, 184, 0.7);
+  text-underline-offset: 2px;
+}
+
+
+
