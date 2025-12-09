@@ -960,6 +960,29 @@ body {
   color: #facc15;
 }
 
+/* Highlight for newly acquired item */
+.rw-inventory-slot--highlight {
+  outline: 2px solid rgba(250, 204, 21, 0.9);
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.9);
+  animation: rw-inventory-pulse 1s ease-in-out 2;
+}
+
+@keyframes rw-inventory-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(250, 204, 21, 0.0);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 18px rgba(250, 204, 21, 1);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(250, 204, 21, 0.0);
+  }
+}
+
+
 
 
 

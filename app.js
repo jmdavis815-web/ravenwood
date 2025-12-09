@@ -118,7 +118,8 @@ function saveInventory(items) {
 }
 
 // Draw the inventory inside #rwInventoryGrid
-function renderInventory(items = []) {
+// Draw the inventory inside #rwInventoryGrid
+function renderInventory(items = [], highlightItemId = null) {
   const grid = document.getElementById("rwInventoryGrid");
   if (!grid) return;
 
@@ -131,6 +132,11 @@ function renderInventory(items = []) {
   safeItems.forEach((item) => {
     const slot = document.createElement("div");
     slot.className = "rw-inventory-slot";
+
+    // ⭐ Highlight this slot if it matches the newly added item
+    if (highlightItemId && item && item.id === highlightItemId) {
+      slot.classList.add("rw-inventory-slot--highlight");
+    }
 
     if (item && item.icon) {
       const img = document.createElement("img");
@@ -954,27 +960,50 @@ async function initWorldPage() {
   }
 
   window.addItemToInventory = function (newItem) {
-    if (!newItem || !newItem.id) return;
+  if (!newItem || !newItem.id) return;
 
-    // Work from the in-memory copy (already seeded from Supabase)
-    const existing = inventory.find((i) => i.id === newItem.id);
+  // Work from the in-memory copy (already seeded from Supabase)
+  const existing = inventory.find((i) => i.id === newItem.id);
+  const isNewItem = !existing;
 
-    if (existing) {
-      existing.quantity =
-        (existing.quantity || 1) + (newItem.quantity || 1);
-    } else {
-      inventory.push({
-        id: newItem.id,
-        name: newItem.name || "Unknown item",
-        icon: newItem.icon || "",
-        quantity: newItem.quantity || 1,
-      });
+  if (existing) {
+    existing.quantity =
+      (existing.quantity || 1) + (newItem.quantity || 1);
+  } else {
+    inventory.push({
+      id: newItem.id,
+      name: newItem.name || "Unknown item",
+      icon: newItem.icon || "",
+      quantity: newItem.quantity || 1,
+    });
+  }
+
+  // Save to Supabase (+ cache locally)
+  syncInventoryToSupabase(inventory);
+
+  // ✅ If this is a brand-new item, highlight it
+  if (isNewItem) {
+    renderInventory(inventory, newItem.id);
+
+    // If we have the Inventory modal, pop it open and let the glow play
+    if (inventoryModal) {
+      inventoryModal.show();
+
+      // Optionally remove the highlight class after a short delay
+      setTimeout(() => {
+        const highlighted = document.querySelector(
+          ".rw-inventory-slot--highlight"
+        );
+        if (highlighted) {
+          highlighted.classList.remove("rw-inventory-slot--highlight");
+        }
+      }, 2200);
     }
-
-    // Save to Supabase (+ cache locally)
-    syncInventoryToSupabase(inventory);
+  } else {
+    // Existing item, just re-render normally
     renderInventory(inventory);
-  };
+  }
+};
 
   function addSecretFromLocation(locKey) {
     const loc = locations[locKey];
