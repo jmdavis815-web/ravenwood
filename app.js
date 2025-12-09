@@ -320,20 +320,21 @@ function initCreatePage() {
       console.log("Auth created:", signUpData);
 
       // 2) Create character profile row in "data" table
-            const payload = {
-        email,
-        display_name: displayName,
-        archetype,
-        affinity,
-        familiar_name: familiarName || null,
-        journey_tone: journeyTone || null,
-        avatar,
-        created_at: new Date().toISOString(),
-        secrets: [],      // start empty
-        inventory: [],    // start empty
-        manor_unlocked: false,
-        intro_seen: false, // first time in Ravenwood, show intro
-      };
+         const payload = {
+  email,
+  display_name: displayName,
+  archetype,
+  affinity,
+  familiar_name: familiarName || null,
+  journey_tone: journeyTone || null,
+  avatar,
+  created_at: new Date().toISOString(),
+  secrets: [],          // start empty
+  inventory: [],        // start empty
+  manor_unlocked: false,
+  intro_seen: false,    // first time in Ravenwood, show town intro
+  manor_intro_seen: false, // first time you go to the Manor
+};
 
       const inserted = await createCharacterOnSupabase(payload);
       console.log("Created character:", inserted);
@@ -434,6 +435,8 @@ function initLoginPage() {
 async function initWorldPage() {
   const nameEl = $("#rwUserName");
   const archEl = $("#rwUserArchetype");
+    // We'll keep the full character object around for later helpers
+  let currentChar = null;
 
   const navAvatarEl = document.querySelector("#rwAvatar");
   const summaryAvatarEl = document.querySelector("#rwSummaryAvatar");
@@ -539,13 +542,16 @@ async function initWorldPage() {
   const email = user.email.toLowerCase();
 
   try {
-    const char = await fetchCharacterByEmail(email);
+  const char = await fetchCharacterByEmail(email);
 
-    if (!char) {
-      console.warn("No character profile found for", email);
-      window.location.href = "create.html";
-      return;
-    }
+  if (!char) {
+    console.warn("No character profile found for", email);
+    window.location.href = "create.html";
+    return;
+  }
+
+  currentChar = char;       // ← add this line
+  window.rwChar = char;     // (optional-global if you want it elsewhere)
 
     // Remove outdated localStorage manor flag (Supabase is the source of truth now)
     localStorage.removeItem("ravenwoodManorUnlocked");
@@ -847,6 +853,54 @@ async function initWorldPage() {
     },
   };
 
+  // ------------------------------
+// FIRST-TIME MANOR ARRIVAL STORY
+// ------------------------------
+async function maybeShowManorArrival(char, email) {
+  if (!char) return;
+  if (char.manor_intro_seen === true) return;
+
+  const modalEl = document.getElementById("rwManorArrivalModal");
+  if (!modalEl || !window.bootstrap || !bootstrap.Modal) return;
+
+  const manorModal = new bootstrap.Modal(modalEl, {
+    backdrop: "static",
+    keyboard: false,
+  });
+
+  manorModal.show();
+
+  const btn = document.getElementById("rwManorArrivalBeginBtn");
+  if (btn) {
+    btn.addEventListener("click", async () => {
+      try {
+        const { error } = await supabaseClient
+          .from("data")
+          .update({
+            manor_unlocked: true,
+            manor_intro_seen: true,
+          })
+          .eq("email", email);
+
+        if (error) {
+          console.error("Failed to update manor arrival:", error);
+        } else {
+          // keep the local copy in sync
+          char.manor_intro_seen = true;
+          if (window.rwChar) window.rwChar.manor_intro_seen = true;
+        }
+      } catch (err) {
+        console.error("Unexpected manor arrival error:", err);
+      }
+
+      manorModal.hide();
+
+      // later: trigger first interactive book here
+      // startInteractiveBook1();
+    }, { once: true });
+  }
+}
+
   // ---- Secrets: load, render, mutate ----
 
   // Start from what Supabase has for this character
@@ -1111,16 +1165,32 @@ async function initWorldPage() {
   }
 
   function wireLocationButton(btn) {
-    btn.addEventListener("click", () => {
-      const key = btn.getAttribute("data-location");
-      if (!locations[key]) return;
+  btn.addEventListener("click", () => {
+    const key = btn.getAttribute("data-location");
+    if (!locations[key]) return;
+
+    // ⭐ Special case: first time arriving at the Manor
+    if (
+      key === "manor" &&
+      currentChar &&                     // we have their char data
+      currentChar.manor_intro_seen !== true && // haven't seen it yet
+      playerHasTalisman()               // they actually have the talisman
+    ) {
+      // Show the manor arrival story modal
+      maybeShowManorArrival(currentChar, window.rwEmail || "");
+      // We still render details / grant secret / save location as usual:
       renderLocationDetail(key);
-      // grant secret on first real visit
       addSecretFromLocation(key);
-      // remember where the player is
       saveLocationKey(key);
-    });
-  }
+      return;
+    }
+
+    // Normal behavior for all other locations (and later manor visits)
+    renderLocationDetail(key);
+    addSecretFromLocation(key);
+    saveLocationKey(key);
+  });
+}
 
   // SPAWN / UPDATE UNLOCKABLE LOCATIONS
   function maybeSpawnDynamicLocations() {

@@ -70,7 +70,7 @@
             </div>
           </div>
           <button class="btn btn-sm btn-outline-light" id="rwResetBtn">
-            Reset Character
+            Return
           </button>
         </div>
 
@@ -349,6 +349,69 @@
           You don’t remember how you got here. Ravenwood does.
         </p>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===========================
+     FIRST-TIME MANOR ARRIVAL MODAL
+     =========================== -->
+<div class="modal fade" id="rwManorArrivalModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content rw-card-landing rw-intro-modal">
+
+      <div class="modal-body p-0">
+        <div class="row g-0">
+          <div class="col-md-5">
+            <div class="rw-intro-art-frame">
+              <!-- Replace with your art -->
+              <img src="manor-arrival.png" class="rw-intro-art" alt="Approaching Ravenwood Manor">
+            </div>
+          </div>
+
+          <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
+
+            <div>
+              <p class="rw-tagline text-uppercase mb-1">The Manor Stirs</p>
+              <h2 class="rw-title fs-4 mb-2">A Door That Opens for You</h2>
+
+              <p class="rw-body mb-3">
+                Fog curls around your boots as you step onto the ancient path.  
+                Lanterns flare to life one by one, as if recognizing the talisman  
+                resting in your pocket. The Manor hums—alive, aware—waiting.
+              </p>
+
+              <p class="rw-intro-dialog mb-3">
+                A figure stands at the great door, silver hair catching the moonlight.
+              </p>
+
+              <p class="rw-body mb-3">
+                <strong>“You brought it back,”</strong> the woman says, voice low with relief.  
+                <em>“The Talisman chose you. That means the Circle is waking—and we cannot face what’s coming alone.”</em>
+              </p>
+
+              <p class="rw-body mb-0">
+                She steps aside, gesturing you inward.
+                <em>“Come. There is something you must see—before the others return.”</em>
+              </p>
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+              <button id="rwManorArrivalBeginBtn" class="btn rw-btn-main">
+                Enter the Manor
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="rw-intro-footer px-4 py-3">
+        <p class="mb-0 text-light-50">
+          The talisman hums softly, warming against your skin.
+        </p>
+      </div>
+
     </div>
   </div>
 </div>
