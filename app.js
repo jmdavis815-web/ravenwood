@@ -42,8 +42,9 @@ async function syncInventoryToSupabase(inventory) {
   try {
     const { error } = await supabaseClient
       .from("data")
-      .update({ inventory })
-      .eq("email", email);
+      .update({ inventory })  // ← THIS LINE
+      .eq("email", email);    // ← AND THIS LINE
+
     if (error) {
       console.error("Failed to sync inventory:", error);
     }
