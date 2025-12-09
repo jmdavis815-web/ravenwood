@@ -73,8 +73,6 @@ function saveSecrets(secrets) {
   }
 }
 
-// ---------- INVENTORY HELPERS (localStorage) ----------
-
 // ---------- INVENTORY HELPERS ----------
 
 function loadInventory() {
@@ -114,7 +112,7 @@ function renderInventory(items = []) {
 
     if (item && item.icon) {
       const img = document.createElement("img");
-      img.src = item.icon;                  // e.g. "raven-mote.png"
+      img.src = item.icon; // e.g. "raven-mote.png"
       img.alt = item.name || "Item";
       img.className = "rw-inventory-item-icon";
       slot.appendChild(img);
@@ -320,9 +318,9 @@ function initLoginPage() {
   const statusEl = $("#rwLoginStatus");
 
   // Pre-fill email if saved
-  const saved = getSavedEmail();
-  if (saved && $("#loginEmail")) {
-    $("#loginEmail").value = saved;
+  theSaved = getSavedEmail();
+  if (theSaved && $("#loginEmail")) {
+    $("#loginEmail").value = theSaved;
   }
 
   form.addEventListener("submit", async (e) => {
@@ -448,7 +446,7 @@ async function initWorldPage() {
   const email = user.email.toLowerCase();
 
   try {
-        const char = await fetchCharacterByEmail(email);
+    const char = await fetchCharacterByEmail(email);
 
     if (!char) {
       console.warn("No character profile found for", email);
@@ -457,12 +455,14 @@ async function initWorldPage() {
     }
 
     // NEW: stash identity + current progress for later helpers
-    window.rwEmail            = email;
-    window.rwInitialSecrets   = Array.isArray(char.secrets)   ? char.secrets   : [];
-    window.rwInitialInventory = Array.isArray(char.inventory) ? char.inventory : [];
+    window.rwEmail = email;
+    window.rwInitialSecrets = Array.isArray(char.secrets) ? char.secrets : [];
+    window.rwInitialInventory = Array.isArray(char.inventory)
+      ? char.inventory
+      : [];
 
     playerArchetype = char.archetype || null;
-    playerAffinity  = char.affinity  || null;
+    playerAffinity = char.affinity || null;
 
     // Basic identity
     if (nameEl) nameEl.textContent = char.display_name || "Guest";
@@ -716,13 +716,33 @@ async function initWorldPage() {
         default:
           "Places like this are where circles begin, and where they break.",
       },
+      // When this secret fires, you also find the talisman
       secretText:
-        "At Ravenwood Overlook, you realized the town is shaped like a sigil — and that you are standing at its center point.",
+        "At Ravenwood Overlook, you found an old bronze talisman etched with a Triquetra, lying where the cliff meets the mist.",
       requiresSecretFrom: "moonwell", // unlock condition
+      rewardItem: {
+        id: "old_talisman",
+        name: "Old Talisman",
+        icon: "tal-tri.png",
+        quantity: 1,
+      },
+    },
+    manor: {
+      title: "Ravenwood Manor",
+      body: {
+        default:
+          "The manor towers over the town, its windows burning with a few patient lights. The wards along the gate shiver when you draw near, tasting the metal of the talisman in your pocket.",
+      },
+      hint: {
+        default:
+          "Someone inside has been waiting for that talisman to find its way home.",
+      },
+      secretText:
+        "At the gates of Ravenwood Manor, a voice behind the door whispered, 'You brought it back.'",
     },
   };
 
-    // ---- Secrets: load, render, mutate ----
+  // ---- Secrets: load, render, mutate ----
 
   // Start from what Supabase has for this character
   let discoveredSecrets = Array.isArray(window.rwInitialSecrets)
@@ -766,25 +786,8 @@ async function initWorldPage() {
     });
   }
 
-  function addSecretFromLocation(locKey) {
-    const loc = locations[locKey];
-    if (!loc || !loc.secretText) return;
-
-    const exists = discoveredSecrets.some((s) => s.text === loc.secretText);
-    if (exists) return;
-
-        discoveredSecrets.push({ key: locKey, text: loc.secretText });
-
-    // Save to Supabase (no longer local-only)
-    syncSecretsToSupabase(discoveredSecrets);
-
-    renderSecrets();
-    maybeSpawnDynamicLocations();
-  }
-
-  renderSecrets();
-
   // ---------- Inventory wiring ----------
+
   const inventoryBtn = document.getElementById("rwInventoryBtn");
   const inventoryModalEl = document.getElementById("rwInventoryModal");
   let inventoryModal = null;
@@ -793,7 +796,7 @@ async function initWorldPage() {
     inventoryModal = new bootstrap.Modal(inventoryModalEl);
   }
 
-    // Local inventory state for this page, seeded from Supabase
+  // Local inventory state for this page, seeded from Supabase
   let inventory = Array.isArray(window.rwInitialInventory)
     ? window.rwInitialInventory
     : [];
@@ -809,7 +812,7 @@ async function initWorldPage() {
 
   renderInventory(inventory);
 
-    if (inventoryBtn && inventoryModal) {
+  if (inventoryBtn && inventoryModal) {
     inventoryBtn.addEventListener("click", () => {
       // Refresh from Supabase initial state + any local changes we’ve made
       renderInventory(inventory);
@@ -817,7 +820,11 @@ async function initWorldPage() {
     });
   }
 
-    window.addItemToInventory = function (newItem) {
+  function playerHasTalisman() {
+    return inventory.some((i) => i.id === "old_talisman");
+  }
+
+  window.addItemToInventory = function (newItem) {
     if (!newItem || !newItem.id) return;
 
     // Work from the in-memory copy (already seeded from Supabase)
@@ -840,31 +847,74 @@ async function initWorldPage() {
     renderInventory(inventory);
   };
 
+  function addSecretFromLocation(locKey) {
+    const loc = locations[locKey];
+    if (!loc || !loc.secretText) return;
+
+    const exists = discoveredSecrets.some((s) => s.text === loc.secretText);
+    if (exists) {
+      // even if secret already known, don't double-award items
+      return;
+    }
+
+    discoveredSecrets.push({ key: locKey, text: loc.secretText });
+
+    // Save to Supabase
+    syncSecretsToSupabase(discoveredSecrets);
+    renderSecrets();
+
+    // If this location grants an item (like the old talisman), award it once
+    if (loc.rewardItem && window.addItemToInventory) {
+      const alreadyHas = inventory.some((i) => i.id === loc.rewardItem.id);
+      if (!alreadyHas) {
+        window.addItemToInventory(loc.rewardItem);
+      }
+    }
+
+    maybeSpawnDynamicLocations();
+  }
+
+  renderSecrets();
+
   // ---- Dynamic locations (unlockables) ----
+  function renderLocationDetail(key) {
+    const loc = locations[key];
+    if (!loc) return;
+
+    const bodyText = getVariantText(
+      loc.body,
+      playerArchetype,
+      playerAffinity
+    );
+    const hintText = getVariantText(
+      loc.hint,
+      playerArchetype,
+      playerAffinity
+    );
+
+    if (detailTitleEl) detailTitleEl.textContent = loc.title;
+
+    if (detailBodyEl) {
+      let html = bodyText;
+      if (key === "square" && hasSecretFromLocation("moonwell")) {
+        html +=
+          '<div class="mt-3 p-2 border border-warning rounded small">' +
+          "<strong>NOTICE FROM RAVENWOOD MANNOR:</strong> To any Circle-touched souls still walking these streets..<br>An old bronze talisman bearing the Triquetra has gone missing from the manor under deeply suspicious circumstances. It was not misplaced, and those of us who keep the wards know when something is taken. If this talisman has found its way into your hands, I ask—no, urge—you to return it at once. The wards have grown restless since it vanished, and there are doors I would rather keep closed. A generous reward in coin, favor, and protection from the manor’s Lady will be granted to any who return it discreetly.<br><br>Signed,<br>Mira Ashbourne"
+      } + "</div>";
+      detailBodyEl.innerHTML = html;
+    }
+
+    if (detailHintEl) detailHintEl.textContent = hintText;
+
+    // reflect in the map
+    setActiveMapLocation(key, loc.title);
+  }
+
   function wireLocationButton(btn) {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-location");
-      const loc = locations[key];
-      if (!loc) return;
-
-      const bodyText = getVariantText(
-        loc.body,
-        playerArchetype,
-        playerAffinity
-      );
-      const hintText = getVariantText(
-        loc.hint,
-        playerArchetype,
-        playerAffinity
-      );
-
-      if (detailTitleEl) detailTitleEl.textContent = loc.title;
-      if (detailBodyEl) detailBodyEl.textContent = bodyText;
-      if (detailHintEl) detailHintEl.textContent = hintText;
-
-      // reflect in the map
-      setActiveMapLocation(key, loc.title);
-
+      if (!locations[key]) return;
+      renderLocationDetail(key);
       // grant secret on first real visit
       addSecretFromLocation(key);
     });
@@ -910,6 +960,44 @@ async function initWorldPage() {
         mapNode.classList.remove("d-none");
       }
     }
+
+    // Manor unlocks once the talisman is in your inventory
+    const needManor =
+      locations.manor &&
+      playerHasTalisman() &&
+      !document.querySelector("[data-location='manor']");
+
+    if (needManor) {
+      const col = document.createElement("div");
+      col.className = "col-md-6 col-xl-4";
+      col.innerHTML = `
+        <button
+          class="rw-location-card w-100 text-start"
+          type="button"
+          data-location="manor"
+        >
+          <div class="rw-location-header d-flex justify-content-between align-items-center">
+            <span class="rw-location-name">Ravenwood Manor</span>
+            <span class="rw-location-badge">New</span>
+          </div>
+          <p class="rw-location-blurb mb-0">
+            A notice in the square says someone at the manor is searching for a missing talisman. Its gates stand slightly ajar.
+          </p>
+        </button>
+      `;
+      townMap.appendChild(col);
+      const btn = col.querySelector("[data-location='manor']");
+      if (btn) wireLocationButton(btn);
+
+  // Also un-hide the Manor pin on the map once it's unlocked
+  const manorNode = document.querySelector(
+    ".rw-map-node[data-map-location='manor']"
+  );
+  if (manorNode) {
+    manorNode.classList.remove("d-none");
+  }
+   
+    }
   }
 
   // Wire existing location buttons
@@ -920,23 +1008,12 @@ async function initWorldPage() {
   const mapNodes = document.querySelectorAll(".rw-map-node");
   mapNodes.forEach((node) => wireMapNode(node));
 
-  // Spawn any unlockable locations based on already-known secrets
+  // Spawn any unlockable locations based on already-known secrets / items
   maybeSpawnDynamicLocations();
 
   // Default view: Town Square + map highlight
   if (detailTitleEl && detailBodyEl && detailHintEl && locations.square) {
-    detailTitleEl.textContent = locations.square.title;
-    detailBodyEl.textContent = getVariantText(
-      locations.square.body,
-      playerArchetype,
-      playerAffinity
-    );
-    detailHintEl.textContent = getVariantText(
-      locations.square.hint,
-      playerArchetype,
-      playerAffinity
-    );
-    setActiveMapLocation("square", locations.square.title);
+    renderLocationDetail("square");
   }
 }
 

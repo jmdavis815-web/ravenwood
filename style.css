@@ -450,6 +450,11 @@ body {
    Pin positions on the map
    (tweak these % to dial in)
    ============================ */
+/* Ravenwood Manor (big building, upper-left) */
+.rw-map-node[data-map-location="manor"] {
+  top: 22%;   /* tweak these numbers to sit exactly on the roof */
+  left: 26%;
+}
 
 /* Town Square (center fountain) */
 .rw-map-node[data-map-location="square"] {
