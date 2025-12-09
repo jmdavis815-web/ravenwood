@@ -180,6 +180,175 @@
     </div>
   </div>
 </div>
+
+<!-- First-Arrival Intro Modal -->
+<div class="modal fade" id="rwIntroModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content rw-card-landing rw-intro-modal">
+      <div class="modal-body p-0">
+
+        <div id="rwIntroCarousel" class="carousel slide" data-bs-ride="false">
+          <div class="carousel-inner">
+
+            <!-- Slide 1 -->
+            <div class="carousel-item active">
+              <div class="row g-0">
+                <div class="col-md-5">
+                  <div class="rw-intro-art-frame">
+                    <!-- Drop-in art #1 -->
+                    <!-- Replace src with your own image when ready -->
+                    <div class="rw-intro-art-placeholder d-md-none">
+                      <img src="intro1.png" 
+                      alt="Lantern-lit Ravenwood street" 
+                      class="rw-intro-art" />
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
+                  <div>
+                    <p class="rw-tagline text-uppercase mb-1">Somewhere between worlds</p>
+                    <h2 class="rw-title fs-4 mb-2">You Wake in Ravenwood</h2>
+                    <p class="rw-body mb-3">
+                      You come back to yourself standing in a lantern-lit square,
+                      mist skimming low over uneven cobblestones. A cracked fountain
+                      murmurs a tune you almost recognize. Your pulse is loud.
+                      Your memories are not.
+                    </p>
+                    <p class="rw-intro-dialog mb-0">
+                      “Easy now,” the town seems to murmur. “Names return before memories.”
+                    </p>
+                  </div>
+                  <div class="d-flex justify-content-end mt-3">
+                    <button
+                      class="btn rw-btn-main"
+                      type="button"
+                      data-bs-target="#rwIntroCarousel"
+                      data-bs-slide="next"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2 -->
+            <div class="carousel-item">
+              <div class="row g-0">
+                <div class="col-md-5">
+                  <div class="rw-intro-art-frame">
+                    <!-- Drop-in art #2 -->
+                    <img
+                      src="intro-2.png"
+                      alt="Ravenwood Manor on the hill"
+                      class="rw-intro-art d-none d-md-block"
+                    />
+                  </div>
+                </div>
+                <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
+                  <div>
+                    <p class="rw-tagline text-uppercase mb-1">The Manor on the Hill</p>
+                    <h2 class="rw-title fs-4 mb-2">The House That Remembers</h2>
+                    <p class="rw-body mb-3">
+                      High above the square, the manor’s windows burn like patient eyes.
+                      The wards hum faintly under your skin, as if recognizing something
+                      in your blood long before you do.
+                    </p>
+                    <p class="rw-intro-dialog mb-0">
+                      Somewhere beyond the fog, a bell tolls the wrong hour — and you know
+                      without knowing why that the sound is for you.
+                    </p>
+                  </div>
+                  <div class="d-flex justify-content-between mt-3">
+                    <button
+                      class="btn btn-sm btn-outline-light"
+                      type="button"
+                      data-bs-target="#rwIntroCarousel"
+                      data-bs-slide="prev"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      class="btn rw-btn-main"
+                      type="button"
+                      data-bs-target="#rwIntroCarousel"
+                      data-bs-slide="next"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3 -->
+            <div class="carousel-item">
+              <div class="row g-0">
+                <div class="col-md-5">
+                  <div class="rw-intro-art-frame">
+                    <!-- Drop-in art #3 -->
+                    <img
+                      src="intro-3.png"
+                      alt="Whispers and sigils in the mist"
+                      class="rw-intro-art d-none d-md-block"
+                    />
+                  </div>
+                </div>
+                <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
+                  <div>
+                    <p class="rw-tagline text-uppercase mb-1">Circle Threads</p>
+                    <h2 class="rw-title fs-4 mb-2">A Story Already in Motion</h2>
+                    <p class="rw-body mb-3">
+                      Fragments hover at the edge of thought: a name someone used to call you,
+                      a silver-marked promise under a hidden moon, the brush of a familiar’s
+                      fur against your hand. The town is waiting to see which way you step.
+                    </p>
+                    <p class="rw-intro-dialog mb-0">
+                      Whatever tore you out of your old life, the path forward starts here —
+                      in Ravenwood, where the Circle is just beginning to remember you.
+                    </p>
+                  </div>
+                  <div class="d-flex justify-content-between mt-3">
+                    <button
+                      class="btn btn-sm btn-outline-light"
+                      type="button"
+                      data-bs-target="#rwIntroCarousel"
+                      data-bs-slide="prev"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      class="btn rw-btn-main"
+                      type="button"
+                      id="rwIntroBeginBtn"
+                    >
+                      Begin
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Optional little dots -->
+          <div class="carousel-indicators mb-0">
+            <button type="button" data-bs-target="#rwIntroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#rwIntroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#rwIntroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="rw-intro-footer px-4 py-3">
+        <p class="mb-0 text-light-50">
+          You don’t remember how you got here. Ravenwood does.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
         
           <!-- RAVENWOOD WORLD MAP PANEL -->
 <section class="rw-panel mb-3 mt-1">

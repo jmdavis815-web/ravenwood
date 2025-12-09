@@ -314,7 +314,7 @@ function initCreatePage() {
       console.log("Auth created:", signUpData);
 
       // 2) Create character profile row in "data" table
-      const payload = {
+            const payload = {
         email,
         display_name: displayName,
         archetype,
@@ -326,6 +326,7 @@ function initCreatePage() {
         secrets: [],      // start empty
         inventory: [],    // start empty
         manor_unlocked: false,
+        intro_seen: false, // first time in Ravenwood, show intro
       };
 
       const inserted = await createCharacterOnSupabase(payload);
@@ -472,6 +473,47 @@ async function initWorldPage() {
     });
   }
 
+    // -------- First-Arrival Intro Modal --------
+  function maybeShowIntroModal(char, email) {
+    const introModalEl = document.getElementById("rwIntroModal");
+    if (!introModalEl || !window.bootstrap || !bootstrap.Modal) return;
+
+    // If they've already seen it (according to Supabase), bail out
+    if (char && char.intro_seen === true) return;
+
+    const introModal = new bootstrap.Modal(introModalEl, {
+      backdrop: "static",
+      keyboard: false,
+    });
+
+    introModal.show();
+
+    const beginBtn = document.getElementById("rwIntroBeginBtn");
+    if (beginBtn) {
+      beginBtn.addEventListener(
+        "click",
+        async () => {
+          try {
+            // Mark as seen in Supabase so it won't show again for this email
+            const { error } = await supabaseClient
+              .from("data")
+              .update({ intro_seen: true })
+              .eq("email", email);
+
+            if (error) {
+              console.error("Failed to mark intro_seen:", error);
+            }
+          } catch (err) {
+            console.error("Unexpected intro_seen error:", err);
+          } finally {
+            introModal.hide();
+          }
+        },
+        { once: true }
+      );
+    }
+  }
+
   // Check current authenticated user via Supabase Auth
   const {
     data: { user },
@@ -561,6 +603,11 @@ async function initWorldPage() {
           ? "Darker & Intense"
           : "Cozy & Healing";
     }
+    // --------------------------------------
+  // ⭐ THIS IS THE CORRECT PLACE ⭐
+  // Show first-arrival intro if this account hasn't seen it yet
+  maybeShowIntroModal(char, email);
+  // --------------------------------------
   } catch (err) {
     console.error("Error loading Ravenwood world:", err);
     alert(
