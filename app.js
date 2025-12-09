@@ -247,6 +247,7 @@ async function createCharacterOnSupabase(payload) {
 }
 
 // ---------- PAGE INIT: CREATE (SIGN-UP) ----------
+// ---------- PAGE INIT: CREATE (SIGN-UP) ----------
 function initCreatePage() {
   const form = $("#characterForm");
   if (!form) return;
@@ -320,34 +321,53 @@ function initCreatePage() {
       console.log("Auth created:", signUpData);
 
       // 2) Create character profile row in "data" table
-         const payload = {
-  email,
-  display_name: displayName,
-  archetype,
-  affinity,
-  familiar_name: familiarName || null,
-  journey_tone: journeyTone || null,
-  avatar,
-  created_at: new Date().toISOString(),
-  secrets: [],          // start empty
-  inventory: [],        // start empty
-  manor_unlocked: false,
-  intro_seen: false,    // first time in Ravenwood, show town intro
-  manor_intro_seen: false, // first time you go to the Manor
-};
+      const payload = {
+        email,
+        display_name: displayName,
+        archetype,
+        affinity,
+        familiar_name: familiarName || null,
+        journey_tone: journeyTone || null,
+        avatar,
+        created_at: new Date().toISOString(),
+        secrets: [],      // start empty
+        inventory: [],    // start empty
+        manor_unlocked: false,
+        intro_seen: false, // first time in Ravenwood, show intro
+      };
 
       const inserted = await createCharacterOnSupabase(payload);
       console.log("Created character:", inserted);
 
-      // Remember email on this device (optional)
+      // Remember email on this device
       saveEmail(email);
 
       if (statusEl) {
         statusEl.textContent = "The gates of Ravenwood open…";
       }
 
-      // 3) Redirect into the manor hub
-      window.location.href = "ravenwood.html";
+      // 🔐 Make sure they're actually logged in before sending them to Ravenwood
+      try {
+        const { error: signInError } =
+          await supabaseClient.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+        if (signInError) {
+          console.error("Auto-sign in after sign-up failed:", signInError);
+          // Fallback: send them to login page if something went wrong
+          window.location.href = "login.html";
+          return;
+        }
+
+        // ✅ Now there is a valid session, so getUser() on ravenwood.html will work,
+        // and maybeShowIntroModal(char, email) will run.
+        window.location.href = "ravenwood.html";
+      } catch (e) {
+        console.error("Unexpected auto-signin error:", e);
+        window.location.href = "login.html";
+      }
     } catch (err) {
       console.error("Error creating character:", err);
       if (statusEl) {
@@ -542,91 +562,107 @@ async function initWorldPage() {
   const email = user.email.toLowerCase();
 
   try {
-  const char = await fetchCharacterByEmail(email);
+  // Try to load an existing character row for this email
+  let char = await fetchCharacterByEmail(email);
 
   if (!char) {
-    console.warn("No character profile found for", email);
-    window.location.href = "create.html";
-    return;
+    console.warn("No character profile found for", email, "— creating a default one.");
+
+    // Fallback payload so you never get stuck in a redirect loop
+    const fallbackPayload = {
+      email,
+      display_name: email.split("@")[0] || "Wanderer",
+      archetype: "shadow-witch",       // safe default; player can change later in UI if you add that
+      affinity: "stone",               // safe default
+      familiar_name: null,
+      journey_tone: "cozy",            // or "intense" if you prefer
+      avatar: DEFAULT_AVATAR,
+      created_at: new Date().toISOString(),
+      secrets: [],
+      inventory: [],
+      manor_unlocked: false,
+      intro_seen: false,
+      manor_intro_seen: false,
+    };
+
+    // Create the missing row
+    char = await createCharacterOnSupabase(fallbackPayload);
   }
 
-  currentChar = char;       // ← add this line
-  window.rwChar = char;     // (optional-global if you want it elsewhere)
+  currentChar = char;
+  window.rwChar = char;
 
-    // Remove outdated localStorage manor flag (Supabase is the source of truth now)
-    localStorage.removeItem("ravenwoodManorUnlocked");
+  // Remove outdated localStorage manor flag (Supabase is the source of truth now)
+  localStorage.removeItem("ravenwoodManorUnlocked");
 
-    // Stash identity + current progress for helpers
-    window.rwEmail = email;
-    window.rwInitialSecrets = Array.isArray(char.secrets) ? char.secrets : [];
-    window.rwInitialInventory = Array.isArray(char.inventory)
-      ? char.inventory
-      : [];
+  // Stash identity + current progress for helpers
+  window.rwEmail = email;
+  window.rwInitialSecrets = Array.isArray(char.secrets) ? char.secrets : [];
+  window.rwInitialInventory = Array.isArray(char.inventory)
+    ? char.inventory
+    : [];
 
-    // manor unlock state (Supabase first, localStorage as fallback)
-    // Supabase is the ONLY source of truth now
-    window.rwManorUnlocked = !!char.manor_unlocked;
+  window.rwManorUnlocked = !!char.manor_unlocked;
 
-    playerArchetype = char.archetype || null;
-    playerAffinity = char.affinity || null;
+  playerArchetype = char.archetype || null;
+  playerAffinity = char.affinity || null;
 
-    // Basic identity
-    if (nameEl) nameEl.textContent = char.display_name || "Guest";
+  // Basic identity
+  if (nameEl) nameEl.textContent = char.display_name || "Guest";
 
-    if (archEl) {
-      const map = {
-        "shadow-witch": "Shadow Witch",
-        "scholar-of-runes": "Scholar of Runes",
-        "guardian-of-gates": "Guardian of Gates",
-        "seer-of-moons": "Seer of Moons",
-      };
-      archEl.textContent = map[char.archetype] || "Circle Walker";
-    }
+  if (archEl) {
+    const map = {
+      "shadow-witch": "Shadow Witch",
+      "scholar-of-runes": "Scholar of Runes",
+      "guardian-of-gates": "Guardian of Gates",
+      "seer-of-moons": "Seer of Moons",
+    };
+    archEl.textContent = map[char.archetype] || "Circle Walker";
+  }
 
-    // Avatar from DB (fallback to default)
-    avatarKey = char.avatar || DEFAULT_AVATAR;
-    applyAvatar(navAvatarEl);
-    applyAvatar(summaryAvatarEl);
+  // Avatar from DB (fallback to default)
+  avatarKey = char.avatar || DEFAULT_AVATAR;
+  applyAvatar(navAvatarEl);
+  applyAvatar(summaryAvatarEl);
 
-    // Snapshot on the right
-    const summaryName = $("#rwSummaryName");
-    const summaryArch = $("#rwSummaryArchetype");
-    const summaryAffinity = $("#rwSummaryAffinity");
-    const summaryTone = $("#rwSummaryTone");
+  // Snapshot on the right
+  const summaryName = $("#rwSummaryName");
+  const summaryArch = $("#rwSummaryArchetype");
+  const summaryAffinity = $("#rwSummaryAffinity");
+  const summaryTone = $("#rwSummaryTone");
 
-    if (summaryName) summaryName.textContent = char.display_name;
-    if (summaryArch) {
-      summaryArch.textContent = archEl ? archEl.textContent : "";
-    }
+  if (summaryName) summaryName.textContent = char.display_name;
+  if (summaryArch) {
+    summaryArch.textContent = archEl ? archEl.textContent : "";
+  }
 
-    if (summaryAffinity && char.affinity) {
-      const affMap = {
-        stone: "Stone · Wards & Foundations",
-        water: "Water · Memory & Dream",
-        flame: "Flame · Will & Transformation",
-        wind: "Wind · Messages & Thresholds",
-      };
-      summaryAffinity.textContent =
-        affMap[char.affinity] || String(char.affinity);
-    }
+  if (summaryAffinity && char.affinity) {
+    const affMap = {
+      stone: "Stone · Wards & Foundations",
+      water: "Water · Memory & Dream",
+      flame: "Flame · Will & Transformation",
+      wind: "Wind · Messages & Thresholds",
+    };
+    summaryAffinity.textContent =
+      affMap[char.affinity] || String(char.affinity);
+  }
 
-    if (summaryTone) {
-      summaryTone.textContent =
-        char.journey_tone === "intense"
-          ? "Darker & Intense"
-          : "Cozy & Healing";
-    }
-    // --------------------------------------
-  // ⭐ THIS IS THE CORRECT PLACE ⭐
-  // Show first-arrival intro if this account hasn't seen it yet
+  if (summaryTone) {
+    summaryTone.textContent =
+      char.journey_tone === "intense"
+        ? "Darker & Intense"
+        : "Cozy & Healing";
+  }
+
+  // ⭐ Show first-arrival intro if this account hasn't seen it yet
   maybeShowIntroModal(char, email);
-  // --------------------------------------
-  } catch (err) {
-    console.error("Error loading Ravenwood world:", err);
-    alert(
-      "Ravenwood couldn’t be reached just now. Try refreshing, or step back through the gate and re-enter."
-    );
-  }
+
+} catch (err) {
+  console.error("Error loading Ravenwood world:", err);
+  alert(
+    "Ravenwood couldn’t be reached just now. Try refreshing, or step back through the gate and re-enter."
+  );
+}
 
   // ----- Avatar edit modal wiring -----
   const avatarModalEl = document.getElementById("rwAvatarModal");
