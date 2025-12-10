@@ -131,6 +131,44 @@ function makeJournalDateLabel(isoString) {
   }
 }
 
+function normalizeJournalEntries(raw) {
+  if (!Array.isArray(raw)) return [];
+
+  return raw.map((e, idx) => {
+    // Legacy entries saved as plain strings
+    if (typeof e === "string") {
+      return {
+        id: `legacy_${idx}`,
+        created_at: null,
+        source: "system",
+        location: null,
+        text: e,
+        dateLabel: makeJournalDateLabel(), // use "now" as label
+      };
+    }
+
+    // Already objects, but be defensive
+    const text =
+      typeof e.text === "string"
+        ? e.text
+        : typeof e.body === "string"
+        ? e.body
+        : "";
+
+    const dateLabel =
+      e.dateLabel || makeJournalDateLabel(e.created_at || e.date || null);
+
+    return {
+      id: e.id || `entry_${idx}`,
+      created_at: e.created_at || null,
+      source: e.source || null,
+      location: e.location || null,
+      text,
+      dateLabel,
+    };
+  });
+}
+
 async function syncJournalToSupabase() {
   const email = window.rwEmail;
   if (!email) return;
@@ -176,17 +214,22 @@ function renderJournal() {
   const idx = Math.min(Math.max(idxRaw, 0), entries.length - 1);
   window.rwJournalIndex = idx;
 
-  const entry = entries[idx];
+  const rawEntry = entries[idx];
+const entry =
+  typeof rawEntry === "string"
+    ? { text: rawEntry, dateLabel: "" }
+    : rawEntry || { text: "", dateLabel: "" };
 
-  if (bodyEl) {
-  const formatted = entry.text
+if (bodyEl) {
+  const text = entry.text || "";
+  const formatted = text
     .split("\n")
-    .map(line => `<p>${line}</p>`)
+    .map((line) => `<p>${line}</p>`)
     .join("");
   bodyEl.innerHTML = formatted;
 }
 
-  if (dateEl) dateEl.textContent = entry.dateLabel || "";
+if (dateEl) dateEl.textContent = entry.dateLabel || "";
   if (pageEl) pageEl.textContent = `Page ${idx + 1} / ${entries.length}`;
 }
 
@@ -987,12 +1030,16 @@ updateCoinDisplay();
     ? char.inventory
     : [];
 
-  window.rwJournalEntries = Array.isArray(char.journal_entries)
-    ? char.journal_entries
-    : [];
-  window.rwJournalIndex = window.rwJournalEntries.length
-    ? window.rwJournalEntries.length - 1
-    : 0;
+  window.rwInitialInventory = Array.isArray(char.inventory)
+  ? char.inventory
+  : [];
+
+// Normalize any legacy/plain-string journal entries
+window.rwJournalEntries = normalizeJournalEntries(char.journal_entries || []);
+
+window.rwJournalIndex = window.rwJournalEntries.length
+  ? window.rwJournalEntries.length - 1
+  : 0;
 
   window.rwManorUnlocked = !!char.manor_unlocked;
 
