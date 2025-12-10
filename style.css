@@ -1265,41 +1265,6 @@ body {
   line-height: 1.5;
 }
 
-@media (max-width: 992px) {
-  
-
-/* Container that mimics the open book pages */
-#rwJournalBody p {
-  column-count: 2;
-  column-gap: 60px;
-  
-  /* Increase top padding to push text downward */
-  padding: 90px 40px 20px 60px;
-  /*   TOP   RIGHT  BOTTOM LEFT */
-
-  height: 500px;
-  overflow-y: auto;
-
-  font-family: "Garamond", serif;
-  font-size: 1.15rem;
-  line-height: 1.5;
-
-  white-space: normal;
-  color: #2b1a10;
-}
-
-/* Prevent column break mid-sentence */
-#rwJournalBody p {
-  break-inside: avoid;
-}
-
-#rwJournalBody p {
-  break-inside: avoid;
-  margin-bottom: 1rem;
-}
-
-}
-
 /* Prevent column break mid-sentence */
 #rwJournalBody p {
   break-inside: avoid;
@@ -1307,13 +1272,13 @@ body {
 
 #rwJournalBody {
   column-count: 2;
-  column-gap: 60px;
+  column-gap: 30px;
   
   /* Increase top padding to push text downward */
-  padding: 90px 40px 20px 80px;
+  padding: 40px 60px 30px 70px;
   /*   TOP   RIGHT  BOTTOM LEFT */
 
-  height: 500px;
+  height: 100%;
   overflow-y: auto;
 
   font-family: "Garamond", serif;

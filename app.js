@@ -670,6 +670,7 @@ function initCreatePage() {
         manor_unlocked: false,
         intro_seen: false,     // first time in Ravenwood, show intro
         manor_intro_seen: false,
+        inventory_intro_seen: false,
         book1_started: false,
         book1_last_page: null,
       };
@@ -926,6 +927,7 @@ async function initWorldPage() {
         manor_unlocked: false,
         intro_seen: false,
         manor_intro_seen: false,
+        inventory_intro_seen: false,
         book1_started: false,
         book1_last_page: null,
       };
@@ -960,10 +962,6 @@ window.rwCoins =
     ? char.coins
     : 0;
 updateCoinDisplay();
-
-  // ----- Journal: load saved pages for this character -----
-  window.rwJournalEntries = Array.isArray(char.journal) ? char.journal : [];
-  window.rwJournalIndex = 0;
 
   // 🔹 If Book I has been started, show a "Continue" button
   const bookContinueBtn = document.getElementById("rwBook1ContinueBtn");
@@ -1423,8 +1421,39 @@ async function maybeShowManorArrival(char, email) {
     maybeSpawnDynamicLocations();
   }
 
+  // ------------------------------
+// FIRST TIME INVENTORY JOURNAL
+// ------------------------------
+function showFirstInventoryModalIfNeeded() {
+  const email = window.rwEmail;
+  if (!email) return;
+
+  // flag key per player
+  const flagKey = `rw_seen_inventory_intro_${email}`;
+
+  // already seen?
+  if (localStorage.getItem(flagKey)) return;
+
+  // otherwise, show modal once
+  const modalEl = document.getElementById("rwFirstInventoryModal");
+  if (modalEl && window.bootstrap) {
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+  }
+
+  // mark as seen
+  localStorage.setItem(flagKey, "yes");
+}
+
   // ---------- Inventory wiring ----------
 
+  // Helper to show the first-time inventory journal intro
+  // ---------- Inventory wiring ----------
+
+  // Grab the button + modal from ravenwood.html
+    // ---------- Inventory wiring ----------
+
+  // Grab the button + modal from ravenwood.html
   const inventoryBtn = document.getElementById("rwInventoryBtn");
   const inventoryModalEl = document.getElementById("rwInventoryModal");
   let inventoryModal = null;
@@ -1438,26 +1467,100 @@ async function maybeShowManorArrival(char, email) {
     ? window.rwInitialInventory
     : [];
 
-  // We do NOT backfill from old localStorage; Supabase is truth.
-  // If you ever need to rescue local inventory on THIS device:
-  // if (!inventory.length) {
-  //   const legacyInv = loadInventory();
-  //   if (Array.isArray(legacyInv) && legacyInv.length) {
-  //     inventory = legacyInv;
-  //     syncInventoryToSupabase(inventory);
-  //   }
-  // }
-
+  // Make sure the grid is populated on load
   renderInventory(inventory);
 
+  // Helper to show the first-time inventory journal intro
+  async function maybeShowInventoryIntroThenOpen() {
+    const introEl = document.getElementById("rwInventoryIntroModal");
+    const btn = document.getElementById("rwInventoryIntroContinueBtn");
+
+    // If we don't have the intro modal, just open inventory normally
+    if (!introEl || !window.bootstrap || !bootstrap.Modal || !inventoryModal) {
+      inventoryModal && inventoryModal.show();
+      return;
+    }
+
+    const introModal = new bootstrap.Modal(introEl, {
+      backdrop: "static",
+      keyboard: false,
+    });
+
+    introModal.show();
+
+    if (btn) {
+      btn.addEventListener(
+        "click",
+        async () => {
+          try {
+            const email = window.rwEmail;
+            const char = window.rwChar;
+
+            // Update Supabase so this never shows again for this player
+            if (email) {
+              const { error } = await supabaseClient
+                .from("data")
+                .update({ inventory_intro_seen: true })
+                .eq("email", email);
+
+              if (error) {
+                console.error("Failed to mark inventory_intro_seen:", error);
+              }
+            }
+
+            // Update the in-memory character too
+            if (char) {
+              char.inventory_intro_seen = true;
+              window.rwChar = char;
+            }
+
+            // ✨ FIRST JOURNAL ENTRY: the book writes itself
+            if (window.rwAddJournalEntry) {
+              const entryText = [
+                "I found a journal I don’t remember packing.",
+                "The cover is dark leather, warm like it’s been carried for years. A raven is stamped into it, wings half-spread, head turned as if listening.",
+                "There was a tiny silver lock on the side. Before I could decide whether to open it, it clicked once and fell away on its own.",
+                "The pages were blank for a breath… then ink started to move across the paper, curling into words in my own handwriting.",
+                "I don’t remember writing any of it. But the journal feels like it remembers me.",
+                "I think this book is going to write what Ravenwood sees, even when I’m trying to look away."
+              ].join("\n\n");
+
+              await window.rwAddJournalEntry(entryText, {
+                source: "system",
+                location: "inventory_intro",
+              });
+            }
+          } catch (err) {
+            console.error("Unexpected inventory_intro_seen error:", err);
+          } finally {
+            // 👉 Close the story modal and open the real inventory
+            introModal.hide();
+            inventoryModal && inventoryModal.show();
+          }
+        },
+        { once: true }
+      );
+    }
+  }
+
+  // Wire the Inventory button
   if (inventoryBtn && inventoryModal) {
     inventoryBtn.addEventListener("click", () => {
       renderInventory(inventory);
-      inventoryModal.show();
+
+      const char = window.rwChar || {};
+      const hasSeenIntro = !!char.inventory_intro_seen;
+
+      if (!hasSeenIntro) {
+        // First time ever opening inventory for this account
+        maybeShowInventoryIntroThenOpen();
+      } else {
+        // Normal behavior once the intro has been seen
+        inventoryModal.show();
+      }
     });
   }
 
-    // ---------- Journal wiring ----------
     // ---------- Journal wiring ----------
 
   const journalBtn = document.getElementById("rwJournalBtn");
