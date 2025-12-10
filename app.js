@@ -1685,36 +1685,17 @@ function showFirstInventoryModalIfNeeded() {
     });
   }
 
-  
-
-  if (nextJournalBtn) {
-    nextJournalBtn.addEventListener("click", () => {
-      const entries = Array.isArray(window.rwJournalEntries)
-        ? window.rwJournalEntries
-        : [];
-      if (!entries.length) return;
-
-      const idx = window.rwJournalIndex ?? 0;
-      window.rwJournalIndex = Math.min(entries.length - 1, idx + 1);
-      renderJournal();
-    });
-  }
-
-  // Make sure the journal UI is in a sane state on load
-  renderJournal();
-
-  // Save to Supabase (+ cache locally)
+  // ✅ Save to Supabase (+ cache locally)
   syncInventoryToSupabase(inventory);
 
-  // ✅ If this is a brand-new item, highlight it
+  // ✅ If this is a brand-new item, highlight it and pop the inventory open
   if (isNewItem) {
     renderInventory(inventory, newItem.id);
 
-    // If we have the Inventory modal, pop it open and let the glow play
     if (inventoryModal) {
       inventoryModal.show();
 
-      // Optionally remove the highlight class after a short delay
+      // Remove highlight after a moment
       setTimeout(() => {
         const highlighted = document.querySelector(
           ".rw-inventory-slot--highlight"
