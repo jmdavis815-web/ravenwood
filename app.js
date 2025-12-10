@@ -110,6 +110,115 @@ async function addCoins(amount) {
 // Make coin helpers accessible if needed elsewhere
 window.rwAddCoins = addCoins;
 
+// ---------- JOURNAL HELPERS ----------
+
+// in-memory journal entries for this session
+window.rwJournalEntries = window.rwJournalEntries || [];
+window.rwJournalIndex = window.rwJournalIndex || 0;
+
+function makeJournalDateLabel(isoString) {
+  try {
+    const d = isoString ? new Date(isoString) : new Date();
+    return d.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return isoString || "";
+  }
+}
+
+async function syncJournalToSupabase() {
+  const email = window.rwEmail;
+  if (!email) return;
+
+  const entries = Array.isArray(window.rwJournalEntries)
+    ? window.rwJournalEntries
+    : [];
+
+  try {
+    const { error } = await supabaseClient
+      .from("data")
+      .update({ journal_entries: entries })
+      .eq("email", email);
+
+    if (error) {
+      console.error("Failed to sync journal:", error);
+    }
+  } catch (err) {
+    console.error("Unexpected journal sync error:", err);
+  }
+}
+
+function renderJournal() {
+  const bodyEl = document.getElementById("rwJournalBody");
+  const dateEl = document.getElementById("rwJournalDate");
+  const pageEl = document.getElementById("rwJournalPageIndicator");
+
+  const entries = Array.isArray(window.rwJournalEntries)
+    ? window.rwJournalEntries
+    : [];
+
+  if (!entries.length) {
+    if (bodyEl) {
+      bodyEl.textContent =
+        "No entries yet. Your journal will begin writing itself the first time the town truly notices you.";
+    }
+    if (dateEl) dateEl.textContent = "";
+    if (pageEl) pageEl.textContent = "Page 0 / 0";
+    return;
+  }
+
+  const idxRaw = window.rwJournalIndex ?? 0;
+  const idx = Math.min(Math.max(idxRaw, 0), entries.length - 1);
+  window.rwJournalIndex = idx;
+
+  const entry = entries[idx];
+
+  if (bodyEl) {
+  const formatted = entry.text
+    .split("\n")
+    .map(line => `<p>${line}</p>`)
+    .join("");
+  bodyEl.innerHTML = formatted;
+}
+
+  if (dateEl) dateEl.textContent = entry.dateLabel || "";
+  if (pageEl) pageEl.textContent = `Page ${idx + 1} / ${entries.length}`;
+}
+
+async function addJournalEntry(text, meta = {}) {
+  if (!text) return;
+
+  const entries = Array.isArray(window.rwJournalEntries)
+    ? window.rwJournalEntries
+    : [];
+
+  const nowIso = new Date().toISOString();
+
+  const entry = {
+    id: meta.id || `j_${nowIso}`,
+    created_at: nowIso,
+    source: meta.source || null,
+    location: meta.location || null,
+    text,
+    dateLabel: makeJournalDateLabel(nowIso),
+  };
+
+  entries.push(entry);
+  window.rwJournalEntries = entries;
+  window.rwJournalIndex = entries.length - 1;
+
+  renderJournal();
+  await syncJournalToSupabase();
+}
+
+// expose for quests / notices etc.
+window.rwAddJournalEntry = addJournalEntry;
+
 // ---------- SECRETS STORAGE ----------
 function loadSecrets() {
   try {
@@ -556,7 +665,8 @@ function initCreatePage() {
         created_at: new Date().toISOString(),
         coins: 0,
         secrets: [],      // start empty
-        inventory: [],    // start empty
+        inventory: [],
+        journal_entries: [],    // start empty
         manor_unlocked: false,
         intro_seen: false,     // first time in Ravenwood, show intro
         manor_intro_seen: false,
@@ -812,6 +922,7 @@ async function initWorldPage() {
 
         secrets: [],
         inventory: [],
+        journal_entries: [],
         manor_unlocked: false,
         intro_seen: false,
         manor_intro_seen: false,
@@ -850,6 +961,10 @@ window.rwCoins =
     : 0;
 updateCoinDisplay();
 
+  // ----- Journal: load saved pages for this character -----
+  window.rwJournalEntries = Array.isArray(char.journal) ? char.journal : [];
+  window.rwJournalIndex = 0;
+
   // 🔹 If Book I has been started, show a "Continue" button
   const bookContinueBtn = document.getElementById("rwBook1ContinueBtn");
   if (bookContinueBtn && char.book1_started === true) {
@@ -870,9 +985,16 @@ updateCoinDisplay();
   // Stash identity + current progress for helpers
   window.rwEmail = email;
   window.rwInitialSecrets = Array.isArray(char.secrets) ? char.secrets : [];
-  window.rwInitialInventory = Array.isArray(char.inventory)
+    window.rwInitialInventory = Array.isArray(char.inventory)
     ? char.inventory
     : [];
+
+  window.rwJournalEntries = Array.isArray(char.journal_entries)
+    ? char.journal_entries
+    : [];
+  window.rwJournalIndex = window.rwJournalEntries.length
+    ? window.rwJournalEntries.length - 1
+    : 0;
 
   window.rwManorUnlocked = !!char.manor_unlocked;
 
@@ -1335,7 +1457,62 @@ async function maybeShowManorArrival(char, email) {
     });
   }
 
+    // ---------- Journal wiring ----------
+    // ---------- Journal wiring ----------
+
+  const journalBtn = document.getElementById("rwJournalBtn");
+  const journalModalEl = document.getElementById("rwJournalModal");
+  let journalModal = null;
+
+  if (journalModalEl && window.bootstrap && bootstrap.Modal) {
+    journalModal = new bootstrap.Modal(journalModalEl);
+  }
+
+  // Open the journal when you click the raven journal image/button
+  if (journalBtn && journalModal) {
+    journalBtn.addEventListener("click", () => {
+      renderJournal();     // fill the current page
+      journalModal.show(); // show the parchment popup
+    });
+  }
+
+  // Page navigation inside the journal
+  const journalPrev = document.getElementById("rwJournalPrev");
+  const journalNext = document.getElementById("rwJournalNext");
+
+  if (journalPrev) {
+    journalPrev.addEventListener("click", () => {
+      const entries = Array.isArray(window.rwJournalEntries)
+        ? window.rwJournalEntries
+        : [];
+      if (!entries.length) return;
+
+      const idx = window.rwJournalIndex ?? 0;
+      // wrap backwards
+      window.rwJournalIndex = idx > 0 ? idx - 1 : entries.length - 1;
+      renderJournal();
+    });
+  }
+
+  if (journalNext) {
+    journalNext.addEventListener("click", () => {
+      const entries = Array.isArray(window.rwJournalEntries)
+        ? window.rwJournalEntries
+        : [];
+      if (!entries.length) return;
+
+      const idx = window.rwJournalIndex ?? 0;
+      // wrap forward
+      window.rwJournalIndex = idx < entries.length - 1 ? idx + 1 : 0;
+      renderJournal();
+    });
+  }
+
+  // Make sure journal UI starts in a sane state
+  renderJournal();
+
   function playerHasTalisman() {
+
     return inventory.some((i) => i.id === "old_talisman");
   }
 
@@ -1357,6 +1534,24 @@ async function maybeShowManorArrival(char, email) {
       quantity: newItem.quantity || 1,
     });
   }
+
+  
+
+  if (nextJournalBtn) {
+    nextJournalBtn.addEventListener("click", () => {
+      const entries = Array.isArray(window.rwJournalEntries)
+        ? window.rwJournalEntries
+        : [];
+      if (!entries.length) return;
+
+      const idx = window.rwJournalIndex ?? 0;
+      window.rwJournalIndex = Math.min(entries.length - 1, idx + 1);
+      renderJournal();
+    });
+  }
+
+  // Make sure the journal UI is in a sane state on load
+  renderJournal();
 
   // Save to Supabase (+ cache locally)
   syncInventoryToSupabase(inventory);
@@ -1396,6 +1591,18 @@ async function maybeShowManorArrival(char, email) {
     }
 
     discoveredSecrets.push({ key: locKey, text: loc.secretText });
+
+        // Also log this as a journal entry
+    try {
+      const locTitle = loc.title || locKey;
+      const entryText = `[${locTitle}] ${loc.secretText}`;
+      addJournalEntry(entryText, {
+        source: "location_secret",
+        location: locKey,
+      });
+    } catch (e) {
+      console.warn("Could not add journal entry:", e);
+    }
 
     // Save to Supabase (+ cache locally)
     syncSecretsToSupabase(discoveredSecrets);

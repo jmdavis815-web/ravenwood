@@ -214,6 +214,7 @@ body {
   background: radial-gradient(circle at top, #020617 0, #02061700 60%);
   border-radius: 1rem;
   border: 1px solid rgba(148, 163, 184, 0.5);
+  
 }
 
 .rw-card-title {
@@ -1141,7 +1142,192 @@ body {
   text-shadow: 0 0 10px rgba(250,204,21,0.7);
 }
 
+/* --- Coins + Journal row under backpack --- */
 
+.rw-inventory-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+.rw-coins-display {
+  padding: 4px 0;
+}
+
+.rw-coins-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.6));
+}
+
+.rw-coins-amount {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #facc15;
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
+}
+
+/* Journal button + icon */
+
+.rw-journal-btn {
+  border: 0;
+  background: radial-gradient(circle at top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.85));
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.7);
+}
+
+.rw-journal-btn:hover {
+  filter: brightness(1.08);
+}
+
+.rw-journal-icon {
+  width: 75px;
+  height: 75px;
+  object-fit: contain;
+}
+
+.rw-journal-label {
+  white-space: nowrap;
+}
+
+/* Journal modal – parchment vibe */
+
+.rw-journal-modal {
+  background: radial-gradient(circle at top, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.92));
+  border-radius: 1rem;
+}
+
+.rw-journal-page {
+  background: radial-gradient(circle at top left, #fdf3dd 0%, #f4e2bf 40%, #e6cfa5 100%);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: inset 0 0 0 1px rgba(107, 70, 26, 0.2),
+              0 15px 35px rgba(0, 0, 0, 0.5);
+  font-family: "Georgia", "Garamond", serif;
+  color: #3b2f1a;
+}
+
+.rw-journal-page::before {
+  content: "";
+  position: absolute;
+  inset: 12px 14px;
+  border-top: 1px solid rgba(113, 63, 18, 0.25);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.rw-journal-entries {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rw-journal-entry + .rw-journal-entry {
+  margin-top: 0.9rem;
+  border-top: 1px dashed rgba(107, 70, 26, 0.5);
+  padding-top: 0.7rem;
+}
+
+.rw-journal-date {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #7c2d12;
+  margin-bottom: 0.2rem;
+}
+
+.rw-journal-text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.rw-journal-empty {
+  text-align: center;
+  font-style: italic;
+  color: #6b7280;
+}
+
+#rwJournalBody {
+  background-image: url("grain-texture.png") !important;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  padding: 20px;
+  border-radius: 6px;
+  min-height: 300px;
+  color: #2b1a10;
+  font-family: "Garamond", serif;
+  line-height: 1.5;
+}
+
+@media (max-width: 992px) {
+  
+
+/* Container that mimics the open book pages */
+#rwJournalBody p {
+  column-count: 2;
+  column-gap: 60px;
+  
+  /* Increase top padding to push text downward */
+  padding: 90px 40px 20px 60px;
+  /*   TOP   RIGHT  BOTTOM LEFT */
+
+  height: 500px;
+  overflow-y: auto;
+
+  font-family: "Garamond", serif;
+  font-size: 1.15rem;
+  line-height: 1.5;
+
+  white-space: normal;
+  color: #2b1a10;
+}
+
+/* Prevent column break mid-sentence */
+#rwJournalBody p {
+  break-inside: avoid;
+}
+
+#rwJournalBody p {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+
+}
+
+/* Prevent column break mid-sentence */
+#rwJournalBody p {
+  break-inside: avoid;
+}
+
+#rwJournalBody {
+  column-count: 2;
+  column-gap: 60px;
+  
+  /* Increase top padding to push text downward */
+  padding: 90px 40px 20px 80px;
+  /*   TOP   RIGHT  BOTTOM LEFT */
+
+  height: 500px;
+  overflow-y: auto;
+
+  font-family: "Garamond", serif;
+  font-size: 1.15rem;
+  line-height: 1.5;
+
+  white-space: normal;
+  color: #2b1a10;
+}
+
+#rwJournalBody p {
+  break-inside: avoid;
+  margin-bottom: 0;
+}
 
 
 
