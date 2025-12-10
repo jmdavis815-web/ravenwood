@@ -594,6 +594,19 @@ async function initWorldPage() {
   char = await createCharacterOnSupabase(fallbackPayload);
 }
 
+//------------------------------------------------
+// FOGWALK ALLEY RANDOMIZER
+//------------------------------------------------
+
+function shouldShowFogwalk(secrets, isFirstVisit) {
+  // Brand new characters NEVER see it on first arrival.
+  if (isFirstVisit) return false;
+
+  // If they've already seen Fogwalk at least once, allow the 1/20 chance.
+  const roll = Math.floor(Math.random() * 20); // 0–19
+  return roll === 0; // 1 in 20 chance
+}
+
 // -------------------------------------
 // ⭐ PLACE YOUR NEW CODE RIGHT HERE ⭐
 // -------------------------------------
@@ -769,6 +782,9 @@ window.rwChar = char;
   const detailBodyEl = $("#rwLocationDetailBody");
   const detailHintEl = $("#rwLocationDetailHint");
   const secretsListEl = $("#rwSecretsList");
+  const SECRET_FOGWALK = "fogwalk_seen";
+  const SECRET_CHAPEL_ITEM = "chapel_relic_obtained";
+  const SECRET_MARNE_UNLOCKED = "marne_secret_book";
 
   // Location definitions, with archetype/affinity variants + secrets
   const locations = {
@@ -856,18 +872,23 @@ window.rwChar = char;
       secretText:
         "At Witchwood Edge, a rune flared warm under your palm, recognizing something in your blood.",
     },
-    fogwalk: {
+        fogwalk: {
       title: "Fogwalk Alley",
       body: {
         default:
-          "A narrow, twisting alley that smells of rain and old paper. Doors without handles, windows without glass, and a single lantern that flickers only when someone lies nearby.",
-        "shadow-witch":
-          "The fog wraps around your ankles like a familiar cat, purring with mischief you almost remember.",
+          "A narrow, shifting alley that only exists when the fog is thick enough to hide your doubts.",
       },
       hint: {
-        default:
-          "This alley shouldn’t exist, and yet here you are.",
+        default: "The fog curls like writing you almost understand.",
       },
+      // extra hint pool just for Fogwalk
+      hints: [
+        "An old chapel bell tolls once somewhere behind the mist.",
+        "For a heartbeat you smell candle wax and stone, as if you’ve stepped indoors without noticing.",
+        "You glimpse a crooked sign half-hidden by fog — a symbol that looks like a door drawn inside a circle.",
+        "The lantern flame leans toward the direction of the chapel, then straightens when you notice.",
+        "A whisper brushes your ear: \"Some doors open from the inside.\"",
+      ],
       secretText:
         "In Fogwalk Alley, the lantern flared when you thought about turning back — as if warning you that some paths only go one way.",
     },
@@ -1173,11 +1194,17 @@ async function maybeShowManorArrival(char, email) {
       playerArchetype,
       playerAffinity
     );
-    const hintText = getVariantText(
+        let hintText = getVariantText(
       loc.hint,
       playerArchetype,
       playerAffinity
     );
+
+    // Special case: Fogwalk gets a random hint from its pool
+    if (key === "fogwalk" && Array.isArray(loc.hints) && loc.hints.length) {
+      const idx = Math.floor(Math.random() * loc.hints.length);
+      hintText = loc.hints[idx];
+    }
 
     if (detailTitleEl) detailTitleEl.textContent = loc.title;
 
@@ -1300,6 +1327,49 @@ async function maybeShowManorArrival(char, email) {
       );
       if (mapNode) {
         mapNode.classList.remove("d-none");
+      }
+    }
+
+        // 3) Fogwalk Alley — rare secret, never on brand-new characters
+    const alreadyHasFogwalkCard = townMap.querySelector("[data-location='fogwalk']");
+    const playerHasAnySecrets =
+      Array.isArray(discoveredSecrets) && discoveredSecrets.length > 0;
+
+    // Only roll if:
+    //  - there isn't already a Fogwalk button on the map
+    //  - the player has at least one secret (so not on their very first visit)
+    if (!alreadyHasFogwalkCard && playerHasAnySecrets) {
+      // 1-in-20 chance each time we render the town
+      const roll = Math.floor(Math.random() * 20); // 0..19
+      if (roll === 0) {
+        const col = document.createElement("div");
+        col.className = "col-md-6 col-xl-4";
+        col.innerHTML = `
+          <button
+            class="rw-location-card w-100 text-start rw-location-secret"
+            type="button"
+            data-location="fogwalk"
+          >
+            <div class="rw-location-header d-flex justify-content-between align-items-center">
+              <span class="rw-location-name">Fogwalk Alley</span>
+              <span class="rw-location-badge">Secret</span>
+            </div>
+            <p class="rw-location-blurb mb-0">
+              You only find this alley when you aren’t looking for it.
+              Tonight the fog seems… interested in you.
+            </p>
+          </button>
+        `;
+        townMap.appendChild(col);
+
+        // Wire up the new button so it behaves like the others
+        const btn = col.querySelector("[data-location='fogwalk']");
+        if (btn) {
+          btn.addEventListener("click", () => {
+            setActiveLocationButton(btn);
+            setPlayerLocation("fogwalk");
+          });
+        }
       }
     }
 
