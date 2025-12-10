@@ -73,6 +73,43 @@ async function syncInventoryToSupabase(inventory) {
   }
 }
 
+// ---------- COIN HELPERS ----------
+
+function updateCoinDisplay() {
+  const el = document.getElementById("rwCoinsAmount");
+  if (!el) return;
+  el.textContent = window.rwCoins ?? 0;
+}
+
+async function syncCoinsToSupabase() {
+  const email = window.rwEmail;
+  if (!email) return;
+  try {
+    const { error } = await supabaseClient
+      .from("data")
+      .update({ coins: window.rwCoins ?? 0 })
+      .eq("email", email);
+
+    if (error) {
+      console.error("Failed to sync coins:", error);
+    }
+  } catch (err) {
+    console.error("Unexpected coins sync error:", err);
+  }
+}
+
+async function addCoins(amount) {
+  const delta = Number(amount) || 0;
+  window.rwCoins = (window.rwCoins || 0) + delta;
+  if (window.rwCoins < 0) window.rwCoins = 0;
+
+  updateCoinDisplay();
+  await syncCoinsToSupabase();
+}
+
+// Make coin helpers accessible if needed elsewhere
+window.rwAddCoins = addCoins;
+
 // ---------- SECRETS STORAGE ----------
 function loadSecrets() {
   try {
@@ -306,7 +343,9 @@ function renderInventory(items = [], highlightItemId = null) {
   const maxSlots = 16; // 4×4 grid
   grid.innerHTML = "";
 
-  const safeItems = Array.isArray(items) ? items : [];
+    const safeItems = (Array.isArray(items) ? items : []).filter(
+    (item) => !item || item.id !== "coins"
+  );
 
   safeItems.forEach((item) => {
     const slot = document.createElement("div");
@@ -515,6 +554,7 @@ function initCreatePage() {
         journey_tone: journeyTone || null,
         avatar,
         created_at: new Date().toISOString(),
+        coins: 0,
         secrets: [],      // start empty
         inventory: [],    // start empty
         manor_unlocked: false,
@@ -757,23 +797,27 @@ async function initWorldPage() {
   console.warn("No character profile found for", email, "— creating a default one.");
 
   // Fallback payload so you never get stuck in a redirect loop
-      const fallbackPayload = {
-      email,
-      display_name: email.split("@")[0] || "Wanderer",
-      archetype: "shadow-witch",
-      affinity: "stone",
-      familiar_name: null,
-      journey_tone: "cozy",
-      avatar: DEFAULT_AVATAR,
-      created_at: new Date().toISOString(),
-      secrets: [],
-      inventory: [],
-      manor_unlocked: false,
-      intro_seen: false,
-      manor_intro_seen: false,
-      book1_started: false,
-      book1_last_page: null,
-    };
+            const fallbackPayload = {
+        email,
+        display_name: email.split("@")[0] || "Wanderer",
+        archetype: "shadow-witch",
+        affinity: "stone",
+        familiar_name: null,
+        journey_tone: "cozy",
+        avatar: DEFAULT_AVATAR,
+        created_at: new Date().toISOString(),
+
+        // ⭐ Start fallback profiles with 0 coins as well
+        coins: 0,
+
+        secrets: [],
+        inventory: [],
+        manor_unlocked: false,
+        intro_seen: false,
+        manor_intro_seen: false,
+        book1_started: false,
+        book1_last_page: null,
+      };
 
   // Create the missing row
   char = await createCharacterOnSupabase(fallbackPayload);
@@ -793,11 +837,18 @@ function shouldShowFogwalk(secrets, isFirstVisit) {
 }
 
 // -------------------------------------
-// ⭐ PLACE YOUR NEW CODE RIGHT HERE ⭐
+// ⭐ Coins + character bootstrap
 // -------------------------------------
 
 currentChar = char;
 window.rwChar = char;
+
+// Load coins from Supabase (default to 0 if missing)
+window.rwCoins =
+  typeof char.coins === "number" && !Number.isNaN(char.coins)
+    ? char.coins
+    : 0;
+updateCoinDisplay();
 
   // 🔹 If Book I has been started, show a "Continue" button
   const bookContinueBtn = document.getElementById("rwBook1ContinueBtn");

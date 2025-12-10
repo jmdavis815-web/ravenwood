@@ -1100,6 +1100,47 @@ body {
   background-color: transparent; /* use the gradient */
 }
 
+.rw-coins-display {
+  justify-content: center;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 12px;
+}
+
+.rw-coins-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(0,0,0,0.6));
+}
+
+.rw-coins-amount {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #facc15; /* gold */
+  text-shadow: 0 0 10px rgba(250,204,21,0.7);
+}
+.rw-coins-display {
+  justify-content: center;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 12px;
+}
+
+.rw-coins-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(0,0,0,0.6));
+}
+
+.rw-coins-amount {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #facc15; /* gold */
+  text-shadow: 0 0 10px rgba(250,204,21,0.7);
+}
+
 
 
 
