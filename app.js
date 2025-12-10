@@ -226,7 +226,14 @@ if (bodyEl) {
     .split("\n")
     .map((line) => `<p>${line}</p>`)
     .join("");
+
   bodyEl.innerHTML = formatted;
+
+  // 🔮 Restart the ink animation each time we render a page
+  bodyEl.classList.remove("rw-ink-animate");
+  // Force reflow so the animation can restart
+  void bodyEl.offsetWidth;
+  bodyEl.classList.add("rw-ink-animate");
 }
 
 if (dateEl) dateEl.textContent = entry.dateLabel || "";
