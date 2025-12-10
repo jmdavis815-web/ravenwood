@@ -1262,12 +1262,7 @@ body {
   min-height: 300px;
   color: #2b1a10;
   font-family: "Garamond", serif;
-  line-height: 1.5;
-}
-
-/* Prevent column break mid-sentence */
-#rwJournalBody p {
-  break-inside: avoid;
+  line-height: 1;
 }
 
 #rwJournalBody {
@@ -1283,7 +1278,7 @@ body {
 
   font-family: "Garamond", serif;
   font-size: 1.15rem;
-  line-height: 1.5;
+  line-height: 1;
 
   white-space: normal;
   color: #2b1a10;
