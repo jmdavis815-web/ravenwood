@@ -221,500 +221,570 @@
     crossorigin="anonymous"
   ></script>
 
+  <!-- Supabase JS (v2) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- Your global Ravenwood logic (Supabase, inventory helpers, etc.) -->
   <script src="app.js"></script>
 
   <!-- Book engine -->
   <script>
-    (function () {
-      const TALISMAN_ITEM_ID = "old_talisman";
+  (function () {
+    const TALISMAN_ITEM_ID = "old_talisman";
 
-      // Simple state for this book session
-      const BOOK_STATE = {
-        currentPageId: "1",
-        talismanUsedPages: {}, // { "5": true } etc.
-        inventory: [],
-      };
+    // Simple state for this book session
+    const BOOK_STATE = {
+      currentPageId: "1",
+      talismanUsedPages: {}, // { "5": true } etc.
+      inventory: [],
+    };
 
-      // --- PAGE DATA ---
-      // You can add more pages following this exact pattern.
-      const BOOK_PAGES = {
-        "1": {
-          title: "The Manor That Waits",
-          image: "book-page-1.png", // replace with your art
-          body: `
-            <p>
-              Fog curls around your boots as you step onto the ancient path. Lanterns along the drive gutter, then flare
-              brighter, as if recognizing the metal resting in your pocket.
-            </p>
-            <p>
-              The Manor looms ahead: windows burning with a few patient lights, stone black with old rain. The air hums
-              faintly. Not storm, not wind. <em>Attention.</em>
-            </p>
-            <p>
-              When your foot crosses the final stone at the threshold, the great door opens on its own—not with a creak,
-              but with a long, low <em>sigh</em>, as though the house is finally waking.
-            </p>
-            <p>
-              A woman with silver hair waits just inside the hall, eyes sharp, expression somewhere between relief and
-              apology.
-            </p>
-            <p class="rw-intro-dialog">
-              “You brought it back,” she says softly. “The talisman.”
-            </p>
-          `,
-          choices: [
-            { text: "Step inside cautiously.", to: "2" },
-            { text: "Enter as if you belong here.", to: "2" },
-            { text: "Ask who she is before crossing the threshold.", to: "2" },
-          ],
-        },
+    // Supabase / character info for this book session
+    let currentBookEmail = null;
+    let currentBookChar = null;
 
-        "2": {
-          title: "Mira Ashbourne",
-          image: "book-page-2.png",
-          body: `
-            <p>
-              You step into the entry hall. Warm golden light spills from lanterns clustered along carved stone pillars,
-              flickering like breath. The floor beneath you is marked with a circle of old sigils, worn by time but still
-              faintly luminous.
-            </p>
-            <p>
-              The silver-haired woman studies you—not suspicious, but searching, as if listening to something just
-              behind your heartbeat.
-            </p>
-            <p>
-              “Mira Ashbourne,” she says. “Keeper of the Manor. Ward-tender. And until tonight…” Her mouth twists into a
-              wry almost-smile. “…the only one left listening when it cries.”
-            </p>
-            <p>
-              The talisman at your chest hums—a low, steady vibration—answering the glow in the floor. Lines of light
-              stir between stone and metal, spider-fine threads reaching for one another.
-            </p>
-            <p class="rw-intro-dialog">
-              “The wards woke for you,” Mira continues. “That means the story is shifting. That means you’re not just a
-              visitor. You’re an <strong>anchor</strong>.”
-            </p>
-          `,
-          choices: [
-            { text: '“What does it mean to be an anchor?”', to: "3" },
-            { text: "Ignore the title—ask what’s wrong with the wards.", to: "3" },
-            { text: "Touch the talisman and see how it responds.", to: "3" },
-          ],
-        },
+    // Save book progress (Supabase)
+    async function saveBookProgress(pageId, options = {}) {
+      if (!currentBookEmail) return;
 
-        "3": {
-          title: "The Listening Door",
-          image: "book-page-3.png",
-          body: `
-            <p>
-              Mira leads you deeper into the hall. Portraits with blurred faces line the walls; some seem to turn
-              slightly as you pass. Above, a chandelier hums like a throat swallowing light.
-            </p>
-            <p>
-              At the far end of the hall stands a tall double door, its surface carved with layered sigils. Bands of
-              pale light cinch it shut like glowing iron.
-            </p>
-            <p>
-              “The Manor has layers,” Mira murmurs. “This door sits where the living house brushes the level just above
-              the Underhall. The older wards gather here.”
-            </p>
-            <p>
-              As you draw near, your talisman warms. The bands of light along the door vibrate, threads of brilliance
-              reaching toward the metal at your throat.
-            </p>
-            <p class="rw-intro-dialog">
-              “It wants to see you,” Mira says. “Let it.”
-            </p>
-          `,
-          choices: [
-            { text: "Press your palm to the door.", to: "4" },
-            { text: "Raise the talisman toward the bands of light.", to: "4" },
-            { text: "Whisper your name to the wood.", to: "4" },
-          ],
-        },
+      try {
+        const update = {
+          book1_started: true,
+          book1_last_page: pageId,
+        };
 
-        "4": {
-          title: "Contact",
-          image: "book-page-4.png",
-          body: `
-            <p>
-              The moment your palm touches the carved wood, the bands of light flare. A low note thrums through your
-              bones. Images tumble across your mind—fractured pieces of yourself the Manor has no right to know:
-              childhood rooms, a familiar voice calling you back, the first time you dreamed of a hill crowned with a
-              house you’d never seen.
-            </p>
-            <p>
-              The talisman sears hot, then cools. Threads of light leap from the door to the metal, then sink inward,
-              vanishing beneath your skin.
-            </p>
-            <p>
-              The door hums approval. Something deeper beneath the Manor hums back.
-            </p>
-            <p class="rw-intro-dialog">
-              “The first gate is open,” Mira says quietly. “And the Underhall knows your name now.”
-            </p>
-          `,
-          choices: [
-            { text: "Step through the door.", to: "5" },
-            { text: "Ask what changed when the gate opened.", to: "5" },
-            { text: "Demand to know what the Underhall is.", to: "5" },
-          ],
-        },
-
-        "5": {
-          title: "The Wall That Breathes",
-          image: "book-page-5.png",
-          body: `
-            <p>
-              Beyond the listening door, the corridor slopes downward in a slow arc. Lanterns burn with a cold,
-              silver-blue flame. The air smells of stone, old wax, and something like rain trapped underground.
-            </p>
-            <p>
-              You feel the Manor thin here. Its skin brushes something deeper—the Underhall’s unseen tide.
-            </p>
-            <p>
-              Halfway down the passage, your talisman jolts. Heat flares against your skin, then tugs, insistent,
-              pulling your attention toward an unremarkable stretch of wall.
-            </p>
-            <p>
-              To the eye, it’s just stone. To the talisman, it <em>breathes</em>.
-            </p>
-            <p>
-              As you watch, faint lines ripple across the surface—an almost-circle, not yet complete. An old lock
-              waiting to remember its key.
-            </p>
-            <p class="rw-intro-dialog">
-              “That shouldn’t be waking,” Mira whispers. “If you’re going to use the talisman… do it carefully.”
-            </p>
-            <p class="small text-muted mb-0">
-              <em>Open your inventory, drag the talisman onto the glowing mark in the illustration, and see what answers.</em>
-            </p>
-          `,
-          // This page requires dragging the talisman onto the hotspot
-          requiresTalisman: true,
-          dropHint: "The hidden lock warms as the talisman nears. Drop it onto the glow in the stone.",
-          dropSuccessText:
-            "The stone drinks in the talisman’s light. A circle completes itself in the wall with a soft chime, and the rock folds inward, revealing a narrow vault beyond.",
-          choices: [
-            { text: "Step into the newly opened vault.", to: "6" },
-            { text: "Look back at Mira before entering.", to: "6" },
-          ],
-        },
-
-        "6": {
-          title: "The Thread-Vault",
-          image: "book-page-6.png",
-          body: `
-            <p>
-              The passage beyond the wall is narrow and warm, lit by no visible lanterns—only a suspended web of
-              silver threads, each one softly luminous. They sway in a breeze you can’t feel.
-            </p>
-            <p>
-              At the center of the chamber stands a pedestal. Resting on it is a single feather made of shifting light,
-              its edges dissolving into glowing motes before reforming again.
-            </p>
-            <p>
-              The talisman, still warm against your skin, thrums in time with the feather’s slow pulse.
-            </p>
-            <p class="rw-intro-dialog">
-              “An echo-vault,” Mira breathes. “Untouched since before my grandmother’s time. The Manor hid this from me.”
-            </p>
-            <p>
-              Silver threads brush against your shoulders as you move, humming like distant voices. You have the
-              unsettling feeling that every step you take in here will matter more than the ones outside.
-            </p>
-          `,
-          choices: [
-            { text: "Reach toward the feather of light.", to: "1" },
-            { text: "Back away—this is too much for one night.", to: "1" },
-          ],
-        },
-      };
-
-      // --- INVENTORY LOADING (from game if possible, else fallback) ---
-
-      function loadBookInventory() {
-        // 1) If world page has already seeded inventory from Supabase, use that
-        if (Array.isArray(window.rwInitialInventory) && window.rwInitialInventory.length) {
-          return [...window.rwInitialInventory];
+        if (options.completed === true) {
+          update.book1_completed = true;
         }
 
-        // 2) Try localStorage fallback (same key app.js uses)
-        try {
-          const raw = localStorage.getItem("ravenwoodInventory");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length) {
-              return parsed;
-            }
-          }
-        } catch (e) {
-          console.warn("Could not load book inventory from localStorage:", e);
-        }
+        const { error } = await supabaseClient
+          .from("data")
+          .update(update)
+          .eq("email", currentBookEmail);
 
-        // 3) As a last resort, grant a simple talisman so the puzzle is solvable
-        return [
-          {
-            id: TALISMAN_ITEM_ID,
-            name: "Old Talisman",
-            icon: "tal-tri.png",
-            quantity: 1,
-          },
-        ];
+        if (error) {
+          console.error("Failed to save book progress:", error);
+        } else if (currentBookChar) {
+          currentBookChar.book1_started = true;
+          currentBookChar.book1_last_page = pageId;
+        }
+      } catch (err) {
+        console.error("Unexpected error saving book progress:", err);
+      }
+    }
+
+    // --- PAGE DATA ---
+    const BOOK_PAGES = {
+      "1": {
+        title: "The Manor That Waits",
+        image: "book-page-1.png",
+        body: `
+          <p>
+            Fog curls around your boots as you step onto the ancient path. Lanterns along the drive gutter, then flare
+            brighter, as if recognizing the metal resting in your pocket.
+          </p>
+          <p>
+            The Manor looms ahead: windows burning with a few patient lights, stone black with old rain. The air hums
+            faintly. Not storm, not wind. <em>Attention.</em>
+          </p>
+          <p>
+            When your foot crosses the final stone at the threshold, the great door opens on its own—not with a creak,
+            but with a long, low <em>sigh</em>, as though the house is finally waking.
+          </p>
+          <p>
+            A woman with silver hair waits just inside the hall, eyes sharp, expression somewhere between relief and
+            apology.
+          </p>
+          <p class="rw-intro-dialog">
+            “You brought it back,” she says softly. “The talisman.”
+          </p>
+        `,
+        choices: [
+          { text: "Step inside cautiously.", to: "2" },
+          { text: "Enter as if you belong here.", to: "2" },
+          { text: "Ask who she is before crossing the threshold.", to: "2" },
+        ],
+      },
+
+      "2": {
+        title: "Mira Ashbourne",
+        image: "book-page-2.png",
+        body: `
+          <p>
+            You step into the entry hall. Warm golden light spills from lanterns clustered along carved stone pillars,
+            flickering like breath. The floor beneath you is marked with a circle of old sigils, worn by time but still
+            faintly luminous.
+          </p>
+          <p>
+            The silver-haired woman studies you—not suspicious, but searching, as if listening to something just
+            behind your heartbeat.
+          </p>
+          <p>
+            “Mira Ashbourne,” she says. “Keeper of the Manor. Ward-tender. And until tonight…” Her mouth twists into a
+            wry almost-smile. “…the only one left listening when it cries.”
+          </p>
+          <p>
+            The talisman at your chest hums—a low, steady vibration—answering the glow in the floor. Lines of light
+            stir between stone and metal, spider-fine threads reaching for one another.
+          </p>
+          <p class="rw-intro-dialog">
+            “The wards woke for you,” Mira continues. “That means the story is shifting. That means you’re not just a
+            visitor. You’re an <strong>anchor</strong>.”
+          </p>
+        `,
+        choices: [
+          { text: "“What does it mean to be an anchor?”", to: "3" },
+          { text: "Ignore the title—ask what’s wrong with the wards.", to: "3" },
+          { text: "Touch the talisman and see how it responds.", to: "3" },
+        ],
+      },
+
+      "3": {
+        title: "The Listening Door",
+        image: "book-page-3.png",
+        body: `
+          <p>
+            Mira leads you deeper into the hall. Portraits with blurred faces line the walls; some seem to turn
+            slightly as you pass. Above, a chandelier hums like a throat swallowing light.
+          </p>
+          <p>
+            At the far end of the hall stands a tall double door, its surface carved with layered sigils. Bands of
+            pale light cinch it shut like glowing iron.
+          </p>
+          <p>
+            “The Manor has layers,” Mira murmurs. “This door sits where the living house brushes the level just above
+            the Underhall. The older wards gather here.”
+          </p>
+          <p>
+            As you draw near, your talisman warms. The bands of light along the door vibrate, threads of brilliance
+            reaching toward the metal at your throat.
+          </p>
+          <p class="rw-intro-dialog">
+            “It wants to see you,” Mira says. “Let it.”
+          </p>
+        `,
+        choices: [
+          { text: "Press your palm to the door.", to: "4" },
+          { text: "Raise the talisman toward the bands of light.", to: "4" },
+          { text: "Whisper your name to the wood.", to: "4" },
+        ],
+      },
+
+      "4": {
+        title: "Contact",
+        image: "book-page-4.png",
+        body: `
+          <p>
+            The moment your palm touches the carved wood, the bands of light flare. A low note thrums through your
+            bones. Images tumble across your mind—fractured pieces of yourself the Manor has no right to know:
+            childhood rooms, a familiar voice calling you back, the first time you dreamed of a hill crowned with a
+            house you’d never seen.
+          </p>
+          <p>
+            The talisman sears hot, then cools. Threads of light leap from the door to the metal, then sink inward,
+            vanishing beneath your skin.
+          </p>
+          <p>
+            The door hums approval. Something deeper beneath the Manor hums back.
+          </p>
+          <p class="rw-intro-dialog">
+            “The first gate is open,” Mira says quietly. “And the Underhall knows your name now.”
+          </p>
+        `,
+        choices: [
+          { text: "Step through the door.", to: "5" },
+          { text: "Ask what changed when the gate opened.", to: "5" },
+          { text: "Demand to know what the Underhall is.", to: "5" },
+        ],
+      },
+
+      "5": {
+        title: "The Wall That Breathes",
+        image: "book-page-5.png",
+        body: `
+          <p>
+            Beyond the listening door, the corridor slopes downward in a slow arc. Lanterns burn with a cold,
+            silver-blue flame. The air smells of stone, old wax, and something like rain trapped underground.
+          </p>
+          <p>
+            You feel the Manor thin here. Its skin brushes something deeper—the Underhall’s unseen tide.
+          </p>
+          <p>
+            Halfway down the passage, your talisman jolts. Heat flares against your skin, then tugs, insistent,
+            pulling your attention toward an unremarkable stretch of wall.
+          </p>
+          <p>
+            To the eye, it’s just stone. To the talisman, it <em>breathes</em>.
+          </p>
+          <p>
+            As you watch, faint lines ripple across the surface—an almost-circle, not yet complete. An old lock
+            waiting to remember its key.
+          </p>
+          <p class="rw-intro-dialog">
+            “That shouldn’t be waking,” Mira whispers. “If you’re going to use the talisman… do it carefully.”
+          </p>
+          <p class="small text-muted mb-0">
+            <em>Open your inventory, drag the talisman onto the glowing mark in the illustration, and see what answers.</em>
+          </p>
+        `,
+        requiresTalisman: true,
+        dropHint:
+          "The hidden lock warms as the talisman nears. Drop it onto the glow in the stone.",
+        dropSuccessText:
+          "The stone drinks in the talisman’s light. A circle completes itself in the wall with a soft chime, and the rock folds inward, revealing a narrow vault beyond.",
+        choices: [
+          { text: "Step into the newly opened vault.", to: "6" },
+          { text: "Look back at Mira before entering.", to: "6" },
+        ],
+      },
+
+      "6": {
+        title: "The Thread-Vault",
+        image: "book-page-6.png",
+        body: `
+          <p>
+            The passage beyond the wall is narrow and warm, lit by no visible lanterns—only a suspended web of
+            silver threads, each one softly luminous. They sway in a breeze you can’t feel.
+          </p>
+          <p>
+            At the center of the chamber stands a pedestal. Resting on it is a single feather made of shifting light,
+            its edges dissolving into glowing motes before reforming again.
+          </p>
+          <p>
+            The talisman, still warm against your skin, thrums in time with the feather’s slow pulse.
+          </p>
+          <p class="rw-intro-dialog">
+            “An echo-vault,” Mira breathes. “Untouched since before my grandmother’s time. The Manor hid this from me.”
+          </p>
+          <p>
+            Silver threads brush against your shoulders as you move, humming like distant voices. You have the
+            unsettling feeling that every step you take in here will matter more than the ones outside.
+          </p>
+        `,
+        choices: [
+          { text: "Reach toward the feather of light.", to: "1" },
+          { text: "Back away—this is too much for one night.", to: "1" },
+        ],
+      },
+    };
+
+    // --- INVENTORY LOADING (from game if possible, else fallback) ---
+    function loadBookInventory() {
+      // 1) If world page seeded inventory from Supabase, use that
+      if (Array.isArray(window.rwInitialInventory) && window.rwInitialInventory.length) {
+        return [...window.rwInitialInventory];
       }
 
-      function renderBookInventory() {
-        const grid = document.getElementById("rwBookInventoryGrid");
-        if (!grid) return;
-
-        grid.innerHTML = "";
-
-        const items = BOOK_STATE.inventory;
-        const maxSlots = 12;
-        const safeItems = Array.isArray(items) ? items : [];
-
-        safeItems.forEach((item) => {
-          const slot = document.createElement("div");
-          slot.className = "rw-inventory-slot";
-
-          if (item && item.icon) {
-            const img = document.createElement("img");
-            img.src = item.icon;
-            img.alt = item.name || "Item";
-            img.className = "rw-inventory-item-icon";
-            img.draggable = true;
-            img.dataset.itemId = item.id;
-
-            img.addEventListener("dragstart", (ev) => {
-              ev.dataTransfer.setData("text/plain", item.id);
-            });
-
-            slot.appendChild(img);
+      // 2) Try localStorage fallback
+      try {
+        const raw = localStorage.getItem("ravenwoodInventory");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length) {
+            return parsed;
           }
-
-          if (item && item.quantity && item.quantity > 1) {
-            const badge = document.createElement("span");
-            badge.className = "rw-inventory-qty";
-            badge.textContent = item.quantity;
-            slot.appendChild(badge);
-          }
-
-          grid.appendChild(slot);
-        });
-
-        // Fill empty slots
-        for (let i = safeItems.length; i < maxSlots; i++) {
-          const empty = document.createElement("div");
-          empty.className = "rw-inventory-slot";
-          grid.appendChild(empty);
         }
+      } catch (e) {
+        console.warn("Could not load book inventory from localStorage:", e);
       }
 
-      // --- PAGE RENDERING ---
+      // 3) Last resort: grant a basic talisman so the puzzle works
+      return [
+        {
+          id: TALISMAN_ITEM_ID,
+          name: "Old Talisman",
+          icon: "tal-tri.png",
+          quantity: 1,
+        },
+      ];
+    }
 
-      function setSystemMessage(text, kind = "warning") {
-        const el = document.getElementById("rwBookSystemMessage");
-        if (!el) return;
-        if (!text) {
-          el.classList.add("d-none");
-          el.textContent = "";
-          return;
-        }
-        el.classList.remove("d-none");
-        el.textContent = text;
-        el.classList.toggle("text-warning", kind === "warning");
-        el.classList.toggle("text-success", kind === "success");
-        el.classList.toggle("text-danger", kind === "danger");
-      }
+    function renderBookInventory() {
+      const grid = document.getElementById("rwBookInventoryGrid");
+      if (!grid) return;
 
-      function renderPage(pageId) {
-        const page = BOOK_PAGES[pageId];
-        if (!page) return;
+      grid.innerHTML = "";
 
-        BOOK_STATE.currentPageId = pageId;
+      const items = BOOK_STATE.inventory;
+      const maxSlots = 12;
+      const safeItems = Array.isArray(items) ? items : [];
 
-        const titleEl = document.getElementById("rwBookPageTitle");
-        const bodyEl = document.getElementById("rwBookPageBody");
-        const imgEl = document.getElementById("rwBookImage");
-        const metaEl = document.getElementById("rwBookPageMeta");
-        const dropZone = document.getElementById("rwBookDropHotspot");
+      safeItems.forEach((item) => {
+        const slot = document.createElement("div");
+        slot.className = "rw-inventory-slot";
 
-        if (titleEl) titleEl.textContent = page.title || "";
-        if (metaEl) metaEl.textContent = "Page " + pageId;
+        if (item && item.icon) {
+          const img = document.createElement("img");
+          img.src = item.icon;
+          img.alt = item.name || "Item";
+          img.className = "rw-inventory-item-icon";
+          img.draggable = true;
+          img.dataset.itemId = item.id;
 
-        if (bodyEl) {
-          bodyEl.innerHTML = page.body || "";
-        }
-
-        // Image / illustration slot per page
-        if (imgEl) {
-          if (page.image) {
-            imgEl.src = page.image;
-            imgEl.style.display = "";
-          } else {
-            imgEl.style.display = "none";
-          }
-        }
-
-        // Talisman drag & drop requirement
-        const needsTalisman = !!page.requiresTalisman;
-        const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
-
-        if (dropZone) {
-          if (needsTalisman) {
-            dropZone.classList.remove("d-none", "rw-drop-success", "rw-drop-fail");
-            setSystemMessage(
-              page.dropHint ||
-                "Open your inventory and drag the talisman onto the glowing mark before you can move on.",
-              "warning"
-            );
-          } else {
-            dropZone.classList.add("d-none", "rw-drop-success", "rw-drop-fail");
-            if (!page.dropHint) {
-              setSystemMessage(null);
-            }
-          }
-        }
-
-        // If the talisman has already been used here and there's a special success text, show it beneath the body
-        if (needsTalisman && alreadyUsed && page.dropSuccessText) {
-          const extra = document.createElement("p");
-          extra.className = "rw-body mt-2";
-          extra.innerHTML = `<em>${page.dropSuccessText}</em>`;
-          bodyEl.appendChild(extra);
-          setSystemMessage("The talisman answered. New paths are open.", "success");
-        }
-
-        renderChoicesForPage(pageId);
-      }
-
-      function renderChoicesForPage(pageId) {
-        const page = BOOK_PAGES[pageId];
-        if (!page) return;
-
-        const choicesEl = document.getElementById("rwBookChoices");
-        if (!choicesEl) return;
-
-        const needsTalisman = !!page.requiresTalisman;
-        const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
-
-        choicesEl.innerHTML = "";
-
-        if (!Array.isArray(page.choices) || !page.choices.length) {
-          const p = document.createElement("p");
-          p.className = "small text-muted";
-          p.textContent = "There are no choices here yet.";
-          choicesEl.appendChild(p);
-          return;
-        }
-
-        page.choices.forEach((choice, idx) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "btn rw-btn-main w-100";
-          btn.textContent = choice.text;
-
-          if (needsTalisman && !alreadyUsed) {
-            btn.disabled = true;
-          }
-
-          btn.addEventListener("click", () => {
-            if (choice.to && BOOK_PAGES[choice.to]) {
-              renderPage(choice.to);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
+          img.addEventListener("dragstart", (ev) => {
+            ev.dataTransfer.setData("text/plain", item.id);
           });
 
-          choicesEl.appendChild(btn);
-        });
+          slot.appendChild(img);
+        }
 
-        if (needsTalisman && !alreadyUsed) {
+        if (item && item.quantity && item.quantity > 1) {
+          const badge = document.createElement("span");
+          badge.className = "rw-inventory-qty";
+          badge.textContent = item.quantity;
+          slot.appendChild(badge);
+        }
+
+        grid.appendChild(slot);
+      });
+
+      // Fill empty slots
+      for (let i = safeItems.length; i < maxSlots; i++) {
+        const empty = document.createElement("div");
+        empty.className = "rw-inventory-slot";
+        grid.appendChild(empty);
+      }
+    }
+
+    // --- SYSTEM MESSAGE ---
+    function setSystemMessage(text, kind = "warning") {
+      const el = document.getElementById("rwBookSystemMessage");
+      if (!el) return;
+      if (!text) {
+        el.classList.add("d-none");
+        el.textContent = "";
+        return;
+      }
+      el.classList.remove("d-none");
+      el.textContent = text;
+      el.classList.toggle("text-warning", kind === "warning");
+      el.classList.toggle("text-success", kind === "success");
+      el.classList.toggle("text-danger", kind === "danger");
+    }
+
+    // --- PAGE RENDERING ---
+    function renderPage(pageId) {
+      const page = BOOK_PAGES[pageId];
+      if (!page) return;
+
+      BOOK_STATE.currentPageId = pageId;
+
+      const titleEl = document.getElementById("rwBookPageTitle");
+      const bodyEl = document.getElementById("rwBookPageBody");
+      const imgEl = document.getElementById("rwBookImage");
+      const metaEl = document.getElementById("rwBookPageMeta");
+      const dropZone = document.getElementById("rwBookDropHotspot");
+
+      if (titleEl) titleEl.textContent = page.title || "";
+      if (metaEl) metaEl.textContent = "Page " + pageId;
+
+      if (bodyEl) {
+        bodyEl.innerHTML = page.body || "";
+      }
+
+      if (imgEl) {
+        if (page.image) {
+          imgEl.src = page.image;
+          imgEl.style.display = "";
+        } else {
+          imgEl.style.display = "none";
+        }
+      }
+
+      const needsTalisman = !!page.requiresTalisman;
+      const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
+
+      if (dropZone) {
+        if (needsTalisman) {
+          dropZone.classList.remove("d-none", "rw-drop-success", "rw-drop-fail");
           setSystemMessage(
-            "The wall is still waiting. Use your talisman in the scene before you choose your next step.",
+            page.dropHint ||
+              "Open your inventory and drag the talisman onto the glowing mark before you can move on.",
             "warning"
           );
+        } else {
+          dropZone.classList.add("d-none", "rw-drop-success", "rw-drop-fail");
+          if (!page.dropHint) {
+            setSystemMessage(null);
+          }
         }
       }
 
-      // --- DRAG & DROP HANDLING FOR THE TALISMAN ---
-
-      function initDropZone() {
-        const dropZone = document.getElementById("rwBookDropHotspot");
-        if (!dropZone) return;
-
-        dropZone.addEventListener("dragover", (ev) => {
-          ev.preventDefault();
-        });
-
-        dropZone.addEventListener("drop", (ev) => {
-          ev.preventDefault();
-          const itemId = ev.dataTransfer.getData("text/plain");
-          const pageId = BOOK_STATE.currentPageId;
-          const page = BOOK_PAGES[pageId];
-
-          dropZone.classList.remove("rw-drop-success", "rw-drop-fail");
-
-          if (!page || !page.requiresTalisman) {
-            return;
-          }
-
-          if (itemId === TALISMAN_ITEM_ID) {
-            BOOK_STATE.talismanUsedPages[pageId] = true;
-            dropZone.classList.add("rw-drop-success");
-            setTimeout(() => dropZone.classList.remove("rw-drop-success"), 1400);
-            renderPage(pageId);
-          } else {
-            dropZone.classList.add("rw-drop-fail");
-            setSystemMessage("That doesn’t feel right. The wards ignore this offering.", "danger");
-            setTimeout(() => dropZone.classList.remove("rw-drop-fail"), 900);
-          }
-        });
+      if (needsTalisman && alreadyUsed && page.dropSuccessText && bodyEl) {
+        const extra = document.createElement("p");
+        extra.className = "rw-body mt-2";
+        extra.innerHTML = `<em>${page.dropSuccessText}</em>`;
+        bodyEl.appendChild(extra);
+        setSystemMessage("The talisman answered. New paths are open.", "success");
       }
 
-      // --- INVENTORY TOGGLE CONTROLS ---
+      renderChoicesForPage(pageId);
 
-      function initInventoryToggle() {
-        const toggleBtn = document.getElementById("rwBookInventoryToggle");
-        const closeBtn = document.getElementById("rwBookInventoryClose");
-        const panel = document.getElementById("rwBookInventoryPanel");
-        if (!toggleBtn || !panel) return;
+      // Save progress whenever we fully render this page
+      saveBookProgress(pageId);
+    }
 
-        function showPanel() {
-          panel.classList.remove("d-none");
+    function renderChoicesForPage(pageId) {
+      const page = BOOK_PAGES[pageId];
+      if (!page) return;
+
+      const choicesEl = document.getElementById("rwBookChoices");
+      if (!choicesEl) return;
+
+      const needsTalisman = !!page.requiresTalisman;
+      const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
+
+      choicesEl.innerHTML = "";
+
+      if (!Array.isArray(page.choices) || !page.choices.length) {
+        const p = document.createElement("p");
+        p.className = "small text-muted";
+        p.textContent = "There are no choices here yet.";
+        choicesEl.appendChild(p);
+        return;
+      }
+
+      page.choices.forEach((choice) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn rw-btn-main w-100";
+        btn.textContent = choice.text;
+
+        if (needsTalisman && !alreadyUsed) {
+          btn.disabled = true;
         }
-        function hidePanel() {
-          panel.classList.add("d-none");
-        }
 
-        toggleBtn.addEventListener("click", () => {
-          if (panel.classList.contains("d-none")) {
-            showPanel();
-          } else {
-            hidePanel();
+        btn.addEventListener("click", () => {
+          if (choice.to && BOOK_PAGES[choice.to]) {
+            renderPage(choice.to);
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }
         });
 
-        if (closeBtn) {
-          closeBtn.addEventListener("click", hidePanel);
-        }
-      }
-
-      // --- INIT ---
-
-      document.addEventListener("DOMContentLoaded", () => {
-        // Seed inventory
-        BOOK_STATE.inventory = loadBookInventory();
-        renderBookInventory();
-
-        // Wire drag / drop & inventory UI
-        initDropZone();
-        initInventoryToggle();
-
-        // Start on page 1
-        renderPage("1");
+        choicesEl.appendChild(btn);
       });
-    })();
-  </script>
+
+      if (needsTalisman && !alreadyUsed) {
+        setSystemMessage(
+          "The wall is still waiting. Use your talisman in the scene before you choose your next step.",
+          "warning"
+        );
+      }
+    }
+
+    // --- DRAG & DROP HANDLING ---
+    function initDropZone() {
+      const dropZone = document.getElementById("rwBookDropHotspot");
+      if (!dropZone) return;
+
+      dropZone.addEventListener("dragover", (ev) => {
+        ev.preventDefault();
+      });
+
+      dropZone.addEventListener("drop", (ev) => {
+        ev.preventDefault();
+        const itemId = ev.dataTransfer.getData("text/plain");
+        const pageId = BOOK_STATE.currentPageId;
+        const page = BOOK_PAGES[pageId];
+
+        dropZone.classList.remove("rw-drop-success", "rw-drop-fail");
+
+        if (!page || !page.requiresTalisman) {
+          return;
+        }
+
+        if (itemId === TALISMAN_ITEM_ID) {
+          BOOK_STATE.talismanUsedPages[pageId] = true;
+          dropZone.classList.add("rw-drop-success");
+          setTimeout(() => dropZone.classList.remove("rw-drop-success"), 1400);
+          renderPage(pageId);
+        } else {
+          dropZone.classList.add("rw-drop-fail");
+          setSystemMessage("That doesn’t feel right. The wards ignore this offering.", "danger");
+          setTimeout(() => dropZone.classList.remove("rw-drop-fail"), 900);
+        }
+      });
+    }
+
+    // --- INVENTORY TOGGLE CONTROLS ---
+    function initInventoryToggle() {
+      const toggleBtn = document.getElementById("rwBookInventoryToggle");
+      const closeBtn = document.getElementById("rwBookInventoryClose");
+      const panel = document.getElementById("rwBookInventoryPanel");
+      if (!toggleBtn || !panel) return;
+
+      function showPanel() {
+        panel.classList.remove("d-none");
+      }
+      function hidePanel() {
+        panel.classList.add("d-none");
+      }
+
+      toggleBtn.addEventListener("click", () => {
+        if (panel.classList.contains("d-none")) {
+          showPanel();
+        } else {
+          hidePanel();
+        }
+      });
+
+      if (closeBtn) {
+        closeBtn.addEventListener("click", hidePanel);
+      }
+    }
+
+    // --- INIT ON LOAD ---
+    document.addEventListener("DOMContentLoaded", async () => {
+      // 1) Ensure a logged-in Supabase user
+      try {
+        const { data, error } = await supabaseClient.auth.getUser();
+        if (error || !data || !data.user || !data.user.email) {
+          window.location.href = "login.html";
+          return;
+        }
+        currentBookEmail = data.user.email.toLowerCase();
+
+        // 2) Load their character row
+        try {
+          currentBookChar = await fetchCharacterByEmail(currentBookEmail);
+        } catch (e) {
+          console.error("Could not load character for book:", e);
+        }
+      } catch (e) {
+        console.error("Supabase auth error in book:", e);
+      }
+
+      // 3) Seed inventory (prefer Supabase)
+      if (currentBookChar && Array.isArray(currentBookChar.inventory)) {
+        BOOK_STATE.inventory = [...currentBookChar.inventory];
+      } else {
+        BOOK_STATE.inventory = loadBookInventory();
+      }
+      renderBookInventory();
+
+      // Wire drag/drop & inventory UI
+      initDropZone();
+      initInventoryToggle();
+
+      // 4) Decide starting page (resume if possible)
+      let startPage = "1";
+      if (
+        currentBookChar &&
+        currentBookChar.book1_last_page &&
+        BOOK_PAGES[currentBookChar.book1_last_page]
+      ) {
+        startPage = currentBookChar.book1_last_page;
+      }
+
+      BOOK_STATE.currentPageId = startPage;
+
+      // Mark as started & save initial progress
+      await saveBookProgress(startPage);
+
+      // Render starting page
+      renderPage(startPage);
+    });
+  })();
+</script>
 </body>
 </html>

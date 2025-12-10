@@ -321,7 +321,7 @@ function initCreatePage() {
       console.log("Auth created:", signUpData);
 
       // 2) Create character profile row in "data" table
-      const payload = {
+            const payload = {
         email,
         display_name: displayName,
         archetype,
@@ -333,7 +333,10 @@ function initCreatePage() {
         secrets: [],      // start empty
         inventory: [],    // start empty
         manor_unlocked: false,
-        intro_seen: false, // first time in Ravenwood, show intro
+        intro_seen: false,     // first time in Ravenwood, show intro
+        manor_intro_seen: false,
+        book1_started: false,
+        book1_last_page: null,
       };
 
       const inserted = await createCharacterOnSupabase(payload);
@@ -566,16 +569,16 @@ async function initWorldPage() {
   let char = await fetchCharacterByEmail(email);
 
   if (!char) {
-    console.warn("No character profile found for", email, "— creating a default one.");
+  console.warn("No character profile found for", email, "— creating a default one.");
 
-    // Fallback payload so you never get stuck in a redirect loop
-    const fallbackPayload = {
+  // Fallback payload so you never get stuck in a redirect loop
+      const fallbackPayload = {
       email,
       display_name: email.split("@")[0] || "Wanderer",
-      archetype: "shadow-witch",       // safe default; player can change later in UI if you add that
-      affinity: "stone",               // safe default
+      archetype: "shadow-witch",
+      affinity: "stone",
       familiar_name: null,
-      journey_tone: "cozy",            // or "intense" if you prefer
+      journey_tone: "cozy",
       avatar: DEFAULT_AVATAR,
       created_at: new Date().toISOString(),
       secrets: [],
@@ -583,14 +586,34 @@ async function initWorldPage() {
       manor_unlocked: false,
       intro_seen: false,
       manor_intro_seen: false,
+      book1_started: false,
+      book1_last_page: null,
     };
 
-    // Create the missing row
-    char = await createCharacterOnSupabase(fallbackPayload);
+  // Create the missing row
+  char = await createCharacterOnSupabase(fallbackPayload);
+}
+
+// -------------------------------------
+// ⭐ PLACE YOUR NEW CODE RIGHT HERE ⭐
+// -------------------------------------
+
+currentChar = char;
+window.rwChar = char;
+
+  // 🔹 If Book I has been started, show a "Continue" button
+  const bookContinueBtn = document.getElementById("rwBook1ContinueBtn");
+  if (bookContinueBtn && char.book1_started === true) {
+    bookContinueBtn.classList.remove("d-none");
+    bookContinueBtn.addEventListener("click", () => {
+      window.location.href = "book-1.html";
+    });
   }
 
-  currentChar = char;
-  window.rwChar = char;
+// -------------------------------------
+// Continue with avatar setup, map setup,
+// intro modal check, etc.
+// -------------------------------------
 
   // Remove outdated localStorage manor flag (Supabase is the source of truth now)
   localStorage.removeItem("ravenwoodManorUnlocked");
@@ -892,6 +915,9 @@ async function initWorldPage() {
   // ------------------------------
 // FIRST-TIME MANOR ARRIVAL STORY
 // ------------------------------
+// ------------------------------
+// FIRST-TIME MANOR ARRIVAL STORY
+// ------------------------------
 async function maybeShowManorArrival(char, email) {
   if (!char) return;
   if (char.manor_intro_seen === true) return;
@@ -908,32 +934,39 @@ async function maybeShowManorArrival(char, email) {
 
   const btn = document.getElementById("rwManorArrivalBeginBtn");
   if (btn) {
-    btn.addEventListener("click", async () => {
-      try {
-        const { error } = await supabaseClient
-          .from("data")
-          .update({
-            manor_unlocked: true,
-            manor_intro_seen: true,
-          })
-          .eq("email", email);
+    btn.addEventListener(
+      "click",
+      async () => {
+        try {
+          const { error } = await supabaseClient
+            .from("data")
+            .update({
+              manor_unlocked: true,
+              manor_intro_seen: true,
+              book1_started: true,
+              book1_last_page: "1", // start on page 1
+            })
+            .eq("email", email);
 
-        if (error) {
-          console.error("Failed to update manor arrival:", error);
-        } else {
-          // keep the local copy in sync
-          char.manor_intro_seen = true;
-          if (window.rwChar) window.rwChar.manor_intro_seen = true;
+          if (error) {
+            console.error("Failed to update manor arrival:", error);
+          } else {
+            // keep local copy in sync
+            char.manor_intro_seen = true;
+            char.book1_started = true;
+            char.book1_last_page = "1";
+            if (window.rwChar) Object.assign(window.rwChar, char);
+          }
+        } catch (err) {
+          console.error("Unexpected manor arrival error:", err);
+        } finally {
+          manorModal.hide();
+          // 🚪 Go straight into the interactive book
+          window.location.href = "book-1.html";
         }
-      } catch (err) {
-        console.error("Unexpected manor arrival error:", err);
-      }
-
-      manorModal.hide();
-
-      // later: trigger first interactive book here
-      // startInteractiveBook1();
-    }, { once: true });
+      },
+      { once: true }
+    );
   }
 }
 
