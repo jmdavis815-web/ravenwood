@@ -346,8 +346,8 @@ function ensureItemMenuModal() {
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content rw-card">
         <div class="modal-header py-2">
-          <h5 class="modal-title" id="rwItemMenuTitle">Item</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <h5 class="modal-title text-light" id="rwItemMenuTitle">Item</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body py-3">
           <button type="button" class="btn rw-btn-main w-100 mb-2" id="rwItemMenuUseBtn">Use</button>
@@ -372,8 +372,8 @@ function ensureItemDescModal() {
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content rw-card">
         <div class="modal-header py-2">
-          <h5 class="modal-title" id="rwItemDescTitle">Item</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <h5 class="modal-title text-light" id="rwItemDescTitle">Item</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div class="text-center mb-3">
