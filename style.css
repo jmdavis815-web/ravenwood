@@ -1275,7 +1275,7 @@ body {
   column-gap: 30px;
   
   /* Increase top padding to push text downward */
-  padding: 40px 60px 30px 70px;
+  padding: 40px 40px 30px 50px;
   /*   TOP   RIGHT  BOTTOM LEFT */
 
   height: 100%;
@@ -1293,6 +1293,20 @@ body {
   break-inside: avoid;
   margin-bottom: 0;
 }
+
+#rwJournalModal .modal-body p,
+#rwJournalModal .modal-body {
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.35rem;
+  line-height: 1.8;
+}
+
+#rwJournalDate {
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.5rem;
+}
+
+
 
 
 
