@@ -119,10 +119,6 @@
       margin-top: 0.5rem;
     }
 
-    .rw-inventory-item-icon[draggable="true"] {
-      cursor: grab;
-    }
-
     .rw-book-system-msg {
       min-height: 1.2rem;
     }
@@ -177,7 +173,9 @@
 
         <div id="rwBookInventoryPanel" class="d-none">
           <div class="d-flex justify-content-between align-items-center">
-            <span class="small text-muted">Drag items from your pack into the scene when needed.</span>
+            <span class="small text-muted">
+                Tap an item in your pack to open options. Choose <strong>Use</strong> or <strong>Description</strong>.
+            </span>
             <button class="btn btn-link btn-sm text-decoration-none text-muted" id="rwBookInventoryClose">
               Close ✕
             </button>
@@ -424,12 +422,12 @@
             “That shouldn’t be waking,” Mira whispers. “If you’re going to use the talisman… do it carefully.”
           </p>
           <p class="small text-muted mb-0">
-            <em>Open your inventory, drag the talisman onto the glowing mark in the illustration, and see what answers.</em>
+            <em>Open your inventory, select the talisman, and choose <strong>Use</strong> when you’re ready to test the waking wall.</em>
           </p>
         `,
         requiresTalisman: true,
         dropHint:
-          "The hidden lock warms as the talisman nears. Drop it onto the glow in the stone.",
+        "The hidden lock warms as the talisman nears. Use the talisman while you’re looking at the wall.",
         dropSuccessText:
           "The stone drinks in the talisman’s light. A circle completes itself in the wall with a soft chime, and the rock folds inward, revealing a narrow vault beyond.",
         choices: [
@@ -514,19 +512,21 @@
         slot.className = "rw-inventory-slot";
 
         if (item && item.icon) {
-          const img = document.createElement("img");
-          img.src = item.icon;
-          img.alt = item.name || "Item";
-          img.className = "rw-inventory-item-icon";
-          img.draggable = true;
-          img.dataset.itemId = item.id;
+  const img = document.createElement("img");
+  img.src = item.icon;
+  img.alt = item.name || "Item";
+  img.className = "rw-inventory-item-icon";
+  img.dataset.itemId = item.id;
 
-          img.addEventListener("dragstart", (ev) => {
-            ev.dataTransfer.setData("text/plain", item.id);
-          });
+  // 🔹 NEW: click to open Use / Description menu (book context)
+  if (window.rwOpenItemMenu) {
+    img.addEventListener("click", () =>
+      window.rwOpenItemMenu(item, { origin: "book" })
+    );
+  }
 
-          slot.appendChild(img);
-        }
+  slot.appendChild(img);
+}
 
         if (item && item.quantity && item.quantity > 1) {
           const badge = document.createElement("span");
@@ -562,149 +562,143 @@
       el.classList.toggle("text-danger", kind === "danger");
     }
 
+    // --- BOOK CONTEXT: inventory item use handler ---
+// Called from app.js via handleItemUse(..., { origin: "book" })
+window.rwBookHandleItemUse = function (item) {
+  if (!item || !item.id) return;
+
+  const pageId = BOOK_STATE.currentPageId;
+  const page = BOOK_PAGES[pageId];
+
+  // The talisman has special behavior
+  if (item.id === TALISMAN_ITEM_ID) {
+    if (page && page.requiresTalisman) {
+      if (!BOOK_STATE.talismanUsedPages[pageId]) {
+        BOOK_STATE.talismanUsedPages[pageId] = true;
+      }
+      setSystemMessage(
+        "The talisman warms in your hand. Light seeps into the waiting ward.",
+        "success"
+      );
+      renderPage(pageId); // re-render so success text + choices unlock
+    } else {
+      setSystemMessage(
+        "You lift the talisman, but the wards here stay quiet. Nothing happens.",
+        "warning"
+      );
+    }
+    return;
+  }
+
+  // Any other item (for now): nothing happens
+  setSystemMessage(
+    "You try to use that here, but the scene doesn’t respond. Nothing happens.",
+    "danger"
+  );
+};
+
     // --- PAGE RENDERING ---
     function renderPage(pageId) {
-      const page = BOOK_PAGES[pageId];
-      if (!page) return;
+  const page = BOOK_PAGES[pageId];
+  if (!page) return;
 
-      BOOK_STATE.currentPageId = pageId;
+  BOOK_STATE.currentPageId = pageId;
 
-      const titleEl = document.getElementById("rwBookPageTitle");
-      const bodyEl = document.getElementById("rwBookPageBody");
-      const imgEl = document.getElementById("rwBookImage");
-      const metaEl = document.getElementById("rwBookPageMeta");
-      const dropZone = document.getElementById("rwBookDropHotspot");
+  const titleEl = document.getElementById("rwBookPageTitle");
+  const bodyEl = document.getElementById("rwBookPageBody");
+  const imgEl = document.getElementById("rwBookImage");
+  const metaEl = document.getElementById("rwBookPageMeta");
+  const dropZone = document.getElementById("rwBookDropHotspot");
 
-      if (titleEl) titleEl.textContent = page.title || "";
-      if (metaEl) metaEl.textContent = "Page " + pageId;
+  if (titleEl) titleEl.textContent = page.title || "";
+  if (metaEl) metaEl.textContent = "Page " + pageId;
 
-      if (bodyEl) {
-        bodyEl.innerHTML = page.body || "";
-      }
+  if (bodyEl) {
+    bodyEl.innerHTML = page.body || "";
+  }
 
-      if (imgEl) {
-        if (page.image) {
-          imgEl.src = page.image;
-          imgEl.style.display = "";
-        } else {
-          imgEl.style.display = "none";
-        }
-      }
-
-      const needsTalisman = !!page.requiresTalisman;
-      const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
-
-      if (dropZone) {
-        if (needsTalisman) {
-          dropZone.classList.remove("d-none", "rw-drop-success", "rw-drop-fail");
-          setSystemMessage(
-            page.dropHint ||
-              "Open your inventory and drag the talisman onto the glowing mark before you can move on.",
-            "warning"
-          );
-        } else {
-          dropZone.classList.add("d-none", "rw-drop-success", "rw-drop-fail");
-          if (!page.dropHint) {
-            setSystemMessage(null);
-          }
-        }
-      }
-
-      if (needsTalisman && alreadyUsed && page.dropSuccessText && bodyEl) {
-        const extra = document.createElement("p");
-        extra.className = "rw-body mt-2";
-        extra.innerHTML = `<em>${page.dropSuccessText}</em>`;
-        bodyEl.appendChild(extra);
-        setSystemMessage("The talisman answered. New paths are open.", "success");
-      }
-
-      renderChoicesForPage(pageId);
-
-      // Save progress whenever we fully render this page
-      saveBookProgress(pageId);
+  if (imgEl) {
+    if (page.image) {
+      imgEl.src = page.image;
+      imgEl.style.display = "";
+    } else {
+      imgEl.style.display = "none";
     }
+  }
+
+  const needsTalisman = !!page.requiresTalisman;
+  const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
+
+  // We no longer use drag & drop; keep the hotspot hidden.
+  if (dropZone) {
+    dropZone.classList.add("d-none");
+  }
+
+  if (needsTalisman && alreadyUsed && page.dropSuccessText && bodyEl) {
+    const extra = document.createElement("p");
+    extra.className = "rw-body mt-2";
+    extra.innerHTML = `<em>${page.dropSuccessText}</em>`;
+    bodyEl.appendChild(extra);
+    setSystemMessage("The talisman answered. New paths are open.", "success");
+  }
+
+  renderChoicesForPage(pageId);
+
+  // Save progress whenever we fully render this page
+  saveBookProgress(pageId);
+}
 
     function renderChoicesForPage(pageId) {
-      const page = BOOK_PAGES[pageId];
-      if (!page) return;
+  const page = BOOK_PAGES[pageId];
+  if (!page) return;
 
-      const choicesEl = document.getElementById("rwBookChoices");
-      if (!choicesEl) return;
+  const choicesEl = document.getElementById("rwBookChoices");
+  if (!choicesEl) return;
 
-      const needsTalisman = !!page.requiresTalisman;
-      const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
+  const needsTalisman = !!page.requiresTalisman;
+  const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
 
-      choicesEl.innerHTML = "";
+  choicesEl.innerHTML = "";
 
-      if (!Array.isArray(page.choices) || !page.choices.length) {
-        const p = document.createElement("p");
-        p.className = "small text-muted";
-        p.textContent = "There are no choices here yet.";
-        choicesEl.appendChild(p);
-        return;
-      }
+  if (!Array.isArray(page.choices) || !page.choices.length) {
+    const p = document.createElement("p");
+    p.className = "small text-muted";
+    p.textContent = "There are no choices here yet.";
+    choicesEl.appendChild(p);
+    return;
+  }
 
-      page.choices.forEach((choice) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "btn rw-btn-main w-100";
-        btn.textContent = choice.text;
+  page.choices.forEach((choice) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn rw-btn-main w-100";
+    btn.textContent = choice.text;
 
-        if (needsTalisman && !alreadyUsed) {
-          btn.disabled = true;
-        }
-
-        btn.addEventListener("click", () => {
-          if (choice.to && BOOK_PAGES[choice.to]) {
-            renderPage(choice.to);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }
-        });
-
-        choicesEl.appendChild(btn);
-      });
-
-      if (needsTalisman && !alreadyUsed) {
-        setSystemMessage(
-          "The wall is still waiting. Use your talisman in the scene before you choose your next step.",
-          "warning"
-        );
-      }
+    if (needsTalisman && !alreadyUsed) {
+      btn.disabled = true;
     }
 
-    // --- DRAG & DROP HANDLING ---
-    function initDropZone() {
-      const dropZone = document.getElementById("rwBookDropHotspot");
-      if (!dropZone) return;
+    btn.addEventListener("click", () => {
+      if (choice.to && BOOK_PAGES[choice.to]) {
+        renderPage(choice.to);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    });
 
-      dropZone.addEventListener("dragover", (ev) => {
-        ev.preventDefault();
-      });
+    choicesEl.appendChild(btn);
+  });
 
-      dropZone.addEventListener("drop", (ev) => {
-        ev.preventDefault();
-        const itemId = ev.dataTransfer.getData("text/plain");
-        const pageId = BOOK_STATE.currentPageId;
-        const page = BOOK_PAGES[pageId];
-
-        dropZone.classList.remove("rw-drop-success", "rw-drop-fail");
-
-        if (!page || !page.requiresTalisman) {
-          return;
-        }
-
-        if (itemId === TALISMAN_ITEM_ID) {
-          BOOK_STATE.talismanUsedPages[pageId] = true;
-          dropZone.classList.add("rw-drop-success");
-          setTimeout(() => dropZone.classList.remove("rw-drop-success"), 1400);
-          renderPage(pageId);
-        } else {
-          dropZone.classList.add("rw-drop-fail");
-          setSystemMessage("That doesn’t feel right. The wards ignore this offering.", "danger");
-          setTimeout(() => dropZone.classList.remove("rw-drop-fail"), 900);
-        }
-      });
-    }
+  if (needsTalisman && !alreadyUsed) {
+    setSystemMessage(
+      page.dropHint ||
+        "The wall is still waiting. Use your talisman here before you choose your next step.",
+      "warning"
+    );
+  } else {
+    // Clear any lingering message if this page doesn't need the talisman
+    setSystemMessage(null);
+  }
+}
 
     // --- INVENTORY TOGGLE CONTROLS ---
     function initInventoryToggle() {
@@ -762,9 +756,8 @@
       }
       renderBookInventory();
 
-      // Wire drag/drop & inventory UI
-      initDropZone();
-      initInventoryToggle();
+      // Inventory UI (no more drag/drop; items are used via the click menu)
+        initInventoryToggle();
 
       // 4) Decide starting page (resume if possible)
       let startPage = "1";

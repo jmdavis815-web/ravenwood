@@ -117,7 +117,187 @@ function saveInventory(items) {
   }
 }
 
-// Draw the inventory inside #rwInventoryGrid
+// ---------- ITEM METADATA + CLICK MENU ----------
+
+const ITEM_METADATA = {
+  old_talisman: {
+    title: "Old Talisman",
+    description:
+      "A bronze talisman etched with a Triquetra. It remembers old wards and answers doors that have forgotten how to open.",
+  },
+  // Add more items here as you introduce them.
+};
+
+function getItemMetadata(item) {
+  if (!item) return null;
+  const base = ITEM_METADATA[item.id] || {};
+  return {
+    id: item.id,
+    title: base.title || item.name || "Unknown Item",
+    description:
+      base.description ||
+      "You’re not sure what this does yet. Maybe someone in Ravenwood knows.",
+    icon: item.icon || base.icon || "",
+  };
+}
+
+let rwItemMenuModalInstance = null;
+let rwItemDescModalInstance = null;
+let rwItemMenuContext = null;
+
+function ensureItemMenuModal() {
+  let el = document.getElementById("rwItemMenuModal");
+  if (el) return el;
+
+  el = document.createElement("div");
+  el.id = "rwItemMenuModal";
+  el.className = "modal fade";
+  el.tabIndex = -1;
+  el.innerHTML = `
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content rw-card">
+        <div class="modal-header py-2">
+          <h5 class="modal-title" id="rwItemMenuTitle">Item</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-3">
+          <button type="button" class="btn rw-btn-main w-100 mb-2" id="rwItemMenuUseBtn">Use</button>
+          <button type="button" class="btn btn-outline-light w-100" id="rwItemMenuDescBtn">Description</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  return el;
+}
+
+function ensureItemDescModal() {
+  let el = document.getElementById("rwItemDescriptionModal");
+  if (el) return el;
+
+  el = document.createElement("div");
+  el.id = "rwItemDescriptionModal";
+  el.className = "modal fade";
+  el.tabIndex = -1;
+  el.innerHTML = `
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rw-card">
+        <div class="modal-header py-2">
+          <h5 class="modal-title" id="rwItemDescTitle">Item</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="text-center mb-3">
+            <img id="rwItemDescImage"
+                 src=""
+                 alt=""
+                 class="img-fluid rounded shadow-sm"
+                 style="max-height:160px;object-fit:contain;">
+          </div>
+          <p id="rwItemDescBody" class="rw-body mb-0 small"></p>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  return el;
+}
+
+function showItemDescription(item) {
+  const meta = getItemMetadata(item);
+  const el = ensureItemDescModal();
+  const titleEl = el.querySelector("#rwItemDescTitle");
+  const imgEl = el.querySelector("#rwItemDescImage");
+  const bodyEl = el.querySelector("#rwItemDescBody");
+
+  if (titleEl) titleEl.textContent = meta.title;
+
+  if (imgEl) {
+    if (meta.icon) {
+      imgEl.src = meta.icon;
+      imgEl.alt = meta.title;
+      imgEl.style.display = "";
+    } else {
+      imgEl.style.display = "none";
+    }
+  }
+
+  if (bodyEl) bodyEl.textContent = meta.description;
+
+  if (window.bootstrap && window.bootstrap.Modal) {
+    rwItemDescModalInstance =
+      rwItemDescModalInstance || new bootstrap.Modal(el);
+    rwItemDescModalInstance.show();
+  } else {
+    // Fallback if Bootstrap fails
+    alert(meta.title + "\n\n" + meta.description);
+  }
+}
+
+// Decide what "Use" does based on context
+function handleItemUse(item, context) {
+  const ctx = context || {};
+
+  // In the book, delegate to the book engine handler
+  if (ctx.origin === "book" && typeof window.rwBookHandleItemUse === "function") {
+    window.rwBookHandleItemUse(item);
+    return;
+  }
+
+  // Default: nothing to use it on
+  alert("Nothing happens.");
+}
+
+// Open the small menu for an item
+function openItemMenu(item, context) {
+  const meta = getItemMetadata(item);
+  rwItemMenuContext = { item, context };
+
+  const el = ensureItemMenuModal();
+  const titleEl = el.querySelector("#rwItemMenuTitle");
+  if (titleEl) titleEl.textContent = meta.title;
+
+  const useBtn = el.querySelector("#rwItemMenuUseBtn");
+  const descBtn = el.querySelector("#rwItemMenuDescBtn");
+
+  if (useBtn) {
+    useBtn.onclick = () => {
+      if (rwItemMenuContext) {
+        handleItemUse(rwItemMenuContext.item, rwItemMenuContext.context);
+      }
+      if (rwItemMenuModalInstance) rwItemMenuModalInstance.hide();
+    };
+  }
+
+  if (descBtn) {
+    descBtn.onclick = () => {
+      if (rwItemMenuContext) {
+        showItemDescription(rwItemMenuContext.item);
+      }
+    };
+  }
+
+  if (window.bootstrap && window.bootstrap.Modal) {
+    rwItemMenuModalInstance =
+      rwItemMenuModalInstance || new bootstrap.Modal(el);
+    rwItemMenuModalInstance.show();
+  } else {
+    // Fallback if Bootstrap isn't available for some reason
+    const choice = window.prompt(
+      meta.title +
+        "\n\nType 'use' to use it, or anything else for description:"
+    );
+    if (choice && choice.toLowerCase().startsWith("u")) {
+      handleItemUse(item, context);
+    } else {
+      showItemDescription(item);
+    }
+  }
+}
+
+// Expose globally so book-1 and other pages can call it
+window.rwOpenItemMenu = openItemMenu;
+
 // Draw the inventory inside #rwInventoryGrid
 function renderInventory(items = [], highlightItemId = null) {
   const grid = document.getElementById("rwInventoryGrid");
@@ -126,24 +306,29 @@ function renderInventory(items = [], highlightItemId = null) {
   const maxSlots = 16; // 4×4 grid
   grid.innerHTML = "";
 
-  // Ensure we always have an array
   const safeItems = Array.isArray(items) ? items : [];
 
   safeItems.forEach((item) => {
     const slot = document.createElement("div");
     slot.className = "rw-inventory-slot";
 
-    // ⭐ Highlight this slot if it matches the newly added item
     if (highlightItemId && item && item.id === highlightItemId) {
       slot.classList.add("rw-inventory-slot--highlight");
     }
 
     if (item && item.icon) {
       const img = document.createElement("img");
-      img.src = item.icon; // e.g. "raven-mote.png"
+      img.src = item.icon;
       img.alt = item.name || "Item";
       img.className = "rw-inventory-item-icon";
       slot.appendChild(img);
+
+      // 🔹 NEW: click to open Use / Description menu
+      if (window.rwOpenItemMenu) {
+        img.addEventListener("click", () =>
+          window.rwOpenItemMenu(item, { origin: "world" })
+        );
+      }
     }
 
     if (item && item.quantity && item.quantity > 1) {
@@ -1268,16 +1453,16 @@ async function maybeShowManorArrival(char, email) {
     // ⭐ Special case: first time arriving at the Manor
     if (
       key === "manor" &&
-      currentChar &&                     // we have their char data
-      currentChar.manor_intro_seen !== true && // haven't seen it yet
-      playerHasTalisman()               // they actually have the talisman
+      currentChar &&
+      currentChar.manor_intro_seen !== true &&
+      playerHasTalisman()
     ) {
-      // Show the manor arrival story modal
       maybeShowManorArrival(currentChar, window.rwEmail || "");
-      // We still render details / grant secret / save location as usual:
       renderLocationDetail(key);
       addSecretFromLocation(key);
       saveLocationKey(key);
+      // 🔁 also give Fogwalk (and other unlocks) a chance to update
+      maybeSpawnDynamicLocations();
       return;
     }
 
@@ -1285,6 +1470,9 @@ async function maybeShowManorArrival(char, email) {
     renderLocationDetail(key);
     addSecretFromLocation(key);
     saveLocationKey(key);
+
+    // 🔁 every click can re-check dynamic locations
+    maybeSpawnDynamicLocations();
   });
 }
 
@@ -1363,13 +1551,12 @@ async function maybeShowManorArrival(char, email) {
         townMap.appendChild(col);
 
         // Wire up the new button so it behaves like the others
+                // Wire up the new button so it behaves like the others
         const btn = col.querySelector("[data-location='fogwalk']");
         if (btn) {
-          btn.addEventListener("click", () => {
-            setActiveLocationButton(btn);
-            setPlayerLocation("fogwalk");
-          });
+          wireLocationButton(btn);
         }
+
       }
     }
 

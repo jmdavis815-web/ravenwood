@@ -1076,6 +1076,31 @@ body {
   text-decoration: underline;
 }
 
+/* ==== Item menu & description modals: barely transparent cards ==== */
+
+#rwItemMenuModal .modal-content.rw-card,
+#rwItemDescriptionModal .modal-content.rw-card {
+  /* Almost solid, just a hint of transparency */
+  background: radial-gradient(
+    circle at top,
+    rgba(15, 23, 42, 0.97) 0%,
+    rgba(15, 23, 42, 0.94) 45%,
+    rgba(15, 23, 42, 0.9) 100%
+  );
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.8);
+}
+
+/* Optional: slightly soften header/footer contrast inside those modals */
+#rwItemMenuModal .modal-header,
+#rwItemDescriptionModal .modal-header,
+#rwItemMenuModal .modal-body,
+#rwItemDescriptionModal .modal-body {
+  background-color: transparent; /* use the gradient */
+}
+
+
 
 
 
