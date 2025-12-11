@@ -2712,25 +2712,60 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ============================
-// Ravenwood Ink Loading Screen
+// Ravenwood Ink Loading Screen + Whisper
 // ============================
+
+// 🔊 Helper to play the whisper sound, handling autoplay blocking
+function playWhisperSound() {
+  const audio = document.getElementById("rwWhisperSound");
+  if (!audio) return;
+
+  try {
+    audio.currentTime = 0;
+    const playPromise = audio.play();
+
+    // Some browsers return a promise we can catch
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch((err) => {
+        // If autoplay is blocked, wait for first user click, then replay
+        if (err && err.name === "NotAllowedError") {
+          const unlock = () => {
+            document.removeEventListener("click", unlock);
+            // Try again now that we have user interaction
+            playWhisperSound();
+          };
+          document.addEventListener("click", unlock, { once: true });
+        } else {
+          console.warn("Whisper play error:", err);
+        }
+      });
+    }
+  } catch (err) {
+    console.warn("Whisper play threw:", err);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const screen = document.getElementById("rwLoadingScreen");
   if (!screen) return;
 
   // When the entire page has finished loading:
   window.addEventListener("load", () => {
-    // Keep the loading screen up for 1 second AFTER load
+    // ⏳ Keep the loading screen for about 1 second after load
     setTimeout(() => {
-      // Begin fade-out
+      // Start the whisper as it begins to fade
+      playWhisperSound();
+
+      // Fade the ink-loading screen away
       screen.style.opacity = "0";
 
-      // Remove the element after fade completes
       setTimeout(() => {
         screen.remove();
-      }, 600); // fade duration
-    }, 1000); // <<— 1 second extra wait after page load
+      }, 600); // fade-out duration
+    }, 1000); // 1 second after page load
   });
 });
+
+
 
 
