@@ -2628,3 +2628,24 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "login") initLoginPage();
   if (page === "world") initWorldPage();
 });
+
+// ============================
+// Ravenwood Ink Loading Screen
+// ============================
+document.addEventListener("DOMContentLoaded", () => {
+  const screen = document.getElementById("rwLoadingScreen");
+  if (!screen) return;
+
+  // When the entire page has finished loading:
+  window.addEventListener("load", () => {
+    // Fade the ink-loading screen away
+    setTimeout(() => {
+      screen.style.opacity = "0";
+
+      setTimeout(() => {
+        screen.remove();
+      }, 600);
+    }, 300);
+  });
+});
+

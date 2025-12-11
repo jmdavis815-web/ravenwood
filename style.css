@@ -1,3 +1,66 @@
+/* ============================
+   Ravenwood Ink Loading Effect (FAST + FIXED)
+   ============================ */
+#rwLoadingScreen {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, #0f172a 0%, #020617 75%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999999;
+  transition: opacity 0.4s ease;
+}
+
+#rwInkBlob {
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle,
+    rgba(20, 31, 47, 1) 0%,
+    rgba(15, 23, 42, 0.95) 35%,
+    rgba(2, 6, 23, 0.75) 60%,
+    rgba(2, 6, 23, 0) 90%
+  );
+  border-radius: 50%;
+  filter: blur(6px);
+  animation: rwInkSpread 1s infinite ease-out;
+  opacity: 1;
+}
+
+@keyframes rwInkSpread {
+  0% {
+    transform: scale(0.3);
+    opacity: 1;
+    filter: blur(4px);
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.8;
+    filter: blur(8px);
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0.2;
+    filter: blur(12px);
+  }
+}
+
+#rwLoadingText {
+  margin-top: 20px;
+  color: #e5e7eb;
+  font-family: "Cormorant Garamond", serif;
+  letter-spacing: 0.15em;
+  font-size: 1rem;
+  opacity: 0.85;
+  animation: rwPulseText 1.2s infinite ease-in-out;
+}
+
+@keyframes rwPulseText {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 /* Background & global look */
 body {
   min-height: 100vh;
