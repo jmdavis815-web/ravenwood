@@ -110,6 +110,95 @@ async function addCoins(amount) {
 // Make coin helpers accessible if needed elsewhere
 window.rwAddCoins = addCoins;
 
+// ---------- HP & MANA HELPERS ----------
+
+const RW_MAX_HP = 100;
+const RW_MAX_MANA = 100;
+
+function updateHpManaDisplays() {
+  const hpBar = document.getElementById("rwHpBar");
+  const manaBar = document.getElementById("rwManaBar");
+  const hpValueEl = document.getElementById("rwHpValue");
+  const manaValueEl = document.getElementById("rwManaValue");
+
+  const hp = Math.max(0, Math.min(RW_MAX_HP, window.rwHP ?? RW_MAX_HP));
+  const mana = Math.max(0, Math.min(RW_MAX_MANA, window.rwMana ?? RW_MAX_MANA));
+
+  const hpPct = (hp / RW_MAX_HP) * 100;
+  const manaPct = (mana / RW_MAX_MANA) * 100;
+
+  if (hpBar) hpBar.style.width = `${hpPct}%`;
+  if (manaBar) manaBar.style.width = `${manaPct}%`;
+
+  if (hpValueEl) hpValueEl.textContent = hp;
+  if (manaValueEl) manaValueEl.textContent = mana;
+}
+
+async function syncHpToSupabase() {
+  const email = window.rwEmail;
+  if (!email) return;
+  try {
+    const { error } = await supabaseClient
+      .from("data")
+      .update({ hp: window.rwHP ?? RW_MAX_HP })
+      .eq("email", email);
+
+    if (error) {
+      console.error("Failed to sync HP:", error);
+    }
+  } catch (err) {
+    console.error("Unexpected HP sync error:", err);
+  }
+}
+
+async function syncManaToSupabase() {
+  const email = window.rwEmail;
+  if (!email) return;
+  try {
+    const { error } = await supabaseClient
+      .from("data")
+      .update({ mana: window.rwMana ?? RW_MAX_MANA })
+      .eq("email", email);
+
+    if (error) {
+      console.error("Failed to sync Mana:", error);
+    }
+  } catch (err) {
+    console.error("Unexpected Mana sync error:", err);
+  }
+}
+
+async function adjustHP(delta) {
+  const amount = Number(delta) || 0;
+  const current = typeof window.rwHP === "number" ? window.rwHP : RW_MAX_HP;
+
+  let next = current + amount;
+  if (next < 0) next = 0;
+  if (next > RW_MAX_HP) next = RW_MAX_HP;
+
+  window.rwHP = next;
+  updateHpManaDisplays();
+
+  // Save the new HP
+  await syncHpToSupabase();
+
+  // If HP hits 0, trigger the “wake in the square” flow
+  if (next === 0 && typeof window.rwHandleHpZero === "function") {
+    window.rwHandleHpZero();
+  }
+}
+
+async function adjustMana(delta) {
+  const amount = Number(delta) || 0;
+  window.rwMana = Math.max(0, Math.min(RW_MAX_MANA, (window.rwMana ?? RW_MAX_MANA) + amount));
+  updateHpManaDisplays();
+  await syncManaToSupabase();
+}
+
+// expose helpers for quests, battles, etc.
+window.rwAdjustHP = adjustHP;
+window.rwAdjustMana = adjustMana;
+
 // ---------- JOURNAL HELPERS ----------
 
 // in-memory journal entries for this session
@@ -313,6 +402,261 @@ function saveInventory(items) {
   }
 }
 
+// ----------------------------
+// Ravenwood Shop Inventory (live 4×4 grid)
+// ----------------------------
+
+// 16 slots (4x4), null = empty
+let rwShopItems = new Array(16).fill(null);
+// current interaction mode for the shop: "buy" or "sell"
+window.rwShopMode = "buy";
+let rwShopLoaded = false;
+
+// Regenerating shop stock (per player/session)
+const SHOP_STOCK_CONFIG = {
+  health_potion: {
+    maxVisible: 3,               // show up to 3 potions at a time
+    restockDelayMs: 3 * 60 * 1000, // 3 minutes; tweak as you like
+  },
+};
+
+let rwHealthPotionRestockTimer = null;
+
+// Ensure the shop has up to maxVisible Minor Health Potions in empty slots
+function seedHealthPotionSlots() {
+  const cfg = SHOP_STOCK_CONFIG.health_potion;
+  if (!cfg) return;
+
+  let existing = rwShopItems.filter(
+    (it) => it && it.id === "health_potion"
+  ).length;
+
+  for (let i = 0; i < rwShopItems.length && existing < cfg.maxVisible; i++) {
+    if (!rwShopItems[i]) {
+      rwShopItems[i] = {
+        id: "health_potion",
+        name: "Minor Health Potion",
+        icon: "item-health-potion.png",
+        price: 8,      // <- set your buy price
+        sellPrice: 4,  // <- set your sell price
+        questItem: false,
+      };
+      existing++;
+    }
+  }
+}
+
+// When all potions are bought, schedule a restock after a delay
+function scheduleHealthPotionRestock() {
+  const cfg = SHOP_STOCK_CONFIG.health_potion;
+  if (!cfg) return;
+
+  // If any potions are still visible, do nothing
+  const visible = rwShopItems.filter(
+    (it) => it && it.id === "health_potion"
+  ).length;
+  if (visible > 0) return;
+
+  // Already waiting to restock?
+  if (rwHealthPotionRestockTimer) return;
+
+  rwHealthPotionRestockTimer = setTimeout(() => {
+    rwHealthPotionRestockTimer = null;
+    seedHealthPotionSlots();
+    renderShopGrid();
+  }, cfg.restockDelayMs);
+}
+
+// current interaction mode for the shop: "buy" or "sell"
+window.rwShopMode = "buy";
+
+// Swap between the front view and the shelves view with grid
+function setShopVisual(view) {
+  const frontImg = document.getElementById("rwShopImageFront");
+  const shelvesImg = document.getElementById("rwShopImageShelves");
+  const grid = document.getElementById("rwShopGrid");
+
+  if (!frontImg || !shelvesImg || !grid) return;
+
+  if (view === "shelves") {
+    frontImg.classList.add("d-none");
+    shelvesImg.classList.remove("d-none");
+    grid.classList.remove("d-none");
+  } else {
+    // default / front view
+    frontImg.classList.remove("d-none");
+    shelvesImg.classList.add("d-none");
+    grid.classList.add("d-none");
+  }
+}
+
+// Pull items from Supabase (uses item_* columns)
+// Pull items from Supabase (uses item_* columns), but always
+// fall back to local regenerating potions even if Supabase fails.
+async function loadShopFromSupabase() {
+  // Start with a clean 16-slot array every time
+  rwShopItems = new Array(16).fill(null);
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("shop_items")
+      .select("*")
+      .eq("enabled", true)
+      .order("slot_index", { ascending: true });
+
+    if (error) {
+      console.error("Failed to load shop items:", error);
+      // DON'T return here — we still want to seed potions below
+    } else if (Array.isArray(data)) {
+      data.forEach((row) => {
+        // If you don't have this table yet, this is harmless.
+        // When you DO add it, use whatever columns you like here.
+        const idx = typeof row.slot_index === "number" ? row.slot_index : -1;
+        if (idx >= 0 && idx < rwShopItems.length) {
+          rwShopItems[idx] = {
+            id: row.item_id || row.id || `item_${idx}`,
+            name: row.name || "Mysterious Item",
+            icon: row.icon || "",
+            price: row.price ?? 10,
+            sellPrice: row.sell_price ?? 5,
+            questItem: !!row.quest_item,
+          };
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Unexpected shop load error:", err);
+    // Again, we don't return — we still seed potions
+  }
+
+  // ✅ ALWAYS make sure the regenerating potions exist
+  seedHealthPotionSlots();
+
+  rwShopLoaded = true;
+}
+
+// Figure out what an item can be sold for.
+// - Quest items (questItem: true) are NEVER sellable.
+// - Prefer the shop's sellPrice field.
+// - Fallback: half of an item.price stored on the inventory item itself.
+function getItemSellPrice(item) {
+  if (!item) return null;
+
+  const meta = getItemMetadata(item);
+  if (meta && meta.questItem) {
+    return null; // cannot sell quest items
+  }
+
+  // Try to find a matching shop definition
+  const shopDef = rwShopItems.find((slot) => slot && slot.id === item.id);
+  if (shopDef && typeof shopDef.sellPrice === "number") {
+    return shopDef.sellPrice;
+  }
+
+  // Fallback: if the item itself knows its price
+  if (typeof item.price === "number") {
+    return Math.floor(item.price / 2);
+  }
+
+  return null;
+}
+
+// Draw the 4×4 shop grid (same idea as backpack)
+function renderShopGrid(items = rwShopItems) {
+  const grid = document.getElementById("rwShopGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  const maxSlots = 16;
+  for (let i = 0; i < maxSlots; i++) {
+    const slot = document.createElement("div");
+    slot.className = "rw-shop-slot";
+
+    const item = items[i];
+
+    if (item && item.icon) {
+      const img = document.createElement("img");
+      img.src = item.icon;
+      img.alt = item.name || "Item";
+
+      img.addEventListener("click", () => {
+        showShopItemOptions(item);
+      });
+
+      slot.appendChild(img);
+    }
+
+    grid.appendChild(slot);
+  }
+}
+
+function showShopItemOptions(item) {
+  const dialog = document.getElementById("rwShopDialog");
+  if (dialog) {
+    dialog.textContent = `The shopkeeper whispers: “${item.name}… Yours for ${item.price} coins.”`;
+  }
+
+  const buyBtn = document.getElementById("rwShopBuyBtn");
+  if (buyBtn) {
+    buyBtn.onclick = async () => {
+      await attemptShopPurchase(item);
+    };
+  }
+}
+
+async function attemptShopPurchase(item) {
+  const price = Number(item.price) || 0;
+
+  if ((window.rwCoins || 0) < price) {
+    const dialog = document.getElementById("rwShopDialog");
+    if (dialog) {
+      dialog.textContent =
+        "The shopkeeper chuckles softly… “You can’t afford that.”";
+    }
+    return;
+  }
+
+  // Deduct coins (already syncs to Supabase)
+  await addCoins(-price);
+
+  // Add item to inventory (this uses your existing inventory + syncInventoryToSupabase)
+    // Add item to inventory (this uses your existing inventory + syncInventoryToSupabase)
+  const inv = window.rwInventory || [];
+  inv.push({
+    id: item.id,
+    name: item.name,
+    icon: item.icon,
+    price: item.price, // NEW: remember what you paid
+  });
+
+  window.rwInventory = inv;
+
+  await syncInventoryToSupabase(inv);
+
+    const dialog = document.getElementById("rwShopDialog");
+  if (dialog) {
+    dialog.textContent = `“A fine choice,” the shopkeeper murmurs.`;
+  }
+
+  // If this was a regenerating-stock potion, remove one copy from the shelves
+  if (item.id === "health_potion") {
+    // Find the exact slot that holds this object and clear it
+    const idx = rwShopItems.findIndex((slot) => slot === item);
+    if (idx !== -1) {
+      rwShopItems[idx] = null;
+    }
+
+    // If all potion slots are empty, start a restock timer
+    scheduleHealthPotionRestock();
+
+    // Redraw shelves so the missing potion disappears
+    renderShopGrid();
+  }
+
+  renderInventory(inv);
+}
+
 // ---------- ITEM METADATA + CLICK MENU ----------
 
 const ITEM_METADATA = {
@@ -320,7 +664,18 @@ const ITEM_METADATA = {
     title: "Old Talisman",
     description:
       "A bronze talisman etched with a Triquetra. It remembers old wards and answers doors that have forgotten how to open.",
+    questItem: true, // can't be sold
   },
+
+  // 🧪 Minor Health Potion (+20 HP)
+  health_potion: {
+    title: "Minor Health Potion",
+    description:
+      "A small glass vial of ember-red liquid. Drinking it restores 20 health and leaves a faint warmth in your chest.",
+    icon: "item-health-potion.png", // <- put your potion icon path here
+    questItem: false,
+  },
+
   // Add more items here as you introduce them.
 };
 
@@ -334,6 +689,7 @@ function getItemMetadata(item) {
       base.description ||
       "You’re not sure what this does yet. Maybe someone in Ravenwood knows.",
     icon: item.icon || base.icon || "",
+    questItem: base.questItem === true,
   };
 }
 
@@ -431,12 +787,31 @@ function showItemDescription(item) {
 }
 
 // Decide what "Use" does based on context
-function handleItemUse(item, context) {
+async function handleItemUse(item, context) {
   const ctx = context || {};
 
   // In the book, delegate to the book engine handler
-  if (ctx.origin === "book" && typeof window.rwBookHandleItemUse === "function") {
+  if (
+    ctx.origin === "book" &&
+    typeof window.rwBookHandleItemUse === "function"
+  ) {
     window.rwBookHandleItemUse(item);
+    return;
+  }
+
+  // 🧪 Minor Health Potion (+20 HP)
+  if (item.id === "health_potion") {
+    // Heal 20 HP, capped at max
+    if (typeof window.rwAdjustHP === "function") {
+      await window.rwAdjustHP(+20);
+    }
+
+    // Remove one potion from inventory
+    if (typeof window.rwRemoveOneFromInventory === "function") {
+      await window.rwRemoveOneFromInventory(item.id);
+    }
+
+    alert("You drink the potion. Warmth blooms in your chest. (+20 HP)");
     return;
   }
 
@@ -522,11 +897,21 @@ function renderInventory(items = [], highlightItemId = null) {
       slot.appendChild(img);
 
       // 🔹 NEW: click to open Use / Description menu
-      if (window.rwOpenItemMenu) {
-        img.addEventListener("click", () =>
-          window.rwOpenItemMenu(item, { origin: "world" })
-        );
-      }
+            img.addEventListener("click", () => {
+        // If the shop is in sell mode AND a sell handler exists, sell instead of "use"
+        if (
+          window.rwShopMode === "sell" &&
+          typeof window.rwShopSellHandler === "function"
+        ) {
+          window.rwShopSellHandler(item);
+          return;
+        }
+
+        // Normal behavior: open the item menu
+        if (window.rwOpenItemMenu) {
+          window.rwOpenItemMenu(item, { origin: "world" });
+        }
+      });
     }
 
     if (item && item.quantity && item.quantity > 1) {
@@ -714,6 +1099,8 @@ function initCreatePage() {
         avatar,
         created_at: new Date().toISOString(),
         coins: 0,
+        hp: 100,          // 👈 NEW
+        mana: 100,        // 👈 NEW
         secrets: [],      // start empty
         inventory: [],
         journal_entries: [],    // start empty
@@ -970,7 +1357,8 @@ async function initWorldPage() {
 
         // ⭐ Start fallback profiles with 0 coins as well
         coins: 0,
-
+        hp: 100,          // 👈 NEW
+        mana: 100,        // 👈 NEW
         secrets: [],
         inventory: [],
         journal_entries: [],
@@ -1012,6 +1400,15 @@ window.rwCoins =
     ? char.coins
     : 0;
 updateCoinDisplay();
+
+// HP & Mana from Supabase (default to 100 if missing)
+window.rwHP =
+  typeof char.hp === "number" && !Number.isNaN(char.hp) ? char.hp : 100;
+window.rwMana =
+  typeof char.mana === "number" && !Number.isNaN(char.mana) ? char.mana : 100;
+
+// draw meters
+updateHpManaDisplays();
 
   // 🔹 If Book I has been started, show a "Continue" button
   const bookContinueBtn = document.getElementById("rwBook1ContinueBtn");
@@ -1517,9 +1914,13 @@ function showFirstInventoryModalIfNeeded() {
   }
 
   // Local inventory state for this page, seeded from Supabase
+    // Local inventory state for this page, seeded from Supabase
   let inventory = Array.isArray(window.rwInitialInventory)
     ? window.rwInitialInventory
     : [];
+
+  // 🔁 Keep a global mirror so the shop / other systems see the same array
+  window.rwInventory = inventory;
 
   // Make sure the grid is populated on load
   renderInventory(inventory);
@@ -1675,6 +2076,33 @@ function showFirstInventoryModalIfNeeded() {
 
   window.addItemToInventory = function (newItem) {
   if (!newItem || !newItem.id) return;
+
+    // Remove exactly one of an item from the inventory
+    // Remove exactly one of an item from the inventory
+  async function removeOneFromInventory(itemId) {
+    if (!itemId) return;
+
+    const inv = inventory; // same array as window.rwInventory
+
+    const idx = inv.findIndex((i) => i && i.id === itemId);
+    if (idx === -1) return;
+
+    const entry = inv[idx];
+    const qty = entry.quantity || 1;
+
+    if (qty > 1) {
+      entry.quantity = qty - 1;
+    } else {
+      inv.splice(idx, 1);
+    }
+
+    window.rwInventory = inv;
+    renderInventory(inv);
+    await syncInventoryToSupabase(inv);
+  }
+
+  // expose so item-use logic can call it
+  window.rwRemoveOneFromInventory = removeOneFromInventory;
 
   // Work from the in-memory copy (already seeded from Supabase)
   const existing = inventory.find((i) => i.id === newItem.id);
@@ -1862,6 +2290,111 @@ function showFirstInventoryModalIfNeeded() {
       return;
     }
 
+    // ⭐ Special case: Market → open the shop modal instead of just text
+    // ⭐ Special case: Market → open the live shop
+    // ⭐ Special case: Market → open the live shop
+        // ⭐ Special case: Market → open the live shop
+    if (key === "market") {
+      (async () => {
+        // Load items once from Supabase
+        if (!rwShopLoaded) {
+          await loadShopFromSupabase();
+        }
+
+        renderShopGrid();
+
+        const modalEl   = document.getElementById("rwShopModal");
+        const dialogEl  = document.getElementById("rwShopDialog");
+        const buyBtn    = document.getElementById("rwShopBuyBtn");
+        const sellBtn   = document.getElementById("rwShopSellBtn");
+
+        // Default visual: front view, no grid
+        setShopVisual("front");
+        window.rwShopMode = "buy";
+
+        if (dialogEl) {
+          dialogEl.textContent =
+            'The shopkeeper watches you with hollow eyes. “Looking to trade… or simply lost?”';
+        }
+
+        // Clicking "Browse Wares" → shelves image + grid
+        if (buyBtn && dialogEl) {
+          buyBtn.onclick = () => {
+            window.rwShopMode = "buy";
+            setShopVisual("shelves");
+            dialogEl.textContent =
+              'He turns, revealing the shelves behind him. “Take your time.”';
+          };
+        }
+
+        // Clicking "Sell Items" → front view, open inventory, enable sell mode
+        if (sellBtn && dialogEl) {
+          sellBtn.onclick = () => {
+            window.rwShopMode = "sell";
+            setShopVisual("front");
+            dialogEl.textContent =
+              'His gaze drops to your pack. “Show me what you’re ready to part with.”';
+
+            // Open your inventory so you can click items to sell
+            if (inventoryModal) {
+              inventoryModal.show();
+            }
+          };
+        }
+
+        // Define how selling works while the shop is open
+        window.rwShopSellHandler = async function (item) {
+          const meta  = getItemMetadata(item);
+          const price = getItemSellPrice(item);
+
+          if (price == null || price <= 0) {
+            if (dialogEl) {
+              dialogEl.textContent =
+                `The shopkeeper studies the ${meta.title.toLowerCase()}, then shakes his head. ` +
+                `"Not for sale. Some things belong to the story, not the market."`;
+            }
+            return;
+          }
+
+          // Remove one instance from inventory
+          const idx = inventory.findIndex((i) => i && i.id === item.id);
+          if (idx === -1) return;
+
+          const entry = inventory[idx];
+          const qty   = entry.quantity || 1;
+
+          if (qty > 1) {
+            entry.quantity = qty - 1;
+          } else {
+            inventory.splice(idx, 1);
+          }
+
+          window.rwInventory = inventory;
+          await syncInventoryToSupabase(inventory);
+          await addCoins(price);
+          renderInventory(inventory);
+
+          if (dialogEl) {
+            dialogEl.textContent =
+              `He weighs the ${meta.title.toLowerCase()} in his hand and nods. ` +
+              `"${price} coins. Fair enough."`;
+          }
+        };
+
+        if (modalEl && window.bootstrap && bootstrap.Modal) {
+          const modal = new bootstrap.Modal(modalEl);
+          modal.show();
+        }
+
+        // track visit as a secret / progress
+        addSecretFromLocation(key);
+        saveLocationKey(key);
+        maybeSpawnDynamicLocations();
+      })();
+
+      return;
+    }
+
     // Normal behavior for all other locations (and later manor visits)
     renderLocationDetail(key);
     addSecretFromLocation(key);
@@ -1871,6 +2404,50 @@ function showFirstInventoryModalIfNeeded() {
     maybeSpawnDynamicLocations();
   });
 }
+
+  // ---------- When HP Drops to 0: Wake in the Square ----------
+  window.rwHandleHpZero = function () {
+    try {
+      // Always bring them back to Town Square
+      const key = "square";
+
+      // Save square as their current location
+      saveLocationKey(key);
+
+      // Re-render the square description if it's a valid location
+      if (locations[key]) {
+        renderLocationDetail(key);
+      }
+
+      // Optionally restore some HP so they don't instantly "die" again
+      window.rwHP = Math.floor(RW_MAX_HP / 2); // wake at half health
+      updateHpManaDisplays();
+      syncHpToSupabase();
+
+      const modalEl = document.getElementById("rwHpZeroModal");
+      if (!modalEl || !window.bootstrap || !bootstrap.Modal) return;
+
+      const deathModal = new bootstrap.Modal(modalEl, {
+        backdrop: "static",
+        keyboard: false,
+      });
+
+      deathModal.show();
+
+      const btn = document.getElementById("rwHpZeroContinueBtn");
+      if (btn) {
+        btn.addEventListener(
+          "click",
+          () => {
+            deathModal.hide();
+          },
+          { once: true }
+        );
+      }
+    } catch (err) {
+      console.error("Error handling HP zero:", err);
+    }
+  };
 
   // SPAWN / UPDATE UNLOCKABLE LOCATIONS
   function maybeSpawnDynamicLocations() {

@@ -118,6 +118,25 @@
               </p>
             </div>
           </div>
+          <!-- HP & Mana Meters -->
+<div class="mt-3 p-2">
+  <div class="rw-meter-label">Hit Points</div>
+  <div class="rw-meter">
+    <div id="rwHpBar" class="rw-meter-fill rw-meter-fill--hp"></div>
+  </div>
+  <div class="rw-meter-values">
+    <span id="rwHpValue">100</span> / 100
+  </div>
+
+  <div class="rw-meter-label mt-2">Mana</div>
+  <div class="rw-meter">
+    <div id="rwManaBar" class="rw-meter-fill rw-meter-fill--mana"></div>
+  </div>
+  <div class="rw-meter-values">
+    <span id="rwManaValue">100</span> / 100
+  </div>
+</div>
+
         </aside>
 
         <p class="rw-panel-body mb-2">
@@ -141,364 +160,6 @@
           >
           <img class="" src="rw-backpack.png" alt="backpack" width="70px">
           </button>
-        </div>
-
-        <!-- Inventory Modal -->
-        <div class="modal fade" id="rwInventoryModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content rw-panel rw-panel-inventory">
-              <div class="modal-header border-0">
-                <h5 class="modal-title rw-panel-subtitle">Inventory</h5>
-                <button
-                  type="button"
-                  class="btn-close btn-close-white"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                ></button>
-              </div>
-
-              <div class="modal-body pt-0">
-                <p class="rw-panel-body small mb-3">
-                  Items you’ve picked up in Ravenwood will appear here.
-                </p>
-
-                <!-- Backpack + grid -->
-                <div class="rw-inventory-wrapper">
-                  <div class="rw-inventory-grid" id="rwInventoryGrid">
-                    <!-- JS fills slots here; NO <img> here in HTML -->
-                  </div>
-                  
-                </div>
-              </div>
-
-                <!-- Coins + Journal row under the backpack -->
-<div class="rw-inventory-footer mt-3 d-flex justify-content-between align-items-center">
-  <div id="rwCoinsDisplay" class="rw-coins-display d-flex align-items-center gap-2">
-    <img src="rw-coins.png" class="rw-coins-icon" alt="Ravenwood Coins" />
-    <span id="rwCoinsAmount" class="rw-coins-amount">0</span>
-  </div>
-
-  <button id="rwJournalBtn" type="button" class="rw-journal-btn d-flex align-items-center gap-2">
-    <img src="rw-journal.png" class="rw-journal-icon" alt="Ravenwood Journal" />
-    <span class="rw-journal-label"></span>
-  </button>
-</div>
-
-
-                <button
-                  type="button"
-                  class="btn btn-outline-light btn-sm"
-                  data-bs-dismiss="modal"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-
-        <!-- First-Arrival Intro Modal -->
-        <div class="modal fade rw-story-modal" id="rwIntroModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content rw-card-landing rw-intro-modal">
-              <div class="modal-body p-0">
-
-                <div id="rwIntroCarousel" class="carousel slide" data-bs-ride="false">
-                  <div class="carousel-inner">
-
-                    <!-- Slide 1 -->
-                    <div class="carousel-item active">
-                      <div class="row g-0">
-                        <div class="col-md-5">
-                          <div class="rw-intro-art-frame">
-                            <!-- Drop-in art #1 -->
-                            <!-- Replace src with your own image when ready -->
-                            <div class="rw-intro-art-frame">
-                              <!-- Drop-in art #2 -->
-                              <img
-                                src="intro1.png"
-                                alt="Ravenwood Town Square"
-                                class="rw-intro-art"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
-                          <div>
-                            <p class="rw-tagline text-uppercase mb-1">Somewhere between worlds</p>
-                            <h2 class="rw-title fs-4 mb-2">You Wake in Ravenwood</h2>
-                            <p class="rw-body mb-3">
-                              You come back to yourself standing in a lantern-lit square,
-                              mist skimming low over uneven cobblestones. A cracked fountain
-                              murmurs a tune you almost recognize. Your pulse is loud.
-                              Your memories are not.
-                            </p>
-                            <p class="rw-intro-dialog mb-0">
-                              “Easy now,” the town seems to murmur. “Names return before memories.”
-                            </p>
-                          </div>
-                          <div class="d-flex justify-content-end mt-3">
-                            <button
-                              class="btn rw-btn-main"
-                              type="button"
-                              data-bs-target="#rwIntroCarousel"
-                              data-bs-slide="next"
-                            >
-                              Next
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Slide 2 -->
-                    <div class="carousel-item">
-                      <div class="row g-0">
-                        <div class="col-md-5">
-                          <div class="rw-intro-art-frame">
-                            <!-- Drop-in art #2 -->
-                            <img
-                              src="intro-2.png"
-                              alt="Ravenwood Manor on the hill"
-                              class="rw-intro-art"
-                            />
-                          </div>
-                        </div>
-                        <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
-                          <div>
-                            <p class="rw-tagline text-uppercase mb-1">The Manor on the Hill</p>
-                            <h2 class="rw-title fs-4 mb-2">The House That Remembers</h2>
-                            <p class="rw-body mb-3">
-                              High above the square, the manor’s windows burn like patient eyes.
-                              The wards hum faintly under your skin, as if recognizing something
-                              in your blood long before you do.
-                            </p>
-                            <p class="rw-intro-dialog mb-0">
-                              Somewhere beyond the fog, a bell tolls the wrong hour — and you know
-                              without knowing why that the sound is for you.
-                            </p>
-                          </div>
-                          <div class="d-flex justify-content-between mt-3">
-                            <button
-                              class="btn btn-sm btn-outline-light"
-                              type="button"
-                              data-bs-target="#rwIntroCarousel"
-                              data-bs-slide="prev"
-                            >
-                              ← Back
-                            </button>
-                            <button
-                              class="btn rw-btn-main"
-                              type="button"
-                              data-bs-target="#rwIntroCarousel"
-                              data-bs-slide="next"
-                            >
-                              Next
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Slide 3 -->
-                    <div class="carousel-item">
-                      <div class="row g-0">
-                        <div class="col-md-5">
-                          <div class="rw-intro-art-frame">
-                            <!-- Drop-in art #3 -->
-                            <img
-                              src="intro-3.png"
-                              alt="Whispers and sigils in the mist"
-                              class="rw-intro-art"
-                            />
-                          </div>
-                        </div>
-                        <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
-                          <div>
-                            <p class="rw-tagline text-uppercase mb-1">Circle Threads</p>
-                            <h2 class="rw-title fs-4 mb-2">A Story Already in Motion</h2>
-                            <p class="rw-body mb-3">
-                              Fragments hover at the edge of thought: a name someone used to call you,
-                              a silver-marked promise under a hidden moon, the brush of a familiar’s
-                              fur against your hand. The town is waiting to see which way you step.
-                            </p>
-                            <p class="rw-intro-dialog mb-0">
-                              Whatever tore you out of your old life, the path forward starts here —
-                              in Ravenwood, where the Circle is just beginning to remember you.
-                            </p>
-                          </div>
-                          <div class="d-flex justify-content-between mt-3">
-                            <button
-                              class="btn btn-sm btn-outline-light"
-                              type="button"
-                              data-bs-target="#rwIntroCarousel"
-                              data-bs-slide="prev"
-                            >
-                              ← Back
-                            </button>
-                            <button
-                              class="btn rw-btn-main"
-                              type="button"
-                              id="rwIntroBeginBtn"
-                            >
-                              Begin
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  <!-- Optional little dots -->
-                  <div class="carousel-indicators mb-0">
-                    <button type="button" data-bs-target="#rwIntroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                    <button type="button" data-bs-target="#rwIntroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                    <button type="button" data-bs-target="#rwIntroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-                  </div>
-                </div>
-
-              </div>
-
-              <div class="rw-intro-footer px-4 py-3">
-                <p class="mb-0 text-light-50">
-                  You don’t remember how you got here. Ravenwood does.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Ravenwood Journal Modal -->
-        <div class="modal fade rw-journal-modal" id="rwJournalModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content rw-card">
-      <div class="modal-header py-2">
-        <div class="d-flex flex-column">
-          <span class="small text-uppercase text-muted">Journal Entry</span>
-          <strong id="rwJournalDate"> </strong>
-        </div>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p id="rwJournalBody" class="rw-body mb-0"></p>
-      </div>
-      <div class="modal-footer justify-content-between">
-        <button type="button" class="btn btn-sm btn-outline-light" id="rwJournalPrev">
-          ‹ Previous
-        </button>
-        <span id="rwJournalPageIndicator" class="small text-muted">Page 0 / 0</span>
-        <button type="button" class="btn btn-sm btn-outline-light" id="rwJournalNext">
-          Next ›
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-        <!-- First-Time Inventory Journal Modal -->
-<div class="modal fade" id="rwInventoryIntroModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content rw-card-landing">
-      <div class="modal-body p-4">
-        <div class="text-center mb-3">
-          <img src="rw-journal.png" 
-               alt="Ravenwood Journal" 
-               style="max-width: 240px; width: 100%; object-fit: contain;">
-        </div>
-
-        <h2 class="rw-title fs-4 mb-3 text-center">A Journal You Don't Remember Carrying</h2>
-
-        <p class="rw-body">
-          As your fingers brush the worn leather, the raven stamped into the cover seems
-          to <em>shift</em>, its wings catching the lantern-light like ink waking up.
-        </p>
-
-        <p class="rw-body">
-          A thin silver lock sits at the edge. Before you can decide whether to open it,
-          the lock gives a soft <em>click</em> and falls away on its own — as if relieved.
-        </p>
-
-        <p class="rw-body">
-          The pages breathe apart. Blank… yet not. Faint lines ripple across the parchment,
-          as though words are trying to surface from memory you have not yet lived.
-        </p>
-
-        <p class="rw-body">
-          This journal feels familiar — frighteningly so.  
-          As if it has been waiting for you longer than Ravenwood has.
-        </p>
-
-        <div class="text-end mt-4">
-          <button id="rwInventoryIntroContinueBtn" class="btn rw-btn-main" data-bs-dismiss="modal">
-            Continue
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-        <!-- ===========================
-             FIRST-TIME MANOR ARRIVAL MODAL
-             =========================== -->
-        <div class="modal fade rw-story-modal" id="rwManorArrivalModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content rw-card-landing rw-intro-modal">
-
-              <div class="modal-body p-0">
-                <div class="row g-0">
-                  <div class="col-md-5">
-                    <div class="rw-intro-art-frame">
-                      <!-- Replace with your art -->
-                      <img src="manor-arrival.png" class="rw-intro-art" alt="Approaching Ravenwood Manor">
-                    </div>
-                  </div>
-
-                  <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
-
-                    <div>
-                      <p class="rw-tagline text-uppercase mb-1">The Manor Stirs</p>
-                      <h2 class="rw-title fs-4 mb-2">A Door That Opens for You</h2>
-
-                      <p class="rw-body mb-3">
-                        Fog curls around your boots as you step onto the ancient path.  
-                        Lanterns flare to life one by one, as if recognizing the talisman  
-                        resting in your pocket. The Manor hums—alive, aware—waiting.
-                      </p>
-
-                      <p class="rw-intro-dialog mb-3">
-                        A figure stands at the great door, silver hair catching the moonlight.
-                      </p>
-
-                      <p class="rw-body mb-3">
-                        <strong>“You brought it back,”</strong> the woman says, voice low with relief.  
-                        <em>“The Talisman chose you. That means the Circle is waking—and we cannot face what’s coming alone.”</em>
-                      </p>
-
-                      <p class="rw-body mb-0">
-                        She steps aside, gesturing you inward.
-                        <em>“Come. There is something you must see—before the others return.”</em>
-                      </p>
-                    </div>
-
-                    <div class="d-flex justify-content-end mt-3">
-                      <button id="rwManorArrivalBeginBtn" class="btn rw-btn-main">
-                        Enter the Manor
-                      </button>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
-              <div class="rw-intro-footer px-4 py-3">
-                <p class="mb-0 text-light-50">
-                  The talisman hums softly, warming against your skin.
-                </p>
-              </div>
-
-            </div>
-          </div>
         </div>
 
         <!-- RAVENWOOD WORLD MAP PANEL -->
@@ -830,6 +491,366 @@
   <!-- Your app logic -->
   <script src="app.js" defer></script>
 
+  <!-- Inventory Modal -->
+        <div class="modal fade" id="rwInventoryModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rw-panel rw-panel-inventory">
+              <div class="modal-header border-0">
+                <h5 class="modal-title rw-panel-subtitle">Inventory</h5>
+                <button
+                  type="button"
+                  class="btn-close btn-close-white"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+
+              <div class="modal-body pt-0">
+                <p class="rw-panel-body small mb-3">
+                  Items you’ve picked up in Ravenwood will appear here.
+                </p>
+
+                <!-- Backpack + grid -->
+                <div class="rw-inventory-wrapper">
+                  <div class="rw-inventory-grid" id="rwInventoryGrid">
+                    <!-- JS fills slots here; NO <img> here in HTML -->
+                  </div>
+                  
+                </div>
+              </div>
+
+                <!-- Coins + Journal row under the backpack -->
+<div class="rw-inventory-footer mt-3 d-flex justify-content-between align-items-center">
+  <div id="rwCoinsDisplay" class="rw-coins-display d-flex align-items-center gap-2">
+    <img src="rw-coins.png" class="rw-coins-icon" alt="Ravenwood Coins" />
+    <span id="rwCoinsAmount" class="rw-coins-amount">0</span>
+  </div>
+
+  <button id="rwJournalBtn" type="button" class="rw-journal-btn d-flex align-items-center gap-2">
+    <img src="rw-journal.png" class="rw-journal-icon" alt="Ravenwood Journal" />
+    <span class="rw-journal-label"></span>
+  </button>
+</div>
+
+
+                <button
+                  type="button"
+                  class="btn btn-outline-light btn-sm"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+
+        <!-- First-Arrival Intro Modal -->
+        <div class="modal fade rw-story-modal" id="rwIntroModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rw-card-landing rw-intro-modal">
+              <div class="modal-body p-0">
+
+                <div id="rwIntroCarousel" class="carousel slide" data-bs-ride="false">
+                  <div class="carousel-inner">
+
+                    <!-- Slide 1 -->
+                    <div class="carousel-item active">
+                      <div class="row g-0">
+                        <div class="col-md-5">
+                          <div class="rw-intro-art-frame">
+                            <!-- Drop-in art #1 -->
+                            <!-- Replace src with your own image when ready -->
+                            <div class="rw-intro-art-frame">
+                              <!-- Drop-in art #2 -->
+                              <img
+                                src="intro1.png"
+                                alt="Ravenwood Town Square"
+                                class="rw-intro-art rw-story-image"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
+                          <div>
+                            <p class="rw-story-subtitle mb-1">Somewhere Between Worlds</p>
+<h2 class="rw-story-title mb-2">You Wake in Ravenwood</h2>
+<p class="rw-story-text mb-2">
+  You come back to yourself standing in a lantern-lit square,
+  mist skimming low over uneven cobblestones. A cracked fountain
+  murmurs a tune you almost recognize. Your pulse is loud.
+  Your memories are not.
+</p>
+<p class="rw-story-text mb-0">
+  <em>“Easy now,”</em> the town seems to murmur.
+  <em>“Names return before memories.”</em>
+</p>
+                          </div>
+                          <div class="d-flex justify-content-end mt-3">
+                            <button
+                              class="btn rw-btn-main"
+                              type="button"
+                              data-bs-target="#rwIntroCarousel"
+                              data-bs-slide="next"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Slide 2 -->
+                    <div class="carousel-item">
+                      <div class="row g-0">
+                        <div class="col-md-5">
+                          <div class="rw-intro-art-frame">
+                            <!-- Drop-in art #2 -->
+                            <img
+                              src="intro-2.png"
+                              alt="Ravenwood Manor on the hill"
+                              class="rw-intro-art rw-story-image"
+                            />
+                          </div>
+                        </div>
+                        <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
+                          <div>
+                            <p class="rw-story-subtitle mb-1">The Manor on the Hill</p>
+<h2 class="rw-story-title mb-2">The House That Remembers</h2>
+<p class="rw-story-text mb-2">
+  High above the square, the manor’s windows burn like patient eyes.
+  The wards hum faintly under your skin, as if recognizing something
+  in your blood long before you do.
+</p>
+<p class="rw-story-text mb-0">
+  Somewhere beyond the fog, a bell tolls the wrong hour — and you know,
+  without knowing why, that the sound is for you.
+</p>
+                          </div>
+                          <div class="d-flex justify-content-between mt-3">
+                            <button
+                              class="btn btn-sm btn-outline-light"
+                              type="button"
+                              data-bs-target="#rwIntroCarousel"
+                              data-bs-slide="prev"
+                            >
+                              ← Back
+                            </button>
+                            <button
+                              class="btn rw-btn-main"
+                              type="button"
+                              data-bs-target="#rwIntroCarousel"
+                              data-bs-slide="next"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Slide 3 -->
+                    <div class="carousel-item">
+                      <div class="row g-0">
+                        <div class="col-md-5">
+                          <div class="rw-intro-art-frame">
+                            <!-- Drop-in art #3 -->
+                            <img
+                              src="intro-3.png"
+                              alt="Whispers and sigils in the mist"
+                              class="rw-intro-art rw-story-image"
+                            />
+                          </div>
+                        </div>
+                        <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
+                          <div>
+                            <p class="rw-story-subtitle mb-1">Circle Threads</p>
+<h2 class="rw-story-title mb-2">A Story Already in Motion</h2>
+<p class="rw-story-text mb-2">
+  Fragments hover at the edge of thought: a name someone used to call you,
+  a silver-marked promise under a hidden moon, the brush of a familiar’s
+  fur against your hand. The town is waiting to see which way you step.
+</p>
+<p class="rw-story-text mb-0">
+  Whatever tore you out of your old life, the path forward starts here —
+  in Ravenwood, where the Circle is just beginning to remember you.
+</p>
+                          </div>
+                          <div class="d-flex justify-content-between mt-3">
+                            <button
+                              class="btn btn-sm btn-outline-light"
+                              type="button"
+                              data-bs-target="#rwIntroCarousel"
+                              data-bs-slide="prev"
+                            >
+                              ← Back
+                            </button>
+                            <button
+                              class="btn rw-btn-main"
+                              type="button"
+                              id="rwIntroBeginBtn"
+                            >
+                              Begin
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Optional little dots -->
+                  <div class="carousel-indicators mb-0">
+                    <button type="button" data-bs-target="#rwIntroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                    <button type="button" data-bs-target="#rwIntroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                    <button type="button" data-bs-target="#rwIntroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="rw-intro-footer px-4 py-3">
+                <p class="mb-0 text-light-50">
+                  You don’t remember how you got here. Ravenwood does.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ravenwood Journal Modal -->
+        <div class="modal fade rw-journal-modal" id="rwJournalModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content rw-card">
+      <div class="modal-header py-2">
+        <div class="d-flex flex-column">
+          <span class="small text-uppercase text-muted">Journal Entry</span>
+          <strong id="rwJournalDate"> </strong>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="rwJournalBody" class="rw-body mb-0"></p>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-sm btn-outline-light" id="rwJournalPrev">
+          ‹ Previous
+        </button>
+        <span id="rwJournalPageIndicator" class="small text-muted">Page 0 / 0</span>
+        <button type="button" class="btn btn-sm btn-outline-light" id="rwJournalNext">
+          Next ›
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+        <!-- First-Time Inventory Journal Modal -->
+<div class="modal fade" id="rwInventoryIntroModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content rw-card-landing">
+      <div class="modal-body p-4">
+        <div class="text-center mb-3">
+          <img src="rw-journal.png" 
+               alt="Ravenwood Journal" 
+               style="max-width: 240px; width: 100%; object-fit: contain;">
+        </div>
+
+        <h2 class="rw-title fs-4 mb-3 text-center">A Journal You Don't Remember Carrying</h2>
+
+        <p class="rw-body">
+          As your fingers brush the worn leather, the raven stamped into the cover seems
+          to <em>shift</em>, its wings catching the lantern-light like ink waking up.
+        </p>
+
+        <p class="rw-body">
+          A thin silver lock sits at the edge. Before you can decide whether to open it,
+          the lock gives a soft <em>click</em> and falls away on its own — as if relieved.
+        </p>
+
+        <p class="rw-body">
+          The pages breathe apart. Blank… yet not. Faint lines ripple across the parchment,
+          as though words are trying to surface from memory you have not yet lived.
+        </p>
+
+        <p class="rw-body">
+          This journal feels familiar — frighteningly so.  
+          As if it has been waiting for you longer than Ravenwood has.
+        </p>
+
+        <div class="text-end mt-4">
+          <button id="rwInventoryIntroContinueBtn" class="btn rw-btn-main" data-bs-dismiss="modal">
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+        <!-- ===========================
+             FIRST-TIME MANOR ARRIVAL MODAL
+             =========================== -->
+        <div class="modal fade rw-story-modal" id="rwManorArrivalModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rw-card-landing rw-intro-modal">
+
+              <div class="modal-body p-0">
+                <div class="row g-0">
+                  <div class="col-md-5">
+                    <div class="rw-intro-art-frame">
+                      <!-- Replace with your art -->
+                      <img src="manor-arrival.png" class="rw-intro-art rw-story-image" alt="Approaching Ravenwood Manor">
+                    </div>
+                  </div>
+
+                  <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
+
+                    <div>
+                      <p class="rw-story-subtitle mb-1">The Manor Stirs</p>
+<h2 class="rw-story-title mb-2">A Door That Opens for You</h2>
+
+<p class="rw-story-text mb-2">
+  Fog curls around your boots as you step onto the ancient path.
+  Lanterns flare to life one by one, as if recognizing the talisman
+  resting in your pocket. The Manor hums—alive, aware—waiting.
+</p>
+
+<p class="rw-story-text mb-2">
+  A figure stands at the great door, silver hair catching the moonlight.
+</p>
+
+<p class="rw-story-text mb-2">
+  <strong>“You brought it back,”</strong> the woman says, voice low with relief.
+  <em>“The Talisman chose you. That means the Circle is waking—and we cannot
+  face what’s coming alone.”</em>
+</p>
+
+<p class="rw-story-text mb-0">
+  She steps aside, gesturing you inward.
+  <em>“Come. There is something you must see—before the others return.”</em>
+</p>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                      <button id="rwManorArrivalBeginBtn" class="btn rw-btn-main">
+                        Enter the Manor
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <div class="rw-intro-footer px-4 py-3">
+                <p class="mb-0 text-light-50">
+                  The talisman hums softly, warming against your skin.
+                </p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
   <!-- Avatar Edit Modal -->
   <div class="modal fade" id="rwAvatarModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -929,6 +950,120 @@
       </div>
     </div>
   </div>
+
+  <!-- ============================
+     Ravenwood Shop Modal
+     ============================ -->
+<div class="modal fade" id="rwShopModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content rw-card">
+      
+      <!-- Shop Image + Grid -->
+      <div class="rw-shop-image-wrapper">
+  <!-- Front view: shopkeeper at the counter -->
+  <img
+    src="rw-shop.png"
+    alt="Ravenwood Shopkeeper"
+    class="rw-shop-image"
+    id="rwShopImageFront"
+  />
+
+  <!-- Second view: shelves with grid (swap to this on BUY) -->
+  <img
+    src="rw-shop-shelves.png"
+    alt="Ravenwood Shop Shelves"
+    class="rw-shop-image d-none"
+    id="rwShopImageShelves"
+  />
+
+  <!-- Item Grid Overlay (4×4) – only shown in shelves view -->
+  <div id="rwShopGrid" class="rw-shop-grid d-none"></div>
+</div>
+
+      <!-- Dialog + Buttons -->
+      <div id="rwShopDialogBg" class="p-4">
+        <p id="rwShopDialog" class="rw-body mb-4">
+          The shopkeeper watches you with hollow eyes. “Looking to trade… or simply lost?”
+        </p>
+
+        <div class="d-flex gap-2">
+          <button class="btn rw-btn-main flex-fill" id="rwShopBuyBtn">Browse Wares</button>
+          <button class="btn btn-outline-light flex-fill" id="rwShopSellBtn">Sell Items</button>
+        </div>
+
+        <div class="mt-3 text-center">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            Leave Shop
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HP Zero / Wake in the Square Modal -->
+<div
+  class="modal fade rw-story-modal"
+  id="rwHpZeroModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content rw-card">
+      <div class="modal-body p-0">
+        <div class="row g-0">
+          <!-- Left: image -->
+          <div class="col-md-5">
+            <img
+              src="hp-faint.png"
+              alt="You awaken on the stones of Ravenwood Square"
+              class="rw-story-image w-100 h-100"
+              style="object-fit: cover;"
+            />
+          </div>
+
+          <!-- Right: text -->
+          <div class="col-md-7 p-4 d-flex flex-column justify-content-between">
+            <div>
+              <p class="rw-story-subtitle text-center mb-1">
+                When the World Went Dark
+              </p>
+              <h2 class="rw-story-title fs-4 text-center mb-3">
+                As If Waking From a Dream
+              </h2>
+              <p class="rw-story-text mb-2">
+                The last thing you remember is pain, then a sound like distant
+                bells being swallowed by water.
+              </p>
+              <p class="rw-story-text mb-2">
+                You jolt upright on the cold stones of Ravenwood Square.
+                Lanterns burn as if nothing happened. Your chest hurts with
+                the echo of panic, but your body feels strangely whole.
+              </p>
+              <p class="rw-story-text mb-0">
+                For a heartbeat you are certain you died. The memory frays even
+                as you reach for it, slipping away like mist through your
+                fingers, leaving only the question:
+                <em>Was any of that real, or just a dream the town had about
+                you?</em>
+              </p>
+            </div>
+
+            <div class="text-end mt-3">
+              <button
+                type="button"
+                class="btn rw-btn-main"
+                id="rwHpZeroContinueBtn"
+              >
+                Catch Your Breath
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
