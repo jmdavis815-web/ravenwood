@@ -413,35 +413,47 @@ window.rwShopMode = "buy";
 let rwShopLoaded = false;
 
 // Regenerating shop stock (per player/session)
+// Regenerating shop stock (per player/session)
 const SHOP_STOCK_CONFIG = {
   health_potion: {
-    maxVisible: 3,               // show up to 3 potions at a time
+    maxVisible: 3,                 // total available at once
     restockDelayMs: 3 * 60 * 1000, // 3 minutes; tweak as you like
   },
 };
 
 let rwHealthPotionRestockTimer = null;
 
-// Ensure the shop has up to maxVisible Minor Health Potions in empty slots
+// Ensure the shop has exactly ONE slot for health potions,
+// with quantity up to maxVisible
 function seedHealthPotionSlots() {
   const cfg = SHOP_STOCK_CONFIG.health_potion;
   if (!cfg) return;
 
-  let existing = rwShopItems.filter(
+  // Find an existing potion slot, if any
+  let potionIndex = rwShopItems.findIndex(
     (it) => it && it.id === "health_potion"
-  ).length;
+  );
 
-  for (let i = 0; i < rwShopItems.length && existing < cfg.maxVisible; i++) {
-    if (!rwShopItems[i]) {
-      rwShopItems[i] = {
-        id: "health_potion",
-        name: "Minor Health Potion",
-        icon: "item-health-potion.png",
-        price: 8,      // <- set your buy price
-        sellPrice: 4,  // <- set your sell price
-        questItem: false,
-      };
-      existing++;
+  // If no slot yet, create one in the first empty slot
+  if (potionIndex === -1) {
+    potionIndex = rwShopItems.findIndex((it) => it === null);
+    if (potionIndex === -1) return; // no free slots at all
+
+    rwShopItems[potionIndex] = {
+      id: "health_potion",
+      name: "Minor Health Potion",
+      icon: "item-health-potion.png",
+      price: 8,
+      sellPrice: 4,
+      questItem: false,
+      quantity: cfg.maxVisible, // start with full stack
+    };
+  } else {
+    // If we already have a potion slot, just top it back up
+    const entry = rwShopItems[potionIndex];
+    const currentQty = entry.quantity || 1;
+    if (currentQty < cfg.maxVisible) {
+      entry.quantity = cfg.maxVisible;
     }
   }
 }
@@ -585,6 +597,15 @@ function renderShopGrid(items = rwShopItems) {
       });
 
       slot.appendChild(img);
+
+      // 🔢 Show stack size if > 1
+      const qty = item.quantity || 1;
+      if (qty > 1) {
+        const badge = document.createElement("span");
+        badge.className = "rw-inventory-qty"; // reuse your existing badge style
+        badge.textContent = qty;
+        slot.appendChild(badge);
+      }
     }
 
     grid.appendChild(slot);
@@ -618,10 +639,10 @@ async function attemptShopPurchase(item) {
   }
 
   // Deduct coins (already syncs to Supabase)
+    // Deduct coins (already syncs to Supabase)
   await addCoins(-price);
 
   // Add item to inventory (this uses your existing inventory + syncInventoryToSupabase)
-    // Add item to inventory (this uses your existing inventory + syncInventoryToSupabase)
   const inv = window.rwInventory || [];
   inv.push({
     id: item.id,
@@ -634,23 +655,28 @@ async function attemptShopPurchase(item) {
 
   await syncInventoryToSupabase(inv);
 
-    const dialog = document.getElementById("rwShopDialog");
+  const dialog = document.getElementById("rwShopDialog");
   if (dialog) {
     dialog.textContent = `“A fine choice,” the shopkeeper murmurs.`;
   }
 
   // If this was a regenerating-stock potion, remove one copy from the shelves
-  if (item.id === "health_potion") {
-    // Find the exact slot that holds this object and clear it
+    if (item.id === "health_potion") {
     const idx = rwShopItems.findIndex((slot) => slot === item);
     if (idx !== -1) {
-      rwShopItems[idx] = null;
+      const entry = rwShopItems[idx];
+      const currentQty = entry.quantity || 1;
+
+      if (currentQty > 1) {
+        // Just reduce the stack by 1
+        entry.quantity = currentQty - 1;
+      } else {
+        // Last one: clear the slot
+        rwShopItems[idx] = null;
+        scheduleHealthPotionRestock();
+      }
     }
 
-    // If all potion slots are empty, start a restock timer
-    scheduleHealthPotionRestock();
-
-    // Redraw shelves so the missing potion disappears
     renderShopGrid();
   }
 
@@ -944,6 +970,33 @@ function getVariantText(map, archetype, affinity) {
     ""
   );
 }
+
+  function collapseInventoryStacks(items) {
+    if (!Array.isArray(items)) return [];
+
+    const byId = new Map();
+
+    for (const item of items) {
+      if (!item || !item.id) continue;
+
+      const key = item.id;
+      const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
+
+      if (byId.has(key)) {
+        const existing = byId.get(key);
+        existing.quantity = (existing.quantity || 1) + qty;
+      } else {
+        byId.set(key, {
+          id: item.id,
+          name: item.name || "Unknown item",
+          icon: item.icon || "",
+          quantity: qty,
+        });
+      }
+    }
+
+    return Array.from(byId.values());
+  }
 
 // ---------- LOCATION HELPERS ----------
 function loadSavedLocation() {
@@ -1430,13 +1483,13 @@ updateHpManaDisplays();
   // Stash identity + current progress for helpers
   window.rwEmail = email;
   window.rwInitialSecrets = Array.isArray(char.secrets) ? char.secrets : [];
-    window.rwInitialInventory = Array.isArray(char.inventory)
-    ? char.inventory
-    : [];
+      // Raw inventory from Supabase
+  const rawInventory = Array.isArray(char.inventory) ? char.inventory : [];
 
-  window.rwInitialInventory = Array.isArray(char.inventory)
-  ? char.inventory
-  : [];
+  // Collapse duplicate ids into stacks (so old data like 3 separate potions → 1 stack of 3)
+  const collapsedInventory = collapseInventoryStacks(rawInventory);
+
+  window.rwInitialInventory = collapsedInventory;
 
 // Normalize any legacy/plain-string journal entries
 window.rwJournalEntries = normalizeJournalEntries(char.journal_entries || []);
@@ -2074,77 +2127,106 @@ function showFirstInventoryModalIfNeeded() {
     return inventory.some((i) => i.id === "old_talisman");
   }
 
-  window.addItemToInventory = function (newItem) {
-  if (!newItem || !newItem.id) return;
+    window.addItemToInventory = function (newItem) {
+    if (!newItem || !newItem.id) return;
+
+    const maxStack = 10;
 
     // Remove exactly one of an item from the inventory
-    // Remove exactly one of an item from the inventory
-  async function removeOneFromInventory(itemId) {
-    if (!itemId) return;
+    async function removeOneFromInventory(itemId) {
+      if (!itemId) return;
 
-    const inv = inventory; // same array as window.rwInventory
+      const inv = inventory; // same array as window.rwInventory
 
-    const idx = inv.findIndex((i) => i && i.id === itemId);
-    if (idx === -1) return;
+      const idx = inv.findIndex((i) => i && i.id === itemId);
+      if (idx === -1) return;
 
-    const entry = inv[idx];
-    const qty = entry.quantity || 1;
+      const entry = inv[idx];
+      const qty = entry.quantity || 1;
 
-    if (qty > 1) {
-      entry.quantity = qty - 1;
-    } else {
-      inv.splice(idx, 1);
+      if (qty > 1) {
+        entry.quantity = qty - 1;
+      } else {
+        inv.splice(idx, 1);
+      }
+
+      window.rwInventory = inv;
+      renderInventory(inv);
+      await syncInventoryToSupabase(inv);
+    }
+
+    // expose so item-use logic can call it
+    window.rwRemoveOneFromInventory = removeOneFromInventory;
+
+    // Work from the in-memory copy (already seeded from Supabase)
+    const inv = inventory;
+
+    // normalize old items that don't have a quantity yet
+    inv.forEach((i) => {
+      if (i && (i.quantity == null || i.quantity < 1)) {
+        i.quantity = 1;
+      }
+    });
+
+    // Did we already have *any* stack of this item id?
+    const hadAnyStack = inv.some((i) => i && i.id === newItem.id);
+
+    let remaining = newItem.quantity || 1;
+
+    // 1) Fill existing stacks up to maxStack
+    for (const entry of inv) {
+      if (!remaining) break;
+      if (!entry || entry.id !== newItem.id) continue;
+
+      const currentQty = entry.quantity || 1;
+      if (currentQty >= maxStack) continue;
+
+      const space = maxStack - currentQty;
+      const toAdd = Math.min(space, remaining);
+
+      entry.quantity = currentQty + toAdd;
+      remaining -= toAdd;
+    }
+
+    // 2) If there's still some left, create new stacks (also capped at 10)
+    while (remaining > 0) {
+      const qty = Math.min(maxStack, remaining);
+      inv.push({
+        id: newItem.id,
+        name: newItem.name || "Unknown item",
+        icon: newItem.icon || "",
+        quantity: qty,
+      });
+      remaining -= qty;
     }
 
     window.rwInventory = inv;
-    renderInventory(inv);
-    await syncInventoryToSupabase(inv);
-  }
+    syncInventoryToSupabase(inv);
 
-  // expose so item-use logic can call it
-  window.rwRemoveOneFromInventory = removeOneFromInventory;
+    const isNewItemId = !hadAnyStack;
 
-  // Work from the in-memory copy (already seeded from Supabase)
-  const existing = inventory.find((i) => i.id === newItem.id);
-  const isNewItem = !existing;
+    if (isNewItemId) {
+      // Highlight the new item and pop open inventory
+      renderInventory(inv, newItem.id);
 
-  if (existing) {
-    existing.quantity =
-      (existing.quantity || 1) + (newItem.quantity || 1);
-  } else {
-    inventory.push({
-      id: newItem.id,
-      name: newItem.name || "Unknown item",
-      icon: newItem.icon || "",
-      quantity: newItem.quantity || 1,
-    });
-  }
+      if (inventoryModal) {
+        inventoryModal.show();
 
-  // ✅ Save to Supabase (+ cache locally)
-  syncInventoryToSupabase(inventory);
-
-  // ✅ If this is a brand-new item, highlight it and pop the inventory open
-  if (isNewItem) {
-    renderInventory(inventory, newItem.id);
-
-    if (inventoryModal) {
-      inventoryModal.show();
-
-      // Remove highlight after a moment
-      setTimeout(() => {
-        const highlighted = document.querySelector(
-          ".rw-inventory-slot--highlight"
-        );
-        if (highlighted) {
-          highlighted.classList.remove("rw-inventory-slot--highlight");
-        }
-      }, 2200);
+        // Remove highlight after a moment
+        setTimeout(() => {
+          const highlighted = document.querySelector(
+            ".rw-inventory-slot--highlight"
+          );
+          if (highlighted) {
+            highlighted.classList.remove("rw-inventory-slot--highlight");
+          }
+        }, 2200);
+      }
+    } else {
+      // Existing item id, just refresh grid with updated quantity
+      renderInventory(inv);
     }
-  } else {
-    // Existing item, just re-render normally
-    renderInventory(inventory);
-  }
-};
+  };
 
   function addSecretFromLocation(locKey) {
     const loc = locations[locKey];
@@ -2638,14 +2720,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // When the entire page has finished loading:
   window.addEventListener("load", () => {
-    // Fade the ink-loading screen away
+    // Keep the loading screen up for 1 second AFTER load
     setTimeout(() => {
+      // Begin fade-out
       screen.style.opacity = "0";
 
+      // Remove the element after fade completes
       setTimeout(() => {
         screen.remove();
-      }, 600);
-    }, 300);
+      }, 600); // fade duration
+    }, 1000); // <<— 1 second extra wait after page load
   });
 });
+
 

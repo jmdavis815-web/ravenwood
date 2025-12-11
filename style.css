@@ -1550,6 +1550,24 @@ body {
   background-color: rgba(0, 0, 0, 0.815);
 }
 
+/* Fix quantity badge position inside the shop grid */
+.rw-shop-slot {
+  position: relative; /* Needed so the badge anchors to this */
+}
+
+/* Badge inside the shop shelves */
+.rw-shop-slot .rw-inventory-qty {
+  position: absolute;
+  right: 4px;    /* Move left or right until perfect */
+  bottom: 4px;   /* Move up or down until perfect */
+  background: rgba(15, 23, 42, 0.9);
+  padding: 0px 5px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  color: #facc15;
+  pointer-events: none;
+}
+
 
 
 
