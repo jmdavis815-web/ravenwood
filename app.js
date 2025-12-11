@@ -2745,16 +2745,24 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!screen) return;
 
   // 🎯 First actual click anywhere on the page → try to play the whisper once
-  document.addEventListener(
-    "click",
-    () => {
-      if (!rwWhisperPlayed) {
-        rwWhisperPlayed = true;
-        playWhisperSound();
-      }
-    },
-    { once: true }
-  );
+  // 15-minute cooldown in ms
+const RW_WHISPER_COOLDOWN = 15 * 60 * 1000;
+
+document.addEventListener("click", () => {
+  const lastPlayed = Number(localStorage.getItem("rwWhisperLastPlayed")) || 0;
+  const now = Date.now();
+
+  // Too soon — don't play again
+  if (now - lastPlayed < RW_WHISPER_COOLDOWN) {
+    return;
+  }
+
+  // It's allowed to play again
+  rwWhisperPlayed = true;
+  localStorage.setItem("rwWhisperLastPlayed", now);
+
+  playWhisperSound();
+}, { once: false }); // allow multiple clicks, cooldown blocks repeats
 
   // When the entire page has finished loading:
   window.addEventListener("load", () => {
