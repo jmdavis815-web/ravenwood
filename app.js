@@ -2361,6 +2361,11 @@ function showFirstInventoryModalIfNeeded() {
     const key = btn.getAttribute("data-location");
     if (!locations[key]) return;
 
+    // 🔔 Chapel: try to play the bell (15-minute cooldown)
+    if (key === "chapel") {
+      playChapelBellIfAllowed();
+    }
+
     // ⭐ Special case: first time arriving at the Manor
     if (
       key === "manor" &&
@@ -2369,18 +2374,19 @@ function showFirstInventoryModalIfNeeded() {
       playerHasTalisman()
     ) {
       maybeShowManorArrival(currentChar, window.rwEmail || "");
+
+      // Show manor description + log secret, save location
       renderLocationDetail(key);
       addSecretFromLocation(key);
       saveLocationKey(key);
-      // 🔁 also give Fogwalk (and other unlocks) a chance to update
+
+      // 🔁 every click can re-check dynamic locations
       maybeSpawnDynamicLocations();
+
       return;
     }
 
-    // ⭐ Special case: Market → open the shop modal instead of just text
     // ⭐ Special case: Market → open the live shop
-    // ⭐ Special case: Market → open the live shop
-        // ⭐ Special case: Market → open the live shop
     if (key === "market") {
       (async () => {
         // Load items once from Supabase
@@ -2390,142 +2396,150 @@ function showFirstInventoryModalIfNeeded() {
 
         renderShopGrid();
 
-              const modalEl   = document.getElementById("rwShopModal");
-      const dialogEl  = document.getElementById("rwShopDialog");
-      const buyBtn    = document.getElementById("rwShopBuyBtn");
-      const sellBtn   = document.getElementById("rwShopSellBtn");
-      const shopInventoryWrapper = document.getElementById("rwShopInventoryWrapper");
-      const shopInventoryBtn = document.getElementById("rwShopInventoryBtn");
+        const modalEl = document.getElementById("rwShopModal");
+        const dialogEl = document.getElementById("rwShopDialog");
+        const buyBtn = document.getElementById("rwShopBuyBtn");
+        const sellBtn = document.getElementById("rwShopSellBtn");
+        const shopInventoryWrapper = document.getElementById(
+          "rwShopInventoryWrapper"
+        );
+        const shopInventoryBtn =
+          document.getElementById("rwShopInventoryBtn");
 
-      // Default visual: front view, no grid
-      setShopVisual("front");
-      window.rwShopMode = "buy";
+        // Default visual: front view, no grid
+        setShopVisual("front");
+        window.rwShopMode = "buy";
 
-      // Reset dialog + hide inventory button each time you enter the shop
-      if (dialogEl) {
-        dialogEl.textContent =
-          'The shopkeeper watches you with hollow eyes. “Looking to trade… or simply lost?”';
-      }
-      if (shopInventoryWrapper) {
-        shopInventoryWrapper.classList.add("d-none");
-      }
-
-      // Clicking "Browse Wares" → shelves image + grid
-      if (buyBtn && dialogEl) {
-        buyBtn.onclick = () => {
-          window.rwShopMode = "buy";
-          setShopVisual("shelves");
+        // Reset dialog + hide inventory button each time you enter the shop
+        if (dialogEl) {
           dialogEl.textContent =
-            'He turns, revealing the shelves behind him. “Take your time.”';
+            'The shopkeeper watches you with hollow eyes. “Looking to trade… or simply lost?”';
+        }
+        if (shopInventoryWrapper) {
+          shopInventoryWrapper.classList.add("d-none");
+        }
 
-          // Hide inventory button again when in buy mode
-          if (shopInventoryWrapper) {
-            shopInventoryWrapper.classList.add("d-none");
-          }
-        };
-      }
+        // Clicking "Browse Wares" → shelves image + grid
+        if (buyBtn && dialogEl) {
+          buyBtn.onclick = () => {
+            window.rwShopMode = "buy";
+            setShopVisual("shelves");
+            dialogEl.textContent =
+              'He turns, revealing the shelves behind him. “Take your time.”';
 
-      // Clicking "Sell Items" → stay on front view, show an Inventory button
-      if (sellBtn && dialogEl) {
-        sellBtn.onclick = () => {
-          window.rwShopMode = "sell";
-          setShopVisual("front");
-          dialogEl.textContent =
-            'His gaze drops to your pack. “If you\'ve anything worth parting with,” ' +
-            'he murmurs, “lay it out where I can see it.”';
+            // Hide inventory button again when in buy mode
+            if (shopInventoryWrapper) {
+              shopInventoryWrapper.classList.add("d-none");
+            }
+          };
+        }
 
-          // Reveal the "Open Your Inventory" button
-          if (shopInventoryWrapper) {
-            shopInventoryWrapper.classList.remove("d-none");
-          }
-        };
-      }
+        // Clicking "Sell Items" → stay on front view, show an Inventory button
+        if (sellBtn && dialogEl) {
+          sellBtn.onclick = () => {
+            window.rwShopMode = "sell";
+            setShopVisual("front");
+            dialogEl.textContent =
+              'His gaze drops to your pack. “If you\'ve anything worth parting with,” ' +
+              'he murmurs, “lay it out where I can see it.”';
 
-      // When you click "Open Your Inventory", *then* open the inventory modal
-      // When you click "Open Your Inventory", close the shop, then open inventory
-if (shopInventoryBtn && typeof bootstrap !== "undefined" && inventoryModal && modalEl) {
-  shopInventoryBtn.onclick = () => {
-    // Get the existing shop modal instance if it's open
-    const shopInstance =
-      bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            // Reveal the "Open Your Inventory" button
+            if (shopInventoryWrapper) {
+              shopInventoryWrapper.classList.remove("d-none");
+            }
+          };
+        }
 
-    // After the shop finishes hiding, show the inventory on top
-    modalEl.addEventListener(
-      "hidden.bs.modal",
-      () => {
-        inventoryModal.show();
-      },
-      { once: true }
-    );
+        // When you click "Open Your Inventory", close the shop, then open inventory
+        if (
+          shopInventoryBtn &&
+          typeof bootstrap !== "undefined" &&
+          inventoryModal &&
+          modalEl
+        ) {
+          shopInventoryBtn.onclick = () => {
+            // Get the existing shop modal instance if it's open
+            const shopInstance =
+              bootstrap.Modal.getInstance(modalEl) ||
+              new bootstrap.Modal(modalEl);
 
-    shopInstance.hide();
-  };
-} else if (shopInventoryBtn) {
-  // Fallback if something is off with bootstrap/inventoryModal
-  shopInventoryBtn.onclick = () => {
-    const invEl = document.getElementById("rwInventoryModal");
-    if (invEl && window.bootstrap && bootstrap.Modal) {
-      const m = new bootstrap.Modal(invEl);
-      m.show();
-    }
-  };
-}
+            // After the shop finishes hiding, show the inventory on top
+            modalEl.addEventListener(
+              "hidden.bs.modal",
+              () => {
+                inventoryModal.show();
+              },
+              { once: true }
+            );
 
-      // (Leave everything after this alone: rwShopSellHandler, showing modal, secrets, etc.)
+            shopInstance.hide();
+          };
+        } else if (shopInventoryBtn) {
+          // Fallback if something is off with bootstrap/inventoryModal
+          shopInventoryBtn.onclick = () => {
+            const invEl = document.getElementById("rwInventoryModal");
+            if (invEl && window.bootstrap && bootstrap.Modal) {
+              const m = new bootstrap.Modal(invEl);
+              m.show();
+            }
+          };
+        }
 
         // Define how selling works while the shop is open
         window.rwShopSellHandler = async function (item) {
-  const meta  = getItemMetadata(item);
-  const price = getItemSellPrice(item);
+          const meta = getItemMetadata(item);
+          const price = getItemSellPrice(item);
 
-  if (price == null || price <= 0) {
-    if (dialogEl) {
-      dialogEl.textContent =
-        `The shopkeeper studies the ${meta.title.toLowerCase()}, then shakes his head. ` +
-        `"Not for sale. Some things belong to the story, not the market."`;
-    }
-    return;
-  }
+          if (price == null || price <= 0) {
+            if (dialogEl) {
+              dialogEl.textContent =
+                `The shopkeeper studies the ${meta.title.toLowerCase()}, then shakes his head. ` +
+                `"Not for sale. Some things belong to the story, not the market."`;
+            }
+            return;
+          }
 
-  // 💬 Ask the player first
-  const message =
-    `Sell "${meta.title}" for ${price} coin${price === 1 ? "" : "s"}?\n\n` +
-    `The shopkeeper taps the counter. "We both know it’s worth at least that."`;
+          // 💬 Ask the player first
+          const message =
+            `Sell "${meta.title}" for ${price} coin${
+              price === 1 ? "" : "s"
+            }?\n\n` +
+            `The shopkeeper taps the counter. "We both know it’s worth at least that."`;
 
-  const confirmed = window.confirm(message);
-  if (!confirmed) {
-    if (dialogEl) {
-      dialogEl.textContent =
-        `He sets the ${meta.title.toLowerCase()} back on the counter. ` +
-        `"No rush. Some things decide when they’re ready to leave."`;
-    }
-    return;
-  }
+          const confirmed = window.confirm(message);
+          if (!confirmed) {
+            if (dialogEl) {
+              dialogEl.textContent =
+                `He sets the ${meta.title.toLowerCase()} back on the counter. ` +
+                `"No rush. Some things decide when they’re ready to leave."`;
+            }
+            return;
+          }
 
-  // ✅ Player agreed → remove one instance from inventory
-  const idx = inventory.findIndex((i) => i && i.id === item.id);
-  if (idx === -1) return;
+          // ✅ Player agreed → remove one instance from inventory
+          const idx = inventory.findIndex((i) => i && i.id === item.id);
+          if (idx === -1) return;
 
-  const entry = inventory[idx];
-  const qty   = entry.quantity || 1;
+          const entry = inventory[idx];
+          const qty = entry.quantity || 1;
 
-  if (qty > 1) {
-    entry.quantity = qty - 1;
-  } else {
-    inventory.splice(idx, 1);
-  }
+          if (qty > 1) {
+            entry.quantity = qty - 1;
+          } else {
+            inventory.splice(idx, 1);
+          }
 
-  window.rwInventory = inventory;
-  await syncInventoryToSupabase(inventory);
-  await addCoins(price);
-  renderInventory(inventory);
+          window.rwInventory = inventory;
+          await syncInventoryToSupabase(inventory);
+          await addCoins(price);
+          renderInventory(inventory);
 
-  if (dialogEl) {
-    dialogEl.textContent =
-      `He weighs the ${meta.title.toLowerCase()} in his hand and nods. ` +
-      `"${price} coin${price === 1 ? "" : "s"}. Fair enough."`;
-  }
-};
+          if (dialogEl) {
+            dialogEl.textContent =
+              `He weighs the ${meta.title.toLowerCase()} in his hand and nods. ` +
+              `"${price} coin${price === 1 ? "" : "s"}. Fair enough."`;
+          }
+        };
 
         if (modalEl && window.bootstrap && bootstrap.Modal) {
           const modal = new bootstrap.Modal(modalEl);
@@ -2541,7 +2555,7 @@ if (shopInventoryBtn && typeof bootstrap !== "undefined" && inventoryModal && mo
       return;
     }
 
-    // Normal behavior for all other locations (and later manor visits)
+    // 🌙 Normal behavior for all other locations (and later manor visits)
     renderLocationDetail(key);
     addSecretFromLocation(key);
     saveLocationKey(key);
@@ -2776,57 +2790,16 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ============================
-// Ravenwood Ink Loading Screen + Whisper (click-safe)
+// Ravenwood Ink Loading Screen (NO WHISPER AUDIO)
 // ============================
 
-let rwWhisperPlayed = false;
-
-// 🔊 Helper to play the whisper sound safely
-function playWhisperSound() {
-  const audio = document.getElementById("rwWhisperSound");
-  if (!audio) return;
-
-  try {
-    audio.volume = 0.9;
-    audio.currentTime = 0;
-
-    const playPromise = audio.play();
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch((err) => {
-        console.warn("Whisper play blocked or failed:", err?.name || err);
-      });
-    }
-  } catch (err) {
-    console.warn("Whisper play threw:", err);
-  }
-}
-
-// Optional: quick test from the console
-window.rwTestWhisper = playWhisperSound;
+// We keep the structure but remove all whisper logic
 
 document.addEventListener("DOMContentLoaded", () => {
   const screen = document.getElementById("rwLoadingScreen");
   if (!screen) return;
 
-  // 🎯 First actual click anywhere on the page → try to play the whisper once
-  // 15-minute cooldown in ms
-const RW_WHISPER_COOLDOWN = 15 * 60 * 1000;
-
-document.addEventListener("click", () => {
-  const lastPlayed = Number(localStorage.getItem("rwWhisperLastPlayed")) || 0;
-  const now = Date.now();
-
-  // Too soon — don't play again
-  if (now - lastPlayed < RW_WHISPER_COOLDOWN) {
-    return;
-  }
-
-  // It's allowed to play again
-  rwWhisperPlayed = true;
-  localStorage.setItem("rwWhisperLastPlayed", now);
-
-  playWhisperSound();
-}, { once: false }); // allow multiple clicks, cooldown blocks repeats
+  // ⬅️ No whisper logic. All audio triggers removed.
 
   // When the entire page has finished loading:
   window.addEventListener("load", () => {
@@ -2840,6 +2813,44 @@ document.addEventListener("click", () => {
     }, 1000);   // 1 second after page load
   });
 });
+
+// ============================
+// Chapel Bell (15-minute cooldown)
+// ============================
+
+const RW_CHAPEL_BELL_COOLDOWN = 15 * 60 * 1000; // 15 minutes in ms
+
+function playChapelBellIfAllowed() {
+  const audio = document.getElementById("rwChapelBellSound");
+  if (!audio) return;
+
+  const lastPlayed =
+    Number(localStorage.getItem("rwChapelBellLastPlayed")) || 0;
+  const now = Date.now();
+
+  // Too soon? Do nothing.
+  if (now - lastPlayed < RW_CHAPEL_BELL_COOLDOWN) {
+    return;
+  }
+
+  // Record new play time
+  localStorage.setItem("rwChapelBellLastPlayed", String(now));
+
+  try {
+    audio.currentTime = 0;
+    audio.volume = 0.9;
+
+    const p = audio.play();
+    if (p && typeof p.catch === "function") {
+      p.catch((err) => {
+        console.warn("Chapel bell play blocked:", err?.name || err);
+      });
+    }
+  } catch (err) {
+    console.warn("Chapel bell threw:", err);
+  }
+}
+
 
 
 
