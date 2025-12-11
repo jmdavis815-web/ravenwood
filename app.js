@@ -614,14 +614,24 @@ function renderShopGrid(items = rwShopItems) {
 
 function showShopItemOptions(item) {
   const dialog = document.getElementById("rwShopDialog");
+  const buyBtn = document.getElementById("rwShopBuyBtn");
+
   if (dialog) {
-    dialog.textContent = `The shopkeeper whispers: “${item.name}… Yours for ${item.price} coins.”`;
+    dialog.textContent =
+      `The shopkeeper whispers: “${item.name}… Yours for ${item.price} coins.” ` +
+      `He taps the counter.`;
   }
 
-  const buyBtn = document.getElementById("rwShopBuyBtn");
   if (buyBtn) {
+    // Change the label so it's obvious this will buy the selected item
+    buyBtn.textContent = `Buy for ${item.price} coin${item.price === 1 ? "" : "s"}`;
+
     buyBtn.onclick = async () => {
       await attemptShopPurchase(item);
+
+      // After buying, you can either leave it as "Buy" or restore the old label.
+      // If you want to restore:
+      // buyBtn.textContent = "Browse Wares";
     };
   }
 }
@@ -1949,11 +1959,6 @@ function showFirstInventoryModalIfNeeded() {
   localStorage.setItem(flagKey, "yes");
 }
 
-  // ---------- Inventory wiring ----------
-
-  // Helper to show the first-time inventory journal intro
-  // ---------- Inventory wiring ----------
-
   // Grab the button + modal from ravenwood.html
     // ---------- Inventory wiring ----------
 
@@ -2385,83 +2390,142 @@ function showFirstInventoryModalIfNeeded() {
 
         renderShopGrid();
 
-        const modalEl   = document.getElementById("rwShopModal");
-        const dialogEl  = document.getElementById("rwShopDialog");
-        const buyBtn    = document.getElementById("rwShopBuyBtn");
-        const sellBtn   = document.getElementById("rwShopSellBtn");
+              const modalEl   = document.getElementById("rwShopModal");
+      const dialogEl  = document.getElementById("rwShopDialog");
+      const buyBtn    = document.getElementById("rwShopBuyBtn");
+      const sellBtn   = document.getElementById("rwShopSellBtn");
+      const shopInventoryWrapper = document.getElementById("rwShopInventoryWrapper");
+      const shopInventoryBtn = document.getElementById("rwShopInventoryBtn");
 
-        // Default visual: front view, no grid
-        setShopVisual("front");
-        window.rwShopMode = "buy";
+      // Default visual: front view, no grid
+      setShopVisual("front");
+      window.rwShopMode = "buy";
 
-        if (dialogEl) {
+      // Reset dialog + hide inventory button each time you enter the shop
+      if (dialogEl) {
+        dialogEl.textContent =
+          'The shopkeeper watches you with hollow eyes. “Looking to trade… or simply lost?”';
+      }
+      if (shopInventoryWrapper) {
+        shopInventoryWrapper.classList.add("d-none");
+      }
+
+      // Clicking "Browse Wares" → shelves image + grid
+      if (buyBtn && dialogEl) {
+        buyBtn.onclick = () => {
+          window.rwShopMode = "buy";
+          setShopVisual("shelves");
           dialogEl.textContent =
-            'The shopkeeper watches you with hollow eyes. “Looking to trade… or simply lost?”';
-        }
+            'He turns, revealing the shelves behind him. “Take your time.”';
 
-        // Clicking "Browse Wares" → shelves image + grid
-        if (buyBtn && dialogEl) {
-          buyBtn.onclick = () => {
-            window.rwShopMode = "buy";
-            setShopVisual("shelves");
-            dialogEl.textContent =
-              'He turns, revealing the shelves behind him. “Take your time.”';
-          };
-        }
+          // Hide inventory button again when in buy mode
+          if (shopInventoryWrapper) {
+            shopInventoryWrapper.classList.add("d-none");
+          }
+        };
+      }
 
-        // Clicking "Sell Items" → front view, open inventory, enable sell mode
-        if (sellBtn && dialogEl) {
-          sellBtn.onclick = () => {
-            window.rwShopMode = "sell";
-            setShopVisual("front");
-            dialogEl.textContent =
-              'His gaze drops to your pack. “Show me what you’re ready to part with.”';
+      // Clicking "Sell Items" → stay on front view, show an Inventory button
+      if (sellBtn && dialogEl) {
+        sellBtn.onclick = () => {
+          window.rwShopMode = "sell";
+          setShopVisual("front");
+          dialogEl.textContent =
+            'His gaze drops to your pack. “If you\'ve anything worth parting with,” ' +
+            'he murmurs, “lay it out where I can see it.”';
 
-            // Open your inventory so you can click items to sell
-            if (inventoryModal) {
-              inventoryModal.show();
-            }
-          };
-        }
+          // Reveal the "Open Your Inventory" button
+          if (shopInventoryWrapper) {
+            shopInventoryWrapper.classList.remove("d-none");
+          }
+        };
+      }
+
+      // When you click "Open Your Inventory", *then* open the inventory modal
+      // When you click "Open Your Inventory", close the shop, then open inventory
+if (shopInventoryBtn && typeof bootstrap !== "undefined" && inventoryModal && modalEl) {
+  shopInventoryBtn.onclick = () => {
+    // Get the existing shop modal instance if it's open
+    const shopInstance =
+      bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+
+    // After the shop finishes hiding, show the inventory on top
+    modalEl.addEventListener(
+      "hidden.bs.modal",
+      () => {
+        inventoryModal.show();
+      },
+      { once: true }
+    );
+
+    shopInstance.hide();
+  };
+} else if (shopInventoryBtn) {
+  // Fallback if something is off with bootstrap/inventoryModal
+  shopInventoryBtn.onclick = () => {
+    const invEl = document.getElementById("rwInventoryModal");
+    if (invEl && window.bootstrap && bootstrap.Modal) {
+      const m = new bootstrap.Modal(invEl);
+      m.show();
+    }
+  };
+}
+
+      // (Leave everything after this alone: rwShopSellHandler, showing modal, secrets, etc.)
 
         // Define how selling works while the shop is open
         window.rwShopSellHandler = async function (item) {
-          const meta  = getItemMetadata(item);
-          const price = getItemSellPrice(item);
+  const meta  = getItemMetadata(item);
+  const price = getItemSellPrice(item);
 
-          if (price == null || price <= 0) {
-            if (dialogEl) {
-              dialogEl.textContent =
-                `The shopkeeper studies the ${meta.title.toLowerCase()}, then shakes his head. ` +
-                `"Not for sale. Some things belong to the story, not the market."`;
-            }
-            return;
-          }
+  if (price == null || price <= 0) {
+    if (dialogEl) {
+      dialogEl.textContent =
+        `The shopkeeper studies the ${meta.title.toLowerCase()}, then shakes his head. ` +
+        `"Not for sale. Some things belong to the story, not the market."`;
+    }
+    return;
+  }
 
-          // Remove one instance from inventory
-          const idx = inventory.findIndex((i) => i && i.id === item.id);
-          if (idx === -1) return;
+  // 💬 Ask the player first
+  const message =
+    `Sell "${meta.title}" for ${price} coin${price === 1 ? "" : "s"}?\n\n` +
+    `The shopkeeper taps the counter. "We both know it’s worth at least that."`;
 
-          const entry = inventory[idx];
-          const qty   = entry.quantity || 1;
+  const confirmed = window.confirm(message);
+  if (!confirmed) {
+    if (dialogEl) {
+      dialogEl.textContent =
+        `He sets the ${meta.title.toLowerCase()} back on the counter. ` +
+        `"No rush. Some things decide when they’re ready to leave."`;
+    }
+    return;
+  }
 
-          if (qty > 1) {
-            entry.quantity = qty - 1;
-          } else {
-            inventory.splice(idx, 1);
-          }
+  // ✅ Player agreed → remove one instance from inventory
+  const idx = inventory.findIndex((i) => i && i.id === item.id);
+  if (idx === -1) return;
 
-          window.rwInventory = inventory;
-          await syncInventoryToSupabase(inventory);
-          await addCoins(price);
-          renderInventory(inventory);
+  const entry = inventory[idx];
+  const qty   = entry.quantity || 1;
 
-          if (dialogEl) {
-            dialogEl.textContent =
-              `He weighs the ${meta.title.toLowerCase()} in his hand and nods. ` +
-              `"${price} coins. Fair enough."`;
-          }
-        };
+  if (qty > 1) {
+    entry.quantity = qty - 1;
+  } else {
+    inventory.splice(idx, 1);
+  }
+
+  window.rwInventory = inventory;
+  await syncInventoryToSupabase(inventory);
+  await addCoins(price);
+  renderInventory(inventory);
+
+  if (dialogEl) {
+    dialogEl.textContent =
+      `He weighs the ${meta.title.toLowerCase()} in his hand and nods. ` +
+      `"${price} coin${price === 1 ? "" : "s"}. Fair enough."`;
+  }
+};
 
         if (modalEl && window.bootstrap && bootstrap.Modal) {
           const modal = new bootstrap.Modal(modalEl);

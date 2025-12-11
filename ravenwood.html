@@ -987,7 +987,7 @@
 </div>
 
       <!-- Dialog + Buttons -->
-      <div id="rwShopDialogBg" class="p-4">
+            <div id="rwShopDialogBg" class="p-4">
         <p id="rwShopDialog" class="rw-body mb-4">
           The shopkeeper watches you with hollow eyes. “Looking to trade… or simply lost?”
         </p>
@@ -997,12 +997,20 @@
           <button class="btn btn-outline-light flex-fill" id="rwShopSellBtn">Sell Items</button>
         </div>
 
+        <!-- New: Inventory button, hidden by default -->
+        <div class="mt-3 d-none" id="rwShopInventoryWrapper">
+          <button class="btn btn-outline-light w-100" id="rwShopInventoryBtn">
+            Open Your Inventory
+          </button>
+        </div>
+
         <div class="mt-3 text-center">
           <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
             Leave Shop
           </button>
         </div>
       </div>
+
     </div>
   </div>
 </div>
