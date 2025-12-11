@@ -2712,32 +2712,24 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ============================
-// Ravenwood Ink Loading Screen + Whisper
+// Ravenwood Ink Loading Screen + Whisper (click-safe)
 // ============================
 
-// 🔊 Helper to play the whisper sound, handling autoplay blocking
+let rwWhisperPlayed = false;
+
+// 🔊 Helper to play the whisper sound safely
 function playWhisperSound() {
   const audio = document.getElementById("rwWhisperSound");
   if (!audio) return;
 
   try {
+    audio.volume = 0.9;
     audio.currentTime = 0;
-    const playPromise = audio.play();
 
-    // Some browsers return a promise we can catch
+    const playPromise = audio.play();
     if (playPromise && typeof playPromise.catch === "function") {
       playPromise.catch((err) => {
-        // If autoplay is blocked, wait for first user click, then replay
-        if (err && err.name === "NotAllowedError") {
-          const unlock = () => {
-            document.removeEventListener("click", unlock);
-            // Try again now that we have user interaction
-            playWhisperSound();
-          };
-          document.addEventListener("click", unlock, { once: true });
-        } else {
-          console.warn("Whisper play error:", err);
-        }
+        console.warn("Whisper play blocked or failed:", err?.name || err);
       });
     }
   } catch (err) {
@@ -2745,26 +2737,38 @@ function playWhisperSound() {
   }
 }
 
+// Optional: quick test from the console
+window.rwTestWhisper = playWhisperSound;
+
 document.addEventListener("DOMContentLoaded", () => {
   const screen = document.getElementById("rwLoadingScreen");
   if (!screen) return;
 
+  // 🎯 First actual click anywhere on the page → try to play the whisper once
+  document.addEventListener(
+    "click",
+    () => {
+      if (!rwWhisperPlayed) {
+        rwWhisperPlayed = true;
+        playWhisperSound();
+      }
+    },
+    { once: true }
+  );
+
   // When the entire page has finished loading:
   window.addEventListener("load", () => {
-    // ⏳ Keep the loading screen for about 1 second after load
+    // ⏳ Keep the loading screen visible ~1 second after load
     setTimeout(() => {
-      // Start the whisper as it begins to fade
-      playWhisperSound();
-
-      // Fade the ink-loading screen away
       screen.style.opacity = "0";
 
       setTimeout(() => {
         screen.remove();
-      }, 600); // fade-out duration
-    }, 1000); // 1 second after page load
+      }, 600); // matches your fade-out duration
+    }, 1000);   // 1 second after page load
   });
 });
+
 
 
 
