@@ -52,6 +52,54 @@ async function syncSecretsToSupabase(secrets) {
   }
 }
 
+async function syncEquippedToSupabase(equipped) {
+  const email = window.rwEmail;
+  if (!email) return;
+
+  try {
+    const { error } = await supabaseClient
+      .from("data")
+      .update({ equipped: equipped || {} })
+      .eq("email", email);
+
+    if (error) console.error("Failed to sync equipped:", error);
+  } catch (err) {
+    console.error("Unexpected equipped sync error:", err);
+  }
+}
+
+function getEquipSlotForItem(item) {
+  const meta = getItemMetadata(item);
+  return meta?.slot || null;
+}
+
+function computeEquipmentBonuses(equipped) {
+  const result = { might: 0, agility: 0, will: 0, insight: 0, presence: 0 };
+  if (!equipped) return result;
+
+  const slots = ["head", "neck", "ring_left", "ring_right", "feet"];
+  for (const slot of slots) {
+    const it = equipped[slot];
+    if (!it) continue;
+
+    const meta = getItemMetadata(it);
+    const b = meta?.bonuses || {};
+    for (const key in result) {
+      if (Object.prototype.hasOwnProperty.call(b, key)) {
+        result[key] += Number(b[key]) || 0;
+      }
+    }
+  }
+
+  return result;
+}
+
+function addStatBlocks(base, bonus) {
+  const out = { ...base };
+  for (const k in out) out[k] = (out[k] || 0) + (bonus[k] || 0);
+  return out;
+}
+
 async function syncInventoryToSupabase(inventory) {
   const email = window.rwEmail;
   if (!email) return;
@@ -222,6 +270,93 @@ async function syncHpToSupabase() {
   } catch (err) {
     console.error("Unexpected HP sync error:", err);
   }
+}
+
+  // Equipment slots we support
+const RW_EQUIP_SLOTS = ["head", "neck", "ring_left", "ring_right", "feet"];
+
+// Add equip slot metadata to items that can be equipped.
+// (Example items — rename icons/ids to yours)
+const ITEM_METADATA = {
+  old_talisman: {
+    title: "Old Talisman",
+    description:
+      "A bronze talisman etched with a Triquetra. It remembers old wards and answers doors that have forgotten how to open.",
+    questItem: true,
+  },
+
+  // Example equip items
+  moon_silver_amulet: {
+    title: "Moon-Silver Amulet",
+    description: "Cold silver that steadies your breath and sharpens your sight.",
+    icon: "item-amulet.png",
+    questItem: false,
+
+    // ✅ equipment info
+    slot: "neck",
+    bonuses: { insight: 1, will: 1 },
+  },
+
+  ash_ring: {
+    title: "Ash Ring",
+    description: "A ring that leaves your skin warm, like an ember never finished.",
+    icon: "item-ring.png",
+    questItem: false,
+
+    // rings can go left/right
+    slot: "ring",
+    bonuses: { presence: 1 },
+  },
+
+  warded_boots: {
+    title: "Warded Boots",
+    description: "Leather stitched with small protective knots.",
+    icon: "item-boots.png",
+    questItem: false,
+
+    slot: "feet",
+    bonuses: { agility: 1 },
+  },
+
+  // health potion stays non-equipable
+  health_potion: {
+    title: "Minor Health Potion",
+    description:
+      "A small glass vial of ember-red liquid. Drinking it restores 20 health and leaves a faint warmth in your chest.",
+    icon: "item-health-potion.png",
+    questItem: false,
+  },
+};
+
+// --------------------------------------
+// Item metadata + equip helpers (GLOBAL)
+// --------------------------------------
+
+function getItemMetadata(item) {
+  if (!item) return null;
+
+  const base = ITEM_METADATA?.[item.id] || {};
+
+  return {
+    id: item.id,
+    title: base.title || item.name || "Unknown Item",
+    description:
+      base.description ||
+      "You’re not sure what this does yet. Maybe someone in Ravenwood knows.",
+    icon: item.icon || base.icon || "",
+    questItem: base.questItem === true,
+
+    // ✅ unify on "slot"
+    slot: base.slot || null, // head | neck | ring | feet | null
+
+    // ✅ bonuses for stats
+    bonuses: base.bonuses || {},
+  };
+}
+
+function isEquippable(item) {
+  const meta = getItemMetadata(item);
+  return !!meta?.slot;
 }
 
 // ---------- STATS (DnD) → SUPABASE ----------
@@ -963,42 +1098,6 @@ async function attemptShopPurchase(item) {
   renderInventory(inv);
 }
 
-// ---------- ITEM METADATA + CLICK MENU ----------
-
-const ITEM_METADATA = {
-  old_talisman: {
-    title: "Old Talisman",
-    description:
-      "A bronze talisman etched with a Triquetra. It remembers old wards and answers doors that have forgotten how to open.",
-    questItem: true, // can't be sold
-  },
-
-  // 🧪 Minor Health Potion (+20 HP)
-  health_potion: {
-    title: "Minor Health Potion",
-    description:
-      "A small glass vial of ember-red liquid. Drinking it restores 20 health and leaves a faint warmth in your chest.",
-    icon: "item-health-potion.png", // <- put your potion icon path here
-    questItem: false,
-  },
-
-  // Add more items here as you introduce them.
-};
-
-function getItemMetadata(item) {
-  if (!item) return null;
-  const base = ITEM_METADATA[item.id] || {};
-  return {
-    id: item.id,
-    title: base.title || item.name || "Unknown Item",
-    description:
-      base.description ||
-      "You’re not sure what this does yet. Maybe someone in Ravenwood knows.",
-    icon: item.icon || base.icon || "",
-    questItem: base.questItem === true,
-  };
-}
-
 let rwItemMenuModalInstance = null;
 let rwItemDescModalInstance = null;
 let rwItemMenuContext = null;
@@ -1096,32 +1195,40 @@ function showItemDescription(item) {
 async function handleItemUse(item, context) {
   const ctx = context || {};
 
+  // ✅ Equipment context: "Use" == Equip
+  if (ctx.origin === "equipment") {
+    if (!isEquippable(item)) {
+      alert("That can’t be equipped.");
+      return;
+    }
+    if (typeof window.equipItemFromInventory !== "function") {
+  console.error("equipItemFromInventory is not available (not exported yet).");
+  alert("Equip system not ready yet.");
+  return;
+}
+await window.equipItemFromInventory(item);
+
+    return;
+  }
+
   // In the book, delegate to the book engine handler
-  if (
-    ctx.origin === "book" &&
-    typeof window.rwBookHandleItemUse === "function"
-  ) {
+  if (ctx.origin === "book" && typeof window.rwBookHandleItemUse === "function") {
     window.rwBookHandleItemUse(item);
     return;
   }
 
-  // 🧪 Minor Health Potion (+20 HP)
+  // 🧪 Potion logic unchanged...
   if (item.id === "health_potion") {
-    // Heal 20 HP, capped at max
     if (typeof window.rwAdjustHP === "function") {
       await window.rwAdjustHP(+20);
     }
-
-    // Remove one potion from inventory
     if (typeof window.rwRemoveOneFromInventory === "function") {
       await window.rwRemoveOneFromInventory(item.id);
     }
-
     alert("You drink the potion. Warmth blooms in your chest. (+20 HP)");
     return;
   }
 
-  // Default: nothing to use it on
   alert("Nothing happens.");
 }
 
@@ -1204,20 +1311,44 @@ function renderInventory(items = [], highlightItemId = null) {
 
       // 🔹 NEW: click to open Use / Description menu
             img.addEventListener("click", () => {
-        // If the shop is in sell mode AND a sell handler exists, sell instead of "use"
-        if (
-          window.rwShopMode === "sell" &&
-          typeof window.rwShopSellHandler === "function"
-        ) {
-          window.rwShopSellHandler(item);
-          return;
-        }
+  // Shop sell mode stays the same
+  if (
+    window.rwShopMode === "sell" &&
+    typeof window.rwShopSellHandler === "function"
+  ) {
+    window.rwShopSellHandler(item);
+    return;
+  }
 
-        // Normal behavior: open the item menu
-        if (window.rwOpenItemMenu) {
-          window.rwOpenItemMenu(item, { origin: "world" });
-        }
-      });
+  // Check if this item is equipable
+  const slotType = getEquipSlotForItem(item);
+
+  if (slotType) {
+    const meta = getItemMetadata(item);
+
+    const choice = window.prompt(
+      `${meta.title}\n\nType:\n- equip\n- desc`
+    );
+    if (!choice) return;
+
+    if (choice.toLowerCase().startsWith("e")) {
+      if (typeof window.equipItemFromInventory === "function") {
+  window.equipItemFromInventory(item);
+} else {
+  console.error("equipItemFromInventory missing on window");
+}
+
+    } else {
+      showItemDescription(item);
+    }
+    return;
+  }
+
+  // Non-equipables (potions, etc.)
+  if (typeof window.rwOpenItemMenu === "function") {
+    window.rwOpenItemMenu(item, { origin: "world" });
+  }
+});
     }
 
     if (item && item.quantity && item.quantity > 1) {
@@ -1684,17 +1815,23 @@ async function initWorldPage() {
 
   // Recompute stats from current character (used now + by Book I later)
   async function rwRecomputeStats(saveToSupabase = false) {
-    const char = window.rwChar || currentChar || {};
-    const stats = computeStartingStatsFor(char);
+  const char = window.rwChar || currentChar || {};
 
-    window.rwStats = stats;
+  // your existing base computation
+  const base = computeStartingStatsFor(char);
 
-    if (saveToSupabase) {
-      await syncStatsToSupabase(stats);
-    }
+  // ✅ add equipment bonuses
+  const equipBonus = computeEquipmentBonuses(window.rwEquipped || {});
+  const finalStats = addStatBlocks(base, equipBonus);
 
-    return stats;
+  window.rwStats = finalStats;
+
+  if (saveToSupabase) {
+    await syncStatsToSupabase(finalStats);
   }
+
+  return finalStats;
+}
 
   // Make it available globally (book-1, etc.)
   window.rwRecomputeStats = rwRecomputeStats;
@@ -1943,6 +2080,242 @@ async function initWorldPage() {
     });
   }
 
+function removeOneFromInventoryLocal(itemId) {
+  const inv = window.rwInventory || [];
+  const idx = inv.findIndex((i) => i && i.id === itemId);
+  if (idx === -1) return false;
+
+  const entry = inv[idx];
+  const qty = entry.quantity || 1;
+
+  if (qty > 1) entry.quantity = qty - 1;
+  else inv.splice(idx, 1);
+
+  window.rwInventory = inv;
+  return true;
+}
+
+function addOneToInventoryLocal(item) {
+  if (!item?.id) return;
+  // reuse your existing stack logic if you want:
+  if (typeof window.addItemToInventory === "function") {
+    window.addItemToInventory({ ...item, quantity: 1 });
+    return;
+  }
+  // minimal fallback:
+  const inv = window.rwInventory || [];
+  inv.push({ id: item.id, name: item.name, icon: item.icon, quantity: 1 });
+  window.rwInventory = inv;
+}
+
+function chooseRingSlot(equipped) {
+  if (!equipped.ring_left) return "ring_left";
+  if (!equipped.ring_right) return "ring_right";
+  return "ring_left"; // both filled → swap left by default
+}
+
+async function equipItemFromInventory(item) {
+  const slotType = getEquipSlotForItem(item); // "head" | "neck" | "ring" | "feet" | null
+  if (!slotType) {
+    alert("That item can’t be equipped.");
+    return;
+  }
+
+  const equipped = window.rwEquipped || {
+    head: null, neck: null, ring_left: null, ring_right: null, feet: null
+  };
+
+  const slot =
+    slotType === "ring" ? chooseRingSlot(equipped) : slotType;
+
+  // remove one from inventory first
+  const removed = removeOneFromInventoryLocal(item.id);
+  if (!removed) return;
+
+  // swap: if something already equipped, put it back in inventory
+  const previous = equipped[slot];
+  if (previous) addOneToInventoryLocal(previous);
+
+  // equip the clicked item (store minimal shape)
+  equipped[slot] = {
+    id: item.id,
+    name: item.name,
+    icon: item.icon,
+  };
+
+  window.rwEquipped = equipped;
+
+  // ✅ sync both + refresh UI + recompute stats
+  await syncInventoryToSupabase(window.rwInventory || []);
+  await syncEquippedToSupabase(equipped);
+
+  renderInventory(window.rwInventory || []);
+  renderEquipment();
+
+  if (typeof window.rwRecomputeStats === "function") {
+    await window.rwRecomputeStats(true);
+  }
+}
+
+// 🔥 Make it callable from global handlers (handleItemUse, inventory menu, etc.)
+window.equipItemFromInventory = equipItemFromInventory;
+
+async function unequipSlot(slotKey) {
+  const equipped = window.rwEquipped || {};
+  const item = equipped[slotKey];
+  if (!item) return;
+
+  // move back to inventory
+  addOneToInventoryLocal(item);
+  equipped[slotKey] = null;
+
+  window.rwEquipped = equipped;
+
+  await syncInventoryToSupabase(window.rwInventory || []);
+  await syncEquippedToSupabase(equipped);
+
+  renderInventory(window.rwInventory || []);
+  renderEquipment();
+
+  if (typeof window.rwRecomputeStats === "function") {
+    await window.rwRecomputeStats(true);
+  }
+}
+
+  // ---------- Equipment wiring ----------
+const equipmentBtn = document.getElementById("rwEquipmentBtn");
+const equipmentModalEl = document.getElementById("rwEquipmentModal");
+let equipmentModal = null;
+
+// equipped state (start with nothing)
+window.rwEquipped = window.rwEquipped || {
+  head: null,
+  cloak: null,
+  neck: null,
+  ring_left: null,
+  ring_right: null,
+  feet: null,
+};
+
+function renderEquipInventoryGrid() {
+  const grid = document.getElementById("rwEquipInventoryGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  const equippables = (inventory || []).filter((it) => it && isEquippable(it));
+
+  // Reuse the same slot look as inventory
+  equippables.forEach((item) => {
+    const slot = document.createElement("div");
+    slot.className = "rw-inventory-slot";
+
+    const meta = getItemMetadata(item);
+
+    if (item.icon) {
+      const img = document.createElement("img");
+      img.src = item.icon;
+      img.alt = item.name || meta.title || "Item";
+      img.className = "rw-inventory-item-icon";
+
+      // ✅ Clicking opens Use/Description menu, but in equipment context
+      img.addEventListener("click", () => {
+        window.rwOpenItemMenu(item, { origin: "equipment" });
+      });
+
+      slot.appendChild(img);
+    }
+
+    if (item.quantity && item.quantity > 1) {
+      const badge = document.createElement("span");
+      badge.className = "rw-inventory-qty";
+      badge.textContent = item.quantity;
+      slot.appendChild(badge);
+    }
+
+    grid.appendChild(slot);
+  });
+
+  // Fill to 16 if you want consistent layout (optional)
+  const maxSlots = 16;
+  for (let i = equippables.length; i < maxSlots; i++) {
+    const empty = document.createElement("div");
+    empty.className = "rw-inventory-slot";
+    grid.appendChild(empty);
+  }
+}
+
+function renderEquipment() {
+  const frame = document.querySelector("#rwEquipmentModal .rw-equip-frame");
+  if (!frame) return;
+
+  const slots = frame.querySelectorAll(".rw-equip-slot");
+  slots.forEach((slotBtn) => {
+    const slotKey = slotBtn.getAttribute("data-slot");
+    const equippedItem = window.rwEquipped?.[slotKey] || null;
+
+    slotBtn.innerHTML = "";
+
+    if (equippedItem?.icon) {
+      const img = document.createElement("img");
+      img.src = equippedItem.icon;
+      img.alt = equippedItem.name || "Equipped item";
+      slotBtn.appendChild(img);
+    }
+
+    // ✅ click behavior:
+    slotBtn.onclick = () => {
+      if (!equippedItem) {
+        alert("Nothing equipped yet.");
+        return;
+      }
+
+      const meta = getItemMetadata(equippedItem);
+      const choice = window.prompt(
+        `${meta.title}\n\nType:\n- unequip\n- desc`
+      );
+
+      if (!choice) return;
+      const c = choice.toLowerCase();
+
+      if (c.startsWith("u")) {
+        unequipSlot(slotKey);
+      } else {
+        showItemDescription(equippedItem);
+      }
+    };
+  });
+}
+
+if (equipmentModalEl && window.bootstrap && bootstrap.Modal) {
+  equipmentModal = new bootstrap.Modal(equipmentModalEl);
+}
+
+if (equipmentBtn && equipmentModal) {
+  equipmentBtn.addEventListener("click", () => {
+    renderEquipment();
+    renderEquipInventoryGrid(); // ✅ NEW
+    equipmentModal.show();
+  });
+}
+
+// Optional: clicking a slot currently just tells you it's empty
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest?.(".rw-equip-slot");
+  if (!btn) return;
+
+  const slotKey = btn.getAttribute("data-slot");
+  const hasItem = !!window.rwEquipped?.[slotKey];
+
+  if (!hasItem) {
+    // keep it simple for now
+    const msg = document.createElement("div");
+    msg.className = "small text-muted mt-2";
+    msg.textContent = "Nothing equipped yet.";
+    // no-op (quiet) — you can later replace this with an equip picker
+  }
+});
+
 //------------------------------------------------
 // FOGWALK ALLEY RANDOMIZER
 //------------------------------------------------
@@ -1962,6 +2335,17 @@ function shouldShowFogwalk(secrets, isFirstVisit) {
 
 currentChar = char;
 window.rwChar = char;
+
+window.rwEquipped = (char.equipped && typeof char.equipped === "object")
+  ? {
+      head: char.equipped.head || null,
+      neck: char.equipped.neck || null,
+      ring_left: char.equipped.ring_left || null,
+      ring_right: char.equipped.ring_right || null,
+      feet: char.equipped.feet || null,
+    }
+  : { head: null, neck: null, ring_left: null, ring_right: null, feet: null };
+
 
 // Load coins from Supabase (default to 0 if missing)
 window.rwCoins =
@@ -1993,13 +2377,10 @@ updateHpManaDisplays();
   // ---------- STATS BOOTSTRAP ----------
   // If Supabase already has stats, use them.
   // Otherwise, compute starting stats and save them once.
-  if (char.stats && typeof char.stats === "object") {
-    window.rwStats = char.stats;
-  } else {
-    window.rwStats = computeStartingStatsFor(char);
-    // Save first-time generated stats back to Supabase
-    syncStatsToSupabase(window.rwStats);
-  }
+  // Always recompute once at boot so equipment applies.
+// If you want to trust Supabase first, you can still load it, then recompute.
+await window.rwRecomputeStats(true);
+
 
 // 🔒 Show or hide the Mana meter depending on unlock flag
 const manaContainer = document.getElementById("rwManaContainer");
@@ -3075,6 +3456,72 @@ function showFirstInventoryModalIfNeeded() {
           };
         }
 
+        function pickRingSlot() {
+  // Prefer left if empty, otherwise right, otherwise left (swap)
+  if (!window.rwEquipped.ring_left) return "ring_left";
+  if (!window.rwEquipped.ring_right) return "ring_right";
+  return "ring_left";
+}
+
+async function equipFromInventory(item) {
+  if (!item || !item.id) return;
+
+  const meta = getItemMetadata(item);
+  if (!meta?.slot) return;
+
+  function pickRingSlot() {
+    if (!window.rwEquipped?.ring_left) return "ring_left";
+    if (!window.rwEquipped?.ring_right) return "ring_right";
+    return "ring_left";
+  }
+
+  const equipped = window.rwEquipped || {
+    head: null, neck: null, ring_left: null, ring_right: null, feet: null
+  };
+
+  const targetSlot = meta.slot === "ring" ? pickRingSlot() : meta.slot;
+
+  const idx = inventory.findIndex((i) => i && i.id === item.id);
+  if (idx === -1) return;
+
+  const entry = inventory[idx];
+  const qty = entry.quantity || 1;
+
+  // If something already equipped there, swap it back into inventory
+  const prev = equipped[targetSlot];
+  if (prev) {
+    if (typeof window.addItemToInventory === "function") {
+      window.addItemToInventory({ ...prev, quantity: 1 });
+    } else {
+      inventory.push({ ...prev, quantity: 1 });
+    }
+  }
+
+  // Remove one from inventory stack
+  if (qty > 1) entry.quantity = qty - 1;
+  else inventory.splice(idx, 1);
+
+  // Equip the item (store a minimal shape)
+  equipped[targetSlot] = {
+    id: entry.id,
+    name: entry.name || meta.title,
+    icon: entry.icon || meta.icon || "",
+  };
+
+  window.rwEquipped = equipped;
+  window.rwInventory = inventory;
+
+  renderInventory(inventory);
+  renderEquipment();
+
+  await syncInventoryToSupabase(inventory);
+  await syncEquippedToSupabase(equipped);
+
+  // ✅ stats refresh
+  if (typeof window.rwRecomputeStats === "function") {
+    await window.rwRecomputeStats(true);
+  }
+}
         // Define how selling works while the shop is open
         window.rwShopSellHandler = async function (item) {
           const meta = getItemMetadata(item);

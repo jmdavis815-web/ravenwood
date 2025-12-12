@@ -1619,6 +1619,106 @@ background-color: transparent; /* or a styled backdrop if you want */
   gap: 0.75rem 1.5rem;
 }
 
+/* ============================
+   Ravenwood Equipment Modal
+   ============================ */
+
+#rwEquipmentModal .modal-dialog {
+  max-width: 700px;
+  background-color: #020617;
+}
+
+.rw-equip-frame {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+
+  /* keep the same tall poster shape as your image */
+  aspect-ratio: 3 / 4;
+
+  background-image: url("equip.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+/* invisible clickable slot overlay */
+.rw-equip-slot {
+  position: absolute;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(2, 6, 23, 0.932);
+  border-radius: 0.65rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.12s ease-out, border-color 0.12s ease-out, background 0.12s ease-out;
+}
+
+.rw-equip-slot:hover {
+  transform: scale(1.02);
+  border-color: rgba(250, 204, 21, 0.8);
+  background: rgba(2, 6, 23, 0.959);
+}
+
+.rw-equip-slot img {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  opacity: 0.92;
+}
+
+/* --- Slot positions (tuned to your posted layout) --- */
+.rw-equip-slot[data-slot="head"] {
+  top: 3%;
+  left: 37%;
+  width: 26%;
+  height: 17%;
+}
+
+.rw-equip-slot[data-slot="cloak"] {
+  top: 22%;
+  left: 11%;
+  width: 23%;
+  height: 16%;
+}
+
+.rw-equip-slot[data-slot="neck"] {
+  top: 22%;
+  left: 66%;
+  width: 23%;
+  height: 16%;
+}
+
+.rw-equip-slot[data-slot="ring_left"] {
+  top: 44%;
+  left: 11%;
+  width: 20%;
+  height: 16%;
+}
+
+.rw-equip-slot[data-slot="ring_right"] {
+  top: 44%;
+  left: 69%;
+  width: 20%;
+  height: 16%;
+}
+
+.rw-equip-slot[data-slot="feet"] {
+  top: 73%;
+  left: 66%;
+  width: 23%;
+  height: 16%;
+}
+
+
 
 
 
