@@ -185,16 +185,26 @@
         <!-- RAVENWOOD WORLD MAP PANEL -->
         <section class="rw-panel mb-3 mt-1">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <div>
-              <div class="rw-panel-subtitle text-center">Map</div>
-              <h3 class="rw-panel-title text-center fs-6 mb-0">Where You Are</h3>
-            </div>
-            <div class="rw-tag">
-              <span id="rwMapCurrentLocation" class="text-center">Town Square</span>
-            </div>
-          </div>
+  <div>
+    <div class="rw-panel-subtitle text-center">Map</div>
+    <h3 class="rw-panel-title text-center fs-6 mb-0">Where You Are</h3>
+  </div>
 
-          <div class="rw-map-wrapper">
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-light"
+      id="rwToggleMapBtn"
+    >
+      Hide Map
+    </button>
+    <div class="rw-tag">
+      <span id="rwMapCurrentLocation" class="text-center">Town Square</span>
+    </div>
+  </div>
+</div>
+
+          <div class="rw-map-wrapper" id="rwMapWrapper">
             <!-- parchment map image -->
             <img
               src="ravenwood-map.png"

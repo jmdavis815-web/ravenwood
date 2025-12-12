@@ -1530,6 +1530,62 @@ function initLoginPage() {
   });
 }
 
+// --------------------------------------
+// Avatar Locking (only allow unlocked avatars)
+// --------------------------------------
+
+function getUnlockedAvatars() {
+  const list = window.rwUnlockedAvatars;
+  if (Array.isArray(list) && list.length) return list;
+
+  // fallback: at least the current avatar (or default)
+  const current =
+    window.rwAvatarKey ||
+    window.rwChar?.avatar ||
+    DEFAULT_AVATAR_FEMALE ||
+    DEFAULT_AVATAR;
+
+  return [current];
+}
+
+function applyAvatarLocks() {
+  const unlocked = getUnlockedAvatars();
+
+  // Your modal uses radio inputs like: <input name="rwAvatarChoice" value="f-mystic" ...>
+  const inputs = document.querySelectorAll('input[name="rwAvatarChoice"]');
+  if (!inputs.length) return;
+
+  inputs.forEach((input) => {
+    const key = input.value;
+    const isUnlocked = unlocked.includes(key);
+
+    input.disabled = !isUnlocked;
+
+    const label = input.closest("label") || input.parentElement;
+    if (label) {
+      label.classList.toggle("rw-avatar-locked", !isUnlocked);
+      label.title = isUnlocked ? "" : "Locked";
+    }
+  });
+
+  // If the currently checked option is locked, force-select the first unlocked option
+  const checked = document.querySelector('input[name="rwAvatarChoice"]:checked');
+  if (checked && checked.disabled) {
+    const firstUnlocked = Array.from(inputs).find((i) => !i.disabled);
+    if (firstUnlocked) firstUnlocked.checked = true;
+  }
+}
+
+// Hard enforcement on save (prevents DOM hacks)
+function validateAvatarChoiceOrWarn(chosenKey) {
+  const unlocked = getUnlockedAvatars();
+  if (!chosenKey || !unlocked.includes(chosenKey)) {
+    alert("That avatar is still locked.");
+    return false;
+  }
+  return true;
+}
+
 // ---------- PAGE INIT: WORLD (MAIN HUB / TOWN) ----------
 async function initWorldPage() {
   const nameEl = $("#rwUserName");
@@ -1964,6 +2020,28 @@ if (manaContainer) {
     });
   }
 
+  // ---------- MAP SHOW / HIDE ----------
+
+// ---------- MAP SHOW / HIDE ----------
+
+const toggleBtn = document.getElementById("rwToggleMapBtn");
+const mapWrapper = document.getElementById("rwMapWrapper");
+
+if (toggleBtn && mapWrapper) {
+  // 📱 Start hidden on mobile only
+  let mapVisible = window.innerWidth >= 768;
+
+  mapWrapper.classList.toggle("d-none", !mapVisible);
+  toggleBtn.textContent = mapVisible ? "Hide Map" : "Show Map";
+
+  toggleBtn.addEventListener("click", () => {
+    mapVisible = !mapVisible;
+    mapWrapper.classList.toggle("d-none", !mapVisible);
+    toggleBtn.textContent = mapVisible ? "Hide Map" : "Show Map";
+  });
+}
+;
+
 // -------------------------------------
 // Continue with avatar setup, map setup,
 // intro modal check, etc.
@@ -2018,9 +2096,20 @@ window.rwJournalIndex = window.rwJournalEntries.length
   // Avatar from DB (fallback to default)
     // Avatar from DB (fallback to default)
   avatarKey = char.avatar || DEFAULT_AVATAR;
+
   window.rwAvatarKey = avatarKey; // 🔹 remember for stat calculations
   applyAvatar(navAvatarEl);
   applyAvatar(summaryAvatarEl);
+
+  // ✅ pull unlocked avatar list from Supabase row
+window.rwUnlockedAvatars = Array.isArray(char.unlocked_avatars)
+  ? char.unlocked_avatars
+  : [avatarKey]; // safe fallback
+
+// (optional) guarantee current avatar is always allowed
+if (!window.rwUnlockedAvatars.includes(avatarKey)) {
+  window.rwUnlockedAvatars.push(avatarKey);
+}
 
   // Snapshot on the right
   const summaryName = $("#rwSummaryName");
@@ -2074,56 +2163,59 @@ window.rwJournalIndex = window.rwJournalEntries.length
 
     // Open modal when clicking the name in navbar
     nameEl.addEventListener("click", () => {
-      const radios = avatarModalEl.querySelectorAll(
-        "input[name='rwAvatarChoice']"
-      );
-      radios.forEach((input) => {
-        input.checked = input.value === avatarKey;
-      });
-      avatarModal.show();
-    });
+  // ✅ Apply locks first (disables radio choices that aren't unlocked)
+  applyAvatarLocks();
+
+  // Then check the current avatar (if it's unlocked)
+  const radios = avatarModalEl.querySelectorAll("input[name='rwAvatarChoice']");
+  radios.forEach((input) => {
+    input.checked = input.value === avatarKey;
+  });
+
+  avatarModal.show();
+});
 
     // Save avatar + update Supabase + refresh UI
     const saveBtn = document.getElementById("rwAvatarSaveBtn");
     if (saveBtn) {
       saveBtn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        const selected = avatarModalEl.querySelector(
-          "input[name='rwAvatarChoice']:checked"
-        );
-        if (!selected) return;
+  e.preventDefault();
+  const selected = avatarModalEl.querySelector("input[name='rwAvatarChoice']:checked");
+  if (!selected) return;
 
-                const newAvatar = selected.value;
+  const newAvatar = selected.value;
 
-        try {
-          const { error: updateError } = await supabaseClient
-            .from("data")
-            .update({ avatar: newAvatar })
-            .eq("email", email);
+  // ✅ block locked avatar saves
+  if (!validateAvatarChoiceOrWarn(newAvatar)) return;
 
-          if (updateError) {
-            console.error("Avatar update failed:", updateError);
-            alert("The wards resisted that change. Try again.");
-            return;
-          }
+  try {
+    const { error: updateError } = await supabaseClient
+      .from("data")
+      .update({ avatar: newAvatar })
+      .eq("email", email);
 
-          avatarKey = newAvatar;
-          window.rwAvatarKey = newAvatar; // 🔹 feed into stat calc
-          applyAvatar(navAvatarEl);
-          applyAvatar(summaryAvatarEl);
+    if (updateError) {
+      console.error("Avatar update failed:", updateError);
+      alert("The wards resisted that change. Try again.");
+      return;
+    }
 
-          // 🔹 Recompute + save stats for the new avatar path
-          if (typeof window.rwRecomputeStats === "function") {
-            window.rwRecomputeStats(true);
-          }
+    avatarKey = newAvatar;
+    window.rwAvatarKey = newAvatar;
+    applyAvatar(navAvatarEl);
+    applyAvatar(summaryAvatarEl);
 
-          avatarModal.hide();
-        } catch (err) {
-          console.error("Unexpected avatar update error:", err);
-          alert("Something disrupted the ritual. Please try again.");
-        }
+    if (typeof window.rwRecomputeStats === "function") {
+      window.rwRecomputeStats(true);
+    }
 
-      });
+    avatarModal.hide();
+  } catch (err) {
+    console.error("Unexpected avatar update error:", err);
+    alert("Something disrupted the ritual. Please try again.");
+  }
+});
+
     }
   }
 
