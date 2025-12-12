@@ -636,51 +636,50 @@ body {
     border: 1px solid rgba(148, 163, 184, 0.5);
   }
 
-/* Standard avatar circle */
 .rw-avatar-circle {
-  width: 4.5rem;           /* larger size */
-  height: 4.5rem;          /* larger size */
   border-radius: 999px;
-  overflow: hidden;
-  border: none !important;
-  box-shadow: none !important;
-
-  /* Make the whole character visible */
-  background-size: contain;     /* instead of cover */
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-/* Large avatar (profile card) */
-.rw-avatar-lg {
-  width: 8rem;             /* increase size */
-  height: 8rem;
-  border-radius: 999px;
-  overflow: hidden;
-  border: none !important;
-  box-shadow: none !important;
-
-  /* show whole character */
+  width: 80px;
+  height: 80px;
   background-size: contain;
-  background-repeat: no-repeat;
+background-repeat: no-repeat;
+background-color: transparent; /* or a styled backdrop if you want */
   background-position: center;
 }
 
-/* Avatar images */
-.rw-avatar-f-mystic {
-  background-image: url("f-mystic.png");
+.rw-avatar-lg {
+  width: 120px;
+  height: 120px;
 }
 
-.rw-avatar-f-shadow {
-  background-image: url("f-shadow.png");
-}
+/* Default (pre-awakening) avatars */
+.rw-avatar-f-default { background-image: url("f-default.png"); }
+.rw-avatar-m-default { background-image: url("m-default.png"); }
 
-.rw-avatar-m-shadow {
-  background-image: url("m-shadow.png");
-}
+/* Mystic */
+.rw-avatar-f-mystic { background-image: url("f-mystic.png"); }
+.rw-avatar-m-mystic { background-image: url("m-mystic.png"); }
 
-.rw-avatar-m-mystic {
-  background-image: url("m-mystic.png");
+/* Shadow */
+.rw-avatar-f-shadow { background-image: url("f-shadow.png"); }
+.rw-avatar-m-shadow { background-image: url("m-shadow.png"); }
+
+/* Moon */
+.rw-avatar-f-moon { background-image: url("f-moon.png"); }
+.rw-avatar-m-moon { background-image: url("m-moon.png"); }
+
+/* Rune */
+.rw-avatar-f-rune { background-image: url("f-rune.png"); }
+.rw-avatar-m-rune { background-image: url("m-rune.png"); }
+
+/* Guardian */
+.rw-avatar-f-guardian { background-image: url("f-guardian.png"); }
+.rw-avatar-m-guardian { background-image: url("m-guardian.png"); }
+
+/* Optional: style for locked avatars in the modal */
+.rw-avatar-locked {
+  opacity: 0.35;
+  filter: grayscale(0.7);
+  pointer-events: none;
 }
 
 /* ============================
@@ -725,6 +724,10 @@ body {
   font-size: 0.75rem;
   color: #e5e7eb;
   margin-top: 2px;
+}
+
+.rw-hidden {
+  display: none !important;
 }
 
 /* ============================
@@ -1566,6 +1569,48 @@ body {
   font-size: 0.7rem;
   color: #facc15;
   pointer-events: none;
+}
+
+/* Character Sheet */
+
+.rw-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem 1.5rem;
+}
+
+.rw-stat-block {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  background: radial-gradient(circle at top, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.6));
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.07);
+}
+
+.rw-stat-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #e5e7eb;
+  margin-bottom: 0.15rem;
+}
+
+.rw-stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fbbf24; /* soft gold; matches your Ravenwood vibe */
+  margin-bottom: 0.25rem;
+}
+
+.rw-stat-note {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.rw-stat-derived {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
 }
 
 

@@ -14,7 +14,6 @@ const supabaseClient = window.supabase.createClient(
 // LocalStorage keys
 const RAVENWOOD_EMAIL_KEY = "ravenwoodEmail";
 const RAVENWOOD_SECRETS_KEY = "ravenwoodTownSecrets";
-const DEFAULT_AVATAR = "f-mystic";
 const RAVENWOOD_INVENTORY_KEY = "ravenwoodInventory";
 const RAVENWOOD_LOCATION_KEY = "ravenwoodLocation";
 
@@ -73,6 +72,58 @@ async function syncInventoryToSupabase(inventory) {
   }
 }
 
+// --------------------------------------
+// Avatar + path helpers
+// --------------------------------------
+
+// Default (pre-awakening) avatar keys
+const DEFAULT_AVATAR_FEMALE = "f-default";
+const DEFAULT_AVATAR_MALE   = "m-default";
+const DEFAULT_AVATAR        = DEFAULT_AVATAR_FEMALE;
+
+// All avatar IDs that can exist in the game
+// (we'll later add upgraded variants like f-shadow-2, etc.)
+const BASE_AVATARS = [
+  "f-default",   "m-default",
+  "f-mystic",    "m-mystic",
+  "f-shadow",    "m-shadow",
+  "f-moon",      "m-moon",
+  "f-rune",      "m-rune",
+  "f-guardian",  "m-guardian",
+];
+
+// Extract the "family"/path from an avatar key.
+// "f-shadow"      -> "shadow"
+// "m-moon-ascend" -> "moon"
+function getAvatarFamily(avatarKey) {
+  if (!avatarKey) return null;
+  const parts = avatarKey.split("-");
+  if (parts.length < 2) return null;
+  return parts[1]; // the part after f/m
+}
+
+// Given an archetype ("shadow", "mystic", "moon", "rune", "guardian")
+// and gender ("male"/"female"), return the base avatar.
+function avatarFromArchetype(archetype, gender = "female") {
+  const g = gender === "male" ? "m" : "f";
+
+  switch (archetype) {
+    case "shadow":
+      return `${g}-shadow`;
+    case "mystic":
+      return `${g}-mystic`;
+    case "moon":
+      return `${g}-moon`;
+    case "rune":
+      return `${g}-rune`;
+    case "guardian":
+      return `${g}-guardian`;
+    default:
+      // if something is weird, stay with default
+      return g === "m" ? DEFAULT_AVATAR_MALE : DEFAULT_AVATAR_FEMALE;
+  }
+}
+
 // ---------- COIN HELPERS ----------
 
 function updateCoinDisplay() {
@@ -110,6 +161,25 @@ async function addCoins(amount) {
 // Make coin helpers accessible if needed elsewhere
 window.rwAddCoins = addCoins;
 
+// ---------- LOCATION (CROSS-DEVICE) HELPERS ----------
+
+async function syncLocationToSupabase(locKey) {
+  const email = window.rwEmail;
+  if (!email || !locKey) return;
+
+  try {
+    const { error } = await supabaseClient
+      .from("data")
+      .update({ location_key: locKey })
+      .eq("email", email);
+
+    if (error) {
+      console.error("Failed to sync location_key:", error);
+    }
+  } catch (err) {
+    console.error("Unexpected location sync error:", err);
+  }
+}
 // ---------- HP & MANA HELPERS ----------
 
 const RW_MAX_HP = 100;
@@ -122,7 +192,10 @@ function updateHpManaDisplays() {
   const manaValueEl = document.getElementById("rwManaValue");
 
   const hp = Math.max(0, Math.min(RW_MAX_HP, window.rwHP ?? RW_MAX_HP));
-  const mana = Math.max(0, Math.min(RW_MAX_MANA, window.rwMana ?? RW_MAX_MANA));
+  const mana = Math.max(
+  0,
+  Math.min(RW_MAX_MANA, window.rwMana ?? 0)
+);
 
   const hpPct = (hp / RW_MAX_HP) * 100;
   const manaPct = (mana / RW_MAX_MANA) * 100;
@@ -150,6 +223,203 @@ async function syncHpToSupabase() {
     console.error("Unexpected HP sync error:", err);
   }
 }
+
+// ---------- STATS (DnD) → SUPABASE ----------
+
+async function syncStatsToSupabase(stats) {
+  const email = window.rwEmail;
+  if (!email) return;
+
+  try {
+    const payload = stats || window.rwStats || null;
+
+    const { error } = await supabaseClient
+      .from("data")
+      .update({ stats: payload })
+      .eq("email", email);
+
+    if (error) {
+      console.error("Failed to sync stats:", error);
+    }
+  } catch (err) {
+    console.error("Unexpected stats sync error:", err);
+  }
+}
+
+// ---------- DnD-STYLE STATS CONFIG ----------
+// We’ll use: Might, Agility, Will, Insight, Presence
+
+const RW_BASE_STATS = {
+  might: 8,
+  agility: 8,
+  will: 8,
+  insight: 8,
+  presence: 8,
+};
+
+// Per-archetype bonuses (Book 1 will eventually choose these)
+const RW_ARCHETYPE_STATS = {
+  "shadow-witch": {
+    might: 1,
+    agility: 2,
+    will: 1,
+    insight: 0,
+    presence: 0,
+  },
+  "scholar-of-runes": {
+    might: 0,
+    agility: 0,
+    will: 1,
+    insight: 3,
+    presence: 0,
+  },
+  "guardian-of-gates": {
+    might: 3,
+    agility: 0,
+    will: 1,
+    insight: 0,
+    presence: 0,
+  },
+  "seer-of-moons": {
+    might: 0,
+    agility: 1,
+    will: 1,
+    insight: 2,
+    presence: 0,
+  },
+};
+
+// Per-affinity bonuses (stone / water / flame / wind)
+const RW_AFFINITY_STATS = {
+  stone: {
+    might: 2,
+    agility: 0,
+    will: 1,
+    insight: 0,
+    presence: 0,
+  },
+  water: {
+    might: 0,
+    agility: 0,
+    will: 1,
+    insight: 1,
+    presence: 1,
+  },
+  flame: {
+    might: 1,
+    agility: 1,
+    will: 2,
+    insight: 0,
+    presence: 0,
+  },
+  wind: {
+    might: 0,
+    agility: 2,
+    will: 0,
+    insight: 1,
+    presence: 0,
+  },
+};
+
+// Avatar “family” bonuses – upgrades as you swap into different Ravenwood paths
+// We key this off getAvatarFamily("f-shadow") -> "shadow", etc.
+const RW_AVATAR_FAMILY_STATS = {
+  default: {
+    might: 0,
+    agility: 0,
+    will: 0,
+    insight: 0,
+    presence: 0,
+  },
+  shadow: {
+    might: 0,
+    agility: 1,
+    will: 1,
+    insight: 0,
+    presence: 0,
+  },
+  mystic: {
+    might: 0,
+    agility: 0,
+    will: 1,
+    insight: 1,
+    presence: 0,
+  },
+  moon: {
+    might: 0,
+    agility: 0,
+    will: 0,
+    insight: 1,
+    presence: 1,
+  },
+  rune: {
+    might: 0,
+    agility: 0,
+    will: 1,
+    insight: 2,
+    presence: 0,
+  },
+  guardian: {
+    might: 2,
+    agility: 0,
+    will: 1,
+    insight: 0,
+    presence: 0,
+  },
+};
+
+// Merge multiple stat blocks together
+function mergeStatBlocks(...blocks) {
+  const result = { ...RW_BASE_STATS };
+  for (const block of blocks) {
+    if (!block) continue;
+    for (const key in result) {
+      if (Object.prototype.hasOwnProperty.call(block, key)) {
+        result[key] += block[key] || 0;
+      }
+    }
+  }
+  return result;
+}
+
+// Compute stats for a character given archetype, affinity, and avatar
+function computeStatsForCharacter(char, avatarKey) {
+  const archetype = char?.archetype || null;
+  const affinity = char?.affinity || null;
+
+  const avatarFamily =
+    getAvatarFamily(avatarKey) || "default"; // e.g. "shadow", "mystic", etc.
+
+  const archetypeBlock = RW_ARCHETYPE_STATS[archetype] || null;
+  const affinityBlock = RW_AFFINITY_STATS[affinity] || null;
+  const avatarBlock =
+    RW_AVATAR_FAMILY_STATS[avatarFamily] || RW_AVATAR_FAMILY_STATS.default;
+
+  return mergeStatBlocks(archetypeBlock, affinityBlock, avatarBlock);
+}
+
+// Global recompute helper for whenever archetype / affinity / avatar changes
+async function recomputeRavenwoodStats(save = true) {
+  const char = window.rwChar || {};
+  const key =
+    window.rwAvatarKey ||
+    char.avatar ||
+    DEFAULT_AVATAR_FEMALE ||
+    DEFAULT_AVATAR;
+
+  const stats = computeStatsForCharacter(char, key);
+  window.rwStats = stats;
+
+  console.log("Ravenwood stats:", stats);
+
+  if (save && typeof syncStatsToSupabase === "function") {
+    await syncStatsToSupabase(stats);
+  }
+
+  return stats;
+}
+
+//
 
 async function syncManaToSupabase() {
   const email = window.rwEmail;
@@ -1079,144 +1349,114 @@ async function createCharacterOnSupabase(payload) {
 
 // ---------- PAGE INIT: CREATE (SIGN-UP) ----------
 // ---------- PAGE INIT: CREATE (SIGN-UP) ----------
+// ---------- PAGE INIT: CREATE (SIGN-UP) ----------
 function initCreatePage() {
-  const form = $("#characterForm");
+  // Only run this logic on the create page
+  if (document.body.dataset.page !== "create") return;
+
+  const form = document.getElementById("characterForm");
+  const statusEl = document.getElementById("rwStatus");
   if (!form) return;
 
-  const statusEl = $("#rwStatus");
+  function setStatus(msg, isError = false) {
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.classList.remove("text-danger", "text-success", "d-none");
+    statusEl.classList.add(isError ? "text-danger" : "text-success");
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const displayName = $("#displayName")?.value.trim();
-    const archetype = $("#archetype")?.value;
-    const affinity = $("#affinity")?.value;
-    const familiarName = $("#familiarName")?.value.trim();
-    const journeyTone = document.querySelector(
-      "input[name='journeyTone']:checked"
-    )?.value;
+    const displayName = document.getElementById("displayName")?.value.trim();
+    const email = document.getElementById("email")?.value.trim().toLowerCase();
+    const password = document.getElementById("password")?.value;
+    const familiarName = document.getElementById("familiarName")?.value.trim();
 
-    const avatar =
-      document.querySelector("input[name='avatar']:checked")?.value ||
-      DEFAULT_AVATAR;
+    const genderInput = document.querySelector("input[name='gender']:checked");
+    const gender = genderInput ? genderInput.value : null;
 
-    const email = $("#email")?.value.trim().toLowerCase();
-    const password = $("#password")?.value;
-
-    if (!displayName || !archetype || !affinity || !email || !password) {
-      alert("Please fill in all required fields (including email & password).");
+    // 🔹 Only require: name, email, password, gender
+    if (!displayName || !email || !password || !gender) {
+      setStatus(
+        "Please fill in your name, email, password, and how Ravenwood first sees you.",
+        true
+      );
       return;
     }
 
-    if (password.length < 6) {
-      alert("Choose a password at least 6 characters long.");
-      return;
-    }
-
-    if (statusEl) {
-      statusEl.textContent = "Consulting the wards...";
-      statusEl.classList.remove("text-danger");
-    }
+    setStatus("Consulting the wards...");
 
     try {
-      // Check if a character already exists for that email
-      const existing = await fetchCharacterByEmail(email);
-      if (existing) {
-        if (statusEl) {
-          statusEl.textContent =
-            "That email is already bound to Ravenwood. Use the Return to Ravenwood login instead.";
-          statusEl.classList.add("text-danger");
-        }
-        alert("That email already has a Ravenwood self. Please log in instead.");
-        return;
-      }
+      // 1) Create auth user
+      const { data, error: authError } = await supabaseClient.auth.signUp({
+        email,
+        password,
+      });
+      if (authError) throw authError;
 
-      // 1) Create Auth user (Supabase Auth)
-      const { data: signUpData, error: signUpError } =
-        await supabaseClient.auth.signUp({
-          email,
-          password,
-        });
+      // 2) Decide starting avatar (default class)
+      const avatar =
+        gender === "male" ? DEFAULT_AVATAR_MALE : DEFAULT_AVATAR_FEMALE;
 
-      if (signUpError) {
-        console.error("Supabase signUp error:", signUpError);
-        if (statusEl) {
-          statusEl.textContent =
-            "The wards rejected that email/password. Try again.";
-          statusEl.classList.add("text-danger");
-        }
-        alert(signUpError.message || "Could not create your Ravenwood account.");
-        return;
-      }
+              // 🔹 Starting stats: no archetype/affinity yet, just base + avatar family
+      const tempCharForStats = { archetype: null, affinity: null };
+      const startingStats = computeStatsForCharacter(tempCharForStats, avatar);
 
-      console.log("Auth created:", signUpData);
-
-      // 2) Create character profile row in "data" table
-            const payload = {
+      // 3) Build character row for the 'data' table
+      const payload = {
         email,
         display_name: displayName,
-        archetype,
-        affinity,
         familiar_name: familiarName || null,
-        journey_tone: journeyTone || null,
+
+        gender,
+
+        // Book I will set these later
+        archetype: null,
+        affinity: null,
+
+        // Starting avatar + unlock list
         avatar,
-        created_at: new Date().toISOString(),
+        unlocked_avatars: [avatar],
+
+        // 🔹 DnD-style stats saved in Supabase
+        stats: startingStats,
+
+        // HP only at start; mana is locked
+        hp: 100,
+        mana: 0,
+        mana_unlocked: false,
+
         coins: 0,
-        hp: 100,          // 👈 NEW
-        mana: 100,        // 👈 NEW
-        secrets: [],      // start empty
+        location_key: "square",
+        secrets: [],
         inventory: [],
-        journal_entries: [],    // start empty
+        journal_entries: [],
+
         manor_unlocked: false,
-        intro_seen: false,     // first time in Ravenwood, show intro
+        intro_seen: false,
         manor_intro_seen: false,
         inventory_intro_seen: false,
+
         book1_started: false,
         book1_last_page: null,
+        book1_completed: false,
       };
 
-      const inserted = await createCharacterOnSupabase(payload);
-      console.log("Created character:", inserted);
+      await createCharacterOnSupabase(payload);
 
-      // Remember email on this device
+      // Remember email and go to Ravenwood
+      window.rwEmail = email;
       saveEmail(email);
 
-      if (statusEl) {
-        statusEl.textContent = "The gates of Ravenwood open…";
-      }
-
-      // 🔐 Make sure they're actually logged in before sending them to Ravenwood
-      try {
-        const { error: signInError } =
-          await supabaseClient.auth.signInWithPassword({
-            email,
-            password,
-          });
-
-        if (signInError) {
-          console.error("Auto-sign in after sign-up failed:", signInError);
-          // Fallback: send them to login page if something went wrong
-          window.location.href = "login.html";
-          return;
-        }
-
-        // ✅ Now there is a valid session, so getUser() on ravenwood.html will work,
-        // and maybeShowIntroModal(char, email) will run.
-        window.location.href = "ravenwood.html";
-      } catch (e) {
-        console.error("Unexpected auto-signin error:", e);
-        window.location.href = "login.html";
-      }
+      setStatus("The gates of Ravenwood open…");
+      window.location.href = "ravenwood.html";
     } catch (err) {
-      console.error("Error creating character:", err);
-      if (statusEl) {
-        statusEl.textContent =
-          "Something disrupted the ritual. Check your connection or try again.";
-        statusEl.classList.add("text-danger");
-      }
-      alert(
-        err.message ||
-          "The wards resisted your entry. Please try again in a moment."
+      console.error("Create error:", err);
+      setStatus(
+        err?.message ||
+          "Something went wrong while creating your Ravenwood self.",
+        true
       );
     }
   });
@@ -1296,6 +1536,112 @@ async function initWorldPage() {
   const archEl = $("#rwUserArchetype");
     // We'll keep the full character object around for later helpers
   let currentChar = null;
+
+    // ---------- DnD-Style STATS CONFIG ----------
+
+  // Neutral baseline before Book I decides archetype/affinity
+  const DEFAULT_BASE_STATS = {
+    pre_awaken: {
+      might: 8,
+      agility: 8,
+      will: 8,
+      insight: 8,
+      presence: 8,
+    },
+
+    // Once archetype is chosen, these become the "class" baselines:
+    "shadow-witch": {
+      might: 8,
+      agility: 12,
+      will: 12,
+      insight: 10,
+      presence: 9,
+    },
+    "scholar-of-runes": {
+      might: 7,
+      agility: 8,
+      will: 11,
+      insight: 13,
+      presence: 9,
+    },
+    "guardian-of-gates": {
+      might: 12,
+      agility: 8,
+      will: 11,
+      insight: 8,
+      presence: 8,
+    },
+    "seer-of-moons": {
+      might: 7,
+      agility: 9,
+      will: 10,
+      insight: 12,
+      presence: 11,
+    },
+  };
+
+  // Elemental affinity tweaks layered on top of base
+  const AFFINITY_MODS = {
+    stone: {
+      might: +1,
+      will: +1,
+    },
+    water: {
+      insight: +1,
+      presence: +1,
+    },
+    flame: {
+      will: +2,
+      insight: -1,
+    },
+    wind: {
+      agility: +2,
+      presence: +1,
+      might: -1,
+    },
+  };
+
+  function computeStartingStatsFor(char) {
+    const arche = char?.archetype || null;
+    const affinity = char?.affinity || null;
+
+    const base =
+      DEFAULT_BASE_STATS[arche || "pre_awaken"] ||
+      DEFAULT_BASE_STATS.pre_awaken;
+
+    const mods = AFFINITY_MODS[affinity] || {};
+
+    const result = {
+      might: base.might,
+      agility: base.agility,
+      will: base.will,
+      insight: base.insight,
+      presence: base.presence,
+    };
+
+    for (const [key, delta] of Object.entries(mods)) {
+      result[key] = (result[key] || 0) + delta;
+    }
+
+    return result;
+  }
+
+  // Recompute stats from current character (used now + by Book I later)
+  async function rwRecomputeStats(saveToSupabase = false) {
+    const char = window.rwChar || currentChar || {};
+    const stats = computeStartingStatsFor(char);
+
+    window.rwStats = stats;
+
+    if (saveToSupabase) {
+      await syncStatsToSupabase(stats);
+    }
+
+    return stats;
+  }
+
+  // Make it available globally (book-1, etc.)
+  window.rwRecomputeStats = rwRecomputeStats;
 
   const navAvatarEl = document.querySelector("#rwAvatar");
   const summaryAvatarEl = document.querySelector("#rwSummaryAvatar");
@@ -1404,38 +1750,142 @@ async function initWorldPage() {
   // Try to load an existing character row for this email
   let char = await fetchCharacterByEmail(email);
 
-  if (!char) {
-  console.warn("No character profile found for", email, "— creating a default one.");
+      if (!char) {
+    console.warn("No character profile found for", email, "— creating a default one.");
 
-  // Fallback payload so you never get stuck in a redirect loop
-            const fallbackPayload = {
-        email,
-        display_name: email.split("@")[0] || "Wanderer",
-        archetype: "shadow-witch",
-        affinity: "stone",
-        familiar_name: null,
-        journey_tone: "cozy",
-        avatar: DEFAULT_AVATAR,
-        created_at: new Date().toISOString(),
+    const fallbackPayload = {
+      email,
+      display_name: email.split("@")[0] || "Wanderer",
+      archetype: "shadow-witch",
+      affinity: "stone",
+      familiar_name: null,
+      avatar: DEFAULT_AVATAR,
+      created_at: new Date().toISOString(),
 
-        // ⭐ Start fallback profiles with 0 coins as well
-        coins: 0,
-        hp: 100,          // 👈 NEW
-        mana: 100,        // 👈 NEW
-        secrets: [],
-        inventory: [],
-        journal_entries: [],
-        manor_unlocked: false,
-        intro_seen: false,
-        manor_intro_seen: false,
-        inventory_intro_seen: false,
-        book1_started: false,
-        book1_last_page: null,
-      };
+      coins: 0,
+      hp: 100,
+      mana: 100,
+      secrets: [],
+      inventory: [],
+      journal_entries: [],
+      location_key: "square",
+      manor_unlocked: false,
+      intro_seen: false,
+      manor_intro_seen: false,
+      inventory_intro_seen: false,
+      book1_started: false,
+      book1_last_page: null,
+    };
 
-  // Create the missing row
-  char = await createCharacterOnSupabase(fallbackPayload);
-}
+    // 🔹 Compute starting stats for the fallback too
+    const tempCharForStats = {
+      archetype: fallbackPayload.archetype,
+      affinity: fallbackPayload.affinity,
+    };
+    fallbackPayload.stats = computeStatsForCharacter(
+      tempCharForStats,
+      fallbackPayload.avatar
+    );
+
+    // Create the missing row
+    char = await createCharacterOnSupabase(fallbackPayload);
+  }
+
+    // ---------- CHARACTER STATS SHEET ----------
+
+  function getReadableArchetype(code) {
+    if (!code) return "Undecided";
+    const map = {
+      "shadow-witch": "Shadow Witch",
+      "scholar-of-runes": "Scholar of Runes",
+      "guardian-of-gates": "Guardian of Gates",
+      "seer-of-moons": "Seer of Moons",
+    };
+    return map[code] || String(code);
+  }
+
+  function getReadableAffinity(code) {
+    if (!code) return "Undecided";
+    const map = {
+      stone: "Stone · Wards & Foundations",
+      water: "Water · Memory & Dream",
+      flame: "Flame · Will & Transformation",
+      wind: "Wind · Messages & Thresholds",
+    };
+    return map[code] || String(code);
+  }
+
+  function renderStatsSheet() {
+    const char = window.rwChar || {};
+    const stats = window.rwStats || {};
+
+    // Header bits
+    const nameEl = document.getElementById("rwStatsName");
+    const archEl = document.getElementById("rwStatsArchetype");
+    const affEl = document.getElementById("rwStatsAffinity");
+
+    if (nameEl) nameEl.textContent = char.display_name || "Wanderer";
+    if (archEl) archEl.textContent = getReadableArchetype(char.archetype);
+    if (affEl) affEl.textContent = getReadableAffinity(char.affinity);
+
+    // Core numeric stats
+    const might = stats.might ?? 0;
+    const agility = stats.agility ?? 0;
+    const will = stats.will ?? 0;
+    const insight = stats.insight ?? 0;
+    const presence = stats.presence ?? 0;
+
+    const setValue = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(value);
+    };
+
+    setValue("rwStatMight", might);
+    setValue("rwStatAgility", agility);
+    setValue("rwStatWill", will);
+    setValue("rwStatInsight", insight);
+    setValue("rwStatPresence", presence);
+
+    // Derived fluff from HP + Mana
+    const hp = typeof window.rwHP === "number" ? window.rwHP : RW_MAX_HP;
+    const mana =
+      typeof window.rwMana === "number" ? window.rwMana : RW_MAX_MANA;
+
+    const vitEl = document.getElementById("rwStatVitalityNote");
+    const manaEl = document.getElementById("rwStatManaNote");
+
+    if (vitEl) {
+      vitEl.textContent = `Current HP: ${hp} / ${RW_MAX_HP} — your body’s ability to keep walking after bad decisions.`;
+    }
+
+    if (manaEl) {
+      if (char.mana_unlocked === true) {
+        manaEl.textContent = `Current Mana: ${mana} / ${RW_MAX_MANA} — how much spellwork your nerves can hold before they fray.`;
+      } else {
+        manaEl.textContent =
+          "Mana is still dormant. Book I will decide how and when it wakes in you.";
+      }
+    }
+  }
+
+  const statsBtn = document.getElementById("rwStatsBtn");
+  const statsModalEl = document.getElementById("rwStatsModal");
+  let statsModal = null;
+
+  if (statsModalEl && window.bootstrap && window.bootstrap.Modal) {
+    statsModal = new bootstrap.Modal(statsModalEl);
+  }
+
+  if (statsBtn && statsModal) {
+    statsBtn.addEventListener("click", async () => {
+      // Make sure we have the latest stats (in case archetype/affinity changed)
+      if (typeof window.rwRecomputeStats === "function") {
+        await window.rwRecomputeStats(true);
+      }
+      renderStatsSheet();
+      statsModal.show();
+    });
+  }
 
 //------------------------------------------------
 // FOGWALK ALLEY RANDOMIZER
@@ -1468,10 +1918,42 @@ updateCoinDisplay();
 window.rwHP =
   typeof char.hp === "number" && !Number.isNaN(char.hp) ? char.hp : 100;
 window.rwMana =
-  typeof char.mana === "number" && !Number.isNaN(char.mana) ? char.mana : 100;
+  typeof char.mana === "number" && !Number.isNaN(char.mana)
+    ? char.mana
+    : 0; // start with no mana until Book I unlocks it
+
+    // 🔹 Stats from Supabase (or compute defaults if missing)
+if (char.stats && typeof char.stats === "object") {
+  window.rwStats = char.stats;
+  console.log("Loaded stats from Supabase:", window.rwStats);
+} else if (typeof window.rwRecomputeStats === "function") {
+  // Older rows without stats will get them now
+  window.rwRecomputeStats(true);
+}
 
 // draw meters
 updateHpManaDisplays();
+
+  // ---------- STATS BOOTSTRAP ----------
+  // If Supabase already has stats, use them.
+  // Otherwise, compute starting stats and save them once.
+  if (char.stats && typeof char.stats === "object") {
+    window.rwStats = char.stats;
+  } else {
+    window.rwStats = computeStartingStatsFor(char);
+    // Save first-time generated stats back to Supabase
+    syncStatsToSupabase(window.rwStats);
+  }
+
+// 🔒 Show or hide the Mana meter depending on unlock flag
+const manaContainer = document.getElementById("rwManaContainer");
+if (manaContainer) {
+  if (char.mana_unlocked === true) {
+    manaContainer.classList.remove("rw-hidden");
+  } else {
+    manaContainer.classList.add("rw-hidden");
+  }
+}
 
   // 🔹 If Book I has been started, show a "Continue" button
   const bookContinueBtn = document.getElementById("rwBook1ContinueBtn");
@@ -1517,17 +1999,26 @@ window.rwJournalIndex = window.rwJournalEntries.length
   if (nameEl) nameEl.textContent = char.display_name || "Guest";
 
   if (archEl) {
+  if (!char.archetype) {
+    // No archetype yet — hide it until Book 1 decides
+    archEl.textContent = "";
+    archEl.classList.add("d-none");
+  } else {
     const map = {
       "shadow-witch": "Shadow Witch",
       "scholar-of-runes": "Scholar of Runes",
       "guardian-of-gates": "Guardian of Gates",
       "seer-of-moons": "Seer of Moons",
     };
-    archEl.textContent = map[char.archetype] || "Circle Walker";
+    archEl.textContent = map[char.archetype] || String(char.archetype);
+    archEl.classList.remove("d-none");
   }
+}
 
   // Avatar from DB (fallback to default)
+    // Avatar from DB (fallback to default)
   avatarKey = char.avatar || DEFAULT_AVATAR;
+  window.rwAvatarKey = avatarKey; // 🔹 remember for stat calculations
   applyAvatar(navAvatarEl);
   applyAvatar(summaryAvatarEl);
 
@@ -1535,12 +2026,18 @@ window.rwJournalIndex = window.rwJournalEntries.length
   const summaryName = $("#rwSummaryName");
   const summaryArch = $("#rwSummaryArchetype");
   const summaryAffinity = $("#rwSummaryAffinity");
-  const summaryTone = $("#rwSummaryTone");
 
   if (summaryName) summaryName.textContent = char.display_name;
   if (summaryArch) {
+  if (!char.archetype) {
+    summaryArch.textContent = "";
+    summaryArch.classList.add("d-none");
+  } else {
+    // Reuse whatever the navbar is showing
     summaryArch.textContent = archEl ? archEl.textContent : "";
+    summaryArch.classList.remove("d-none");
   }
+}
 
   if (summaryAffinity && char.affinity) {
     const affMap = {
@@ -1551,13 +2048,6 @@ window.rwJournalIndex = window.rwJournalEntries.length
     };
     summaryAffinity.textContent =
       affMap[char.affinity] || String(char.affinity);
-  }
-
-  if (summaryTone) {
-    summaryTone.textContent =
-      char.journey_tone === "intense"
-        ? "Darker & Intense"
-        : "Cozy & Healing";
   }
 
   // ⭐ Show first-arrival intro if this account hasn't seen it yet
@@ -1603,7 +2093,7 @@ window.rwJournalIndex = window.rwJournalEntries.length
         );
         if (!selected) return;
 
-        const newAvatar = selected.value;
+                const newAvatar = selected.value;
 
         try {
           const { error: updateError } = await supabaseClient
@@ -1618,14 +2108,21 @@ window.rwJournalIndex = window.rwJournalEntries.length
           }
 
           avatarKey = newAvatar;
+          window.rwAvatarKey = newAvatar; // 🔹 feed into stat calc
           applyAvatar(navAvatarEl);
           applyAvatar(summaryAvatarEl);
+
+          // 🔹 Recompute + save stats for the new avatar path
+          if (typeof window.rwRecomputeStats === "function") {
+            window.rwRecomputeStats(true);
+          }
 
           avatarModal.hide();
         } catch (err) {
           console.error("Unexpected avatar update error:", err);
           alert("Something disrupted the ritual. Please try again.");
         }
+
       });
     }
   }
@@ -2367,7 +2864,7 @@ function showFirstInventoryModalIfNeeded() {
     }
 
     // ⭐ Special case: first time arriving at the Manor
-    if (
+        if (
       key === "manor" &&
       currentChar &&
       currentChar.manor_intro_seen !== true &&
@@ -2378,11 +2875,12 @@ function showFirstInventoryModalIfNeeded() {
       // Show manor description + log secret, save location
       renderLocationDetail(key);
       addSecretFromLocation(key);
+
+      // Save locally + Supabase
       saveLocationKey(key);
+      syncLocationToSupabase(key);
 
-      // 🔁 every click can re-check dynamic locations
       maybeSpawnDynamicLocations();
-
       return;
     }
 
@@ -2556,58 +3054,64 @@ function showFirstInventoryModalIfNeeded() {
     }
 
     // 🌙 Normal behavior for all other locations (and later manor visits)
+        // 🌙 Normal behavior for all other locations (and later manor visits)
     renderLocationDetail(key);
     addSecretFromLocation(key);
-    saveLocationKey(key);
 
-    // 🔁 every click can re-check dynamic locations
+    // Save locally + Supabase
+    saveLocationKey(key);
+    syncLocationToSupabase(key);
+
     maybeSpawnDynamicLocations();
+
   });
 }
 
   // ---------- When HP Drops to 0: Wake in the Square ----------
   window.rwHandleHpZero = function () {
-    try {
-      // Always bring them back to Town Square
-      const key = "square";
+  try {
+    // Always bring them back to Town Square
+    const key = "square";
 
-      // Save square as their current location
-      saveLocationKey(key);
+    // Save square as their current location
+    saveLocationKey(key);
+    // Also sync to Supabase so location persists across devices
+    syncLocationToSupabase(key);
 
-      // Re-render the square description if it's a valid location
-      if (locations[key]) {
-        renderLocationDetail(key);
-      }
-
-      // Optionally restore some HP so they don't instantly "die" again
-      window.rwHP = Math.floor(RW_MAX_HP / 2); // wake at half health
-      updateHpManaDisplays();
-      syncHpToSupabase();
-
-      const modalEl = document.getElementById("rwHpZeroModal");
-      if (!modalEl || !window.bootstrap || !bootstrap.Modal) return;
-
-      const deathModal = new bootstrap.Modal(modalEl, {
-        backdrop: "static",
-        keyboard: false,
-      });
-
-      deathModal.show();
-
-      const btn = document.getElementById("rwHpZeroContinueBtn");
-      if (btn) {
-        btn.addEventListener(
-          "click",
-          () => {
-            deathModal.hide();
-          },
-          { once: true }
-        );
-      }
-    } catch (err) {
-      console.error("Error handling HP zero:", err);
+    // Re-render the square description if it's a valid location
+    if (locations[key]) {
+      renderLocationDetail(key);
     }
-  };
+
+    // Optionally restore some HP so they don't instantly "die" again
+    window.rwHP = Math.floor(RW_MAX_HP / 2); // wake at half health
+    updateHpManaDisplays();
+    syncHpToSupabase();
+
+    const modalEl = document.getElementById("rwHpZeroModal");
+    if (!modalEl || !window.bootstrap || !bootstrap.Modal) return;
+
+    const deathModal = new bootstrap.Modal(modalEl, {
+      backdrop: "static",
+      keyboard: false,
+    });
+
+    deathModal.show();
+
+    const btn = document.getElementById("rwHpZeroContinueBtn");
+    if (btn) {
+      btn.addEventListener(
+        "click",
+        () => {
+          deathModal.hide();
+        },
+        { once: true }
+      );
+    }
+  } catch (err) {
+    console.error("Error handling HP zero:", err);
+  }
+};
 
   // SPAWN / UPDATE UNLOCKABLE LOCATIONS
   function maybeSpawnDynamicLocations() {
@@ -2748,19 +3252,23 @@ function showFirstInventoryModalIfNeeded() {
   // Spawn any unlockable locations based on already-known secrets / items
   maybeSpawnDynamicLocations();
 
-  // Starting view:
-  //  - First time: Town Square
-  //  - Later: last visited valid location
-  let startingKey = loadSavedLocation();
+    // Starting view:
+  //  - First time: Town Square (from Supabase default row)
+  //  - Later: whatever location Supabase says, with localStorage as optional cache
+  let startingKey = (currentChar && currentChar.location_key) || loadSavedLocation();
+
   if (!startingKey || !locations[startingKey]) {
-    startingKey = "square";       // first time, use Town Square
-    saveLocationKey(startingKey); // remember it for next time
+    // Fallback if it's missing or invalid
+    startingKey = "square";
   }
+
+  // Local cache is optional; Supabase is the source of truth
+  saveLocationKey(startingKey);
 
   if (detailTitleEl && detailBodyEl && detailHintEl && locations[startingKey]) {
     renderLocationDetail(startingKey);
   }
-}
+} // 👈 CLOSES async function initWorldPage()
 
 // ---------- LANDING PAGE ----------
 function initLandingPage() {
