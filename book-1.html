@@ -2,37 +2,29 @@
 <html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8" />
-  <title>Wards of the Manor · Ravenwood Interactive Book</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wards of the Manor · Ravenwood · Book I</title>
 
   <!-- Main Ravenwood styles -->
   <link rel="stylesheet" href="style.css" />
-  
+
   <!-- Bootstrap -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
     crossorigin="anonymous"
   />
-  <style>
-    /* --- Book layout helpers (minimal extra CSS) --- */
 
+  <!-- Page-specific helpers (keep small; most styling lives in style.css) -->
+  <style>
     body.rw-bg {
       background: radial-gradient(circle at top, #111827 0, #020617 60%);
       min-height: 100vh;
     }
 
     .rw-book-shell {
-      max-width: 900px;
+      max-width: 920px;
       margin: 0 auto;
-    }
-
-    .rw-book-body {
-      max-height: none;
-    }
-
-    .rw-book-image-wrapper {
-      margin-bottom: 1.75rem;
     }
 
     .rw-book-image-frame {
@@ -54,48 +46,6 @@
       display: block;
     }
 
-    /* Glow overlay where you want the talisman dropped */
-    .rw-book-drop-hotspot {
-      position: absolute;
-      inset: 25% 30%;
-      border: 2px dashed rgba(250, 204, 21, 0.8);
-      border-radius: 999px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle, rgba(250, 204, 21, 0.12), transparent);
-      box-shadow: 0 0 28px rgba(250, 204, 21, 0.65);
-      pointer-events: auto;
-    }
-
-    .rw-book-drop-label {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #fefce8;
-      text-shadow: 0 1px 3px rgba(15, 23, 42, 0.9);
-    }
-
-    .rw-book-drop-hotspot.rw-drop-success {
-      border-style: solid;
-      box-shadow: 0 0 32px rgba(34, 197, 94, 0.9);
-    }
-
-    .rw-book-drop-hotspot.rw-drop-fail {
-      border-color: rgba(239, 68, 68, 0.9);
-      box-shadow: 0 0 32px rgba(239, 68, 68, 0.9);
-    }
-
-    .rw-book-choices button {
-      text-align: left;
-      white-space: normal;
-    }
-
-    .rw-book-choices button:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
     .rw-book-page-meta {
       font-size: 0.8rem;
       letter-spacing: 0.15em;
@@ -103,19 +53,14 @@
       color: #9ca3af;
     }
 
-    /* Inventory panel specific to the book view */
-
+    /* Inventory panel in-book */
     #rwBookInventoryPanel {
-      max-width: 480px;
-      margin: 0 auto 1.5rem;
+      max-width: 520px;
+      margin: 0 auto 1.25rem;
       padding: 0.75rem 0.75rem 0.25rem;
       border-radius: 0.9rem;
       background: radial-gradient(circle at top left, #020617 0, #020617 45%, #030712 100%);
       border: 1px solid rgba(148, 163, 184, 0.4);
-    }
-
-    #rwBookInventoryGrid {
-      margin-top: 0.5rem;
     }
 
     .rw-book-system-msg {
@@ -123,81 +68,81 @@
     }
 
     @media (max-width: 768px) {
-      .rw-book-image-frame {
-        min-height: 180px;
-      }
-      #rwBookInventoryPanel {
-        width: 100%;
-      }
+      .rw-book-image-frame { min-height: 180px; }
+      #rwBookInventoryPanel { width: 100%; }
     }
   </style>
+
+  <style>
+    .rw-choice-echo strong { letter-spacing: .04em; }
+  </style>
+
 </head>
-<body class="rw-bg" data-page="book">
-  <!-- Simple nav back to Ravenwood -->
+<body class="rw-bg" data-page="book1">
   <nav class="navbar navbar-expand-lg rw-navbar border-bottom">
     <div class="container">
-      <a class="navbar-brand fw-semibold" href="ravenwood.html">
-        Ravenwood
-      </a>
+      <a class="navbar-brand fw-semibold" href="ravenwood.html">Ravenwood</a>
+
       <span class="navbar-text small text-muted ms-3">
         Wards of the Manor · Book I
       </span>
+
       <a href="ravenwood.html" class="btn btn-sm rw-btn-main ms-auto">
         ⟵ Town &amp; Manor
       </a>
     </div>
   </nav>
 
-  <main class="py-4 py-md-5">
+    <main class="py-4 py-md-5">
     <div class="container rw-book-shell">
       <div class="rw-card p-4 p-md-5 shadow-lg">
+
         <header class="mb-4 text-center">
           <p class="rw-tagline text-uppercase mb-1">Interactive Ravenwood Story</p>
           <h1 class="rw-title mb-2">Wards of the Manor</h1>
           <p class="rw-body mb-0">
-            Book I · Your choices shape how the Manor remembers you. Read slowly, follow the paths that call to you, and
-            let the talisman guide your way.
+            Book I · Your choices shape how the Manor remembers you.
+            Read slowly. Follow what calls. Let Ravenwood answer in its own time.
           </p>
         </header>
 
         <hr class="my-4" />
 
-        <!-- Inventory toggle + panel -->
+        <!-- Page meta + Inventory toggle -->
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="rw-book-page-meta" id="rwBookPageMeta">Page 1</span>
+
           <button id="rwBookInventoryToggle" class="btn btn-outline-light btn-sm">
             👜 Open Inventory
           </button>
         </div>
 
+        <!-- Inventory panel -->
         <div id="rwBookInventoryPanel" class="d-none">
           <div class="d-flex justify-content-between align-items-center">
             <span class="small text-muted">
-              Tap an item in your pack to open options. Choose <strong>Use</strong> or <strong>Description</strong>.
+              Tap an item for options (<strong>Use</strong> / <strong>Description</strong>).
             </span>
             <button class="btn btn-link btn-sm text-decoration-none text-muted" id="rwBookInventoryClose">
               Close ✕
             </button>
           </div>
+
           <div id="rwBookInventoryGrid" class="rw-inventory-grid mt-2"></div>
         </div>
 
-        <!-- Page content -->
+        <!-- Page container -->
         <article id="rwBookPageContainer" class="rw-book-body">
+
           <!-- Image slot -->
-          <div class="rw-book-image-wrapper">
+          <div class="mb-4">
             <div class="rw-book-image-frame">
-              <!-- Replace src per page; you can drop real art for each scene -->
               <img
                 id="rwBookImage"
-                src="book-page-1.png"
-                alt="Ravenwood Manor scene"
+                src=""
+                alt="Ravenwood scene"
                 onerror="this.style.display='none';"
               />
-              <!-- Drag-drop hotspot (currently unused but kept) -->
-              <div id="rwBookDropHotspot" class="rw-book-drop-hotspot d-none">
-                <span class="rw-book-drop-label">Drop the talisman here</span>
-              </div>
             </div>
           </div>
 
@@ -206,13 +151,36 @@
 
           <div id="rwBookSystemMessage" class="rw-book-system-msg small text-warning mb-2 d-none"></div>
 
-          <div id="rwBookChoices" class="rw-book-choices d-flex flex-column gap-2 mb-3"></div>
+          <div id="rwBookChoices" class="d-flex flex-column gap-2 mb-3"></div>
+
         </article>
+
       </div>
     </div>
   </main>
 
-  <!-- Bootstrap JS -->
+    <!-- Item Action Modal (for book inventory) -->
+  <div class="modal fade" id="rwBookItemModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rw-card">
+        <div class="modal-header border-0">
+          <h5 class="modal-title rw-card-title" id="rwBookItemModalTitle">Item</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <p class="rw-body mb-3" id="rwBookItemModalDesc"></p>
+
+          <div class="d-flex gap-2">
+            <button class="btn rw-btn-main w-50" id="rwBookItemUseBtn">Use</button>
+            <button class="btn btn-outline-light w-50" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Bootstrap JS -->
   <script
     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     crossorigin="anonymous"
@@ -221,1011 +189,3541 @@
   <!-- Supabase JS (v2) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Your global Ravenwood logic (Supabase, inventory helpers, etc.) -->
+  <!-- Ravenwood core logic (Supabase client, inventory helpers, HP/Mana, stats, etc.) -->
   <script src="app.js"></script>
 
-  <!-- Book engine -->
-  <script>
-    (function () {
-      const TALISMAN_ITEM_ID = "old_talisman";
+    <script>
+(function () {
+  // ----------------------------
+  // Book I State
+  // ----------------------------
+  const BOOK_STATE = {
+    currentPageId: "1",
+    flags: {},
+    lastChoiceKey: null,
+    lastRoll: null,
+  };
 
-      // Simple state for this book session
-      const BOOK_STATE = {
-        currentPageId: "1",
-        talismanUsedPages: {}, // { "5": true } etc.
-        inventory: [],
-        flags: {},            // remembers important past choices
-        lastChoiceKey: null,  // remembers the *immediately* previous choice
-      };
+  // expose for debugging (optional)
+  window.BOOK_STATE = BOOK_STATE;
 
-      // Supabase / character info for this book session
-      let currentBookEmail = null;
-      let currentBookChar = null;
+  // ----------------------------
+  // Manor Attitude + Ward Heat
+  // ----------------------------
+  function getSavedNumberFlag(key, fallback = 0) {
+    const v = BOOK_STATE.flags?.[key];
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
 
-      // Save book progress (Supabase)
-      async function saveBookProgress(pageId, options = {}) {
-        if (!currentBookEmail) return;
+  function setNumberFlag(key, value) {
+    if (!BOOK_STATE.flags) BOOK_STATE.flags = {};
+    BOOK_STATE.flags[key] = Number(value) || 0;
+  }
 
-        try {
-          const update = {
-            book1_started: true,
-            book1_last_page: pageId,
-          };
+  function getManorAttitudeScore() {
+    return getSavedNumberFlag("__attitudeScore", 0);
+  }
 
-          if (options.completed === true) {
-            update.book1_completed = true;
-          }
+  function setManorAttitudeScore(score) {
+    setNumberFlag("__attitudeScore", score);
+    window.rwManorAttitude = getManorAttitudeLabel();
+  }
 
-          const { error } = await supabaseClient
-            .from("data")
-            .update(update)
-            .eq("email", currentBookEmail);
+  function bumpManorAttitude(delta) {
+    const next = getManorAttitudeScore() + (Number(delta) || 0);
+    setManorAttitudeScore(next);
+    return next;
+  }
 
-          if (error) {
-            console.error("Failed to save book progress:", error);
-          } else if (currentBookChar) {
-            currentBookChar.book1_started = true;
-            currentBookChar.book1_last_page = pageId;
-          }
-        } catch (err) {
-          console.error("Unexpected error saving book progress:", err);
-        }
+  function getManorAttitudeLabel() {
+    const s = getManorAttitudeScore();
+    if (s >= 2) return "welcoming";
+    if (s <= -2) return "wary";
+    return "watchful";
+  }
+
+  function getWardHeat() {
+    return getSavedNumberFlag("__wardHeat", 0);
+  }
+
+  function setWardHeat(v) {
+    const clamped = Math.max(0, Math.min(3, Number(v) || 0));
+    setNumberFlag("__wardHeat", clamped);
+    return clamped;
+  }
+
+  function bumpWardHeat(delta) {
+    return setWardHeat(getWardHeat() + (Number(delta) || 0));
+  }
+
+  // ----------------------------
+  // D&D-ish Rolls
+  // ----------------------------
+  function getPlayerStat(statKey) {
+    const s = window.rwStats || window.ravenwoodStats || null;
+    if (s && typeof s === "object" && s[statKey] != null) return Number(s[statKey]) || 8;
+
+    try {
+      const raw = localStorage.getItem("ravenwoodStats");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && parsed[statKey] != null) return Number(parsed[statKey]) || 8;
       }
+    } catch {}
 
-      // --- PAGE DATA ---
+    return 8;
+  }
+
+  function statModFromScore(score) {
+    const n = Number(score) || 0;
+    return Math.floor((n - 10) / 2);
+  }
+
+  function d20() {
+    return Math.floor(Math.random() * 20) + 1;
+  }
+
+  function rollCheck(check) {
+    const stat = String(check?.stat || "insight");
+    const dc = Number(check?.dc || 10);
+    const label = String(check?.label || "Check");
+
+    const score = getPlayerStat(stat);
+    const mod = statModFromScore(score);
+    const die = d20();
+    const total = die + mod;
+    const success = total >= dc;
+
+    const result = { label, stat, score, mod, die, dc, total, success };
+    BOOK_STATE.lastRoll = result;
+
+    const msg = success ? check?.successMsg : check?.failMsg;
+    if (msg) showSystemMessage(String(msg));
+
+    if (success && Number.isFinite(Number(check?.deltaAttitudeSuccess))) bumpManorAttitude(Number(check.deltaAttitudeSuccess));
+    if (!success && Number.isFinite(Number(check?.deltaAttitudeFail))) bumpManorAttitude(Number(check.deltaAttitudeFail));
+
+    if (success && Number.isFinite(Number(check?.deltaWardHeatSuccess))) bumpWardHeat(Number(check.deltaWardHeatSuccess));
+    if (!success && Number.isFinite(Number(check?.deltaWardHeatFail))) bumpWardHeat(Number(check.deltaWardHeatFail));
+
+    return result;
+  }
+
+  // ✅ everything else you already have stays BELOW, still inside this IIFE...
+
+
+
+      // Cached references
+      const elMeta = document.getElementById("rwBookPageMeta");
+      const elTitle = document.getElementById("rwBookPageTitle");
+      const elBody = document.getElementById("rwBookPageBody");
+      const elChoices = document.getElementById("rwBookChoices");
+      const elImage = document.getElementById("rwBookImage");
+      const elSys = document.getElementById("rwBookSystemMessage");
+
+      // Inventory UI
+      const invToggle = document.getElementById("rwBookInventoryToggle");
+      const invPanel = document.getElementById("rwBookInventoryPanel");
+      const invClose = document.getElementById("rwBookInventoryClose");
+      const invGrid = document.getElementById("rwBookInventoryGrid");
+
+      // Item modal
+      const itemModalEl = document.getElementById("rwBookItemModal");
+      const itemModal = itemModalEl ? new bootstrap.Modal(itemModalEl) : null;
+      const itemModalTitle = document.getElementById("rwBookItemModalTitle");
+      const itemModalDesc = document.getElementById("rwBookItemModalDesc");
+      const itemUseBtn = document.getElementById("rwBookItemUseBtn");
+
+      let selectedItem = null;
+
+      // ----------------------------
+      // Page content (start small)
+      // You’ll expand BOOK_PAGES next.
+      // ----------------------------
       const BOOK_PAGES = {
         "1": {
-          title: "The Manor That Waits",
+          title: "The Road That Remembers",
           image: "b1-p1.png",
           body: `
-      <p>
-        Fog curls around your boots as you step onto the ancient path. Lanterns along the drive gutter, then flare
-        brighter, as if recognizing the metal resting in your pocket.
-      </p>
-      <p>
-        The Manor looms ahead: windows burning with a few patient lights, stone black with old rain. The air hums
-        faintly. Not storm, not wind. <em>Attention.</em>
-      </p>
-      <p>
-        When your foot crosses the final stone at the threshold, the great door opens on its own—not with a creak,
-        but with a long, low <em>sigh</em>, as though the house is finally waking.
-      </p>
-      <p>
-        A woman with silver hair waits just inside the hall, eyes sharp, expression somewhere between relief
-        and apology. Lines of ward-light trace faintly along the stones behind her, like veins beneath skin.
-      </p>
-      <p class="rw-intro-dialog">
-        “You brought it back,” she says softly. “The talisman.”
-      </p>
-    `,
+            <p>Fog gathers low, clinging to your boots as though the earth itself is reluctant to let you pass.</p>
+            <p>Lanterns along the old road flicker—not randomly, but in sequence. One after another. A measured response.</p>
+            <p>You did not plan to come to Ravenwood. And yet here you are.</p>
+            <p>The manor rises ahead, dark stone veined with moonlight. It does not loom. It <em>waits</em>.</p>
+          `,
           choices: [
-            { text: "Step inside cautiously.", to: "2", key: "p1_cautious" },
-            { text: "Enter as if you belong here.", to: "2", key: "p1_belong" },
-            {
-              text: "Ask who she is before crossing the threshold.",
-              to: "2",
-              key: "p1_ask_who",
-            },
+            { text: "Slow your pace and listen to the silence.", to: "2", key: "p1_listen" },
+            { text: "Walk as if you belong here.", to: "2", key: "p1_belong" },
+            { text: "Stop at the threshold stone and breathe.", to: "2", key: "p1_breathe" },
           ],
         },
 
         "2": {
-          title: "Mira Ashbourne",
+          title: "The Door That Breathes",
           image: "b1-p2.png",
           body: `
-      <p>
-        You step into the entry hall. Warm golden light spills from lanterns clustered along carved stone pillars,
-        flickering like breath. The floor beneath you is marked with a circle of old sigils, worn by time but still
-        faintly luminous.
-      </p>
-      <p>
-        The silver-haired woman studies you—not suspicious, but searching, as if listening to something just
-        behind your heartbeat.
-      </p>
-      <p class="rw-intro-dialog">
-        “Mira Ashbourne,” she says. “Keeper of the Manor. Ward-tender. And until tonight…” Her mouth twists into a
-        wry almost-smile. “…the only one left listening when it cries.”
-      </p>
-      <p>
-        The talisman at your chest hums—a low, steady vibration—answering the glow in the floor. Lines of light
-        stir between stone and metal, spider-fine threads reaching for one another.
-      </p>
-      <p>
-        You start to ask what it means to be an <strong>anchor</strong>, and Mira lifts a hand.
-      </p>
-      <p class="rw-intro-dialog">
-        “Anchors keep houses like this from drifting off their own stories,” she says. “You ground the wards,
-        the way a lightning rod grounds a storm. But explanations can wait. The Manor wants to meet you first,
-        and it grows…impatient.”
-      </p>
-    `,
+            <p>The door opens before you reach for it.</p>
+            <p>Warm light spills outward, cutting a soft line through the fog. The scent inside is old stone, candle smoke, and rain soaked into walls for centuries.</p>
+            <p>A woman with silver hair waits just beyond the threshold, gaze sharp with long practice.</p>
+            <p class="rw-intro-dialog">“You made it,” she says. Not welcome. Not who are you. <em>You made it.</em></p>
+          `,
           choices: [
-            {
-              text: "“What does it mean to be an anchor?”",
-              to: "3",
-              key: "p2_ask_anchor",
-            },
-            {
-              text: "“What’s wrong with the wards?”",
-              to: "3",
-              key: "p2_ask_wards",
-            },
-            {
-              text: "Touch the talisman, testing how it responds.",
-              to: "3",
-              key: "p2_touch_talisman",
-            },
+            { text: "Step inside.", to: "3", key: "p2_step_in" },
+            { text: "Ask who she is first.", to: "3", key: "p2_ask_who" },
+            { text: "Touch the talisman and watch her reaction.", to: "3", key: "p2_talisman" },
           ],
         },
 
         "3": {
-          title: "The Listening Door",
-          image: "book-page-3.png",
+          title: "Mira Ashbourne",
+          image: "b1-p3.png",
           body: `
-      <p>
-        Mira leads you deeper into the hall. Portraits with blurred faces line the walls; some seem to turn
-        slightly as you pass. Above, a chandelier hums like a throat swallowing light.
-      </p>
-      <p>
-        At the far end of the hall stands a tall double door, its surface carved with layered sigils. Bands of
-        pale light cinch it shut like glowing iron.
-      </p>
-      <p class="rw-intro-dialog">
-        “The Manor has layers,” Mira murmurs. “This door sits where the living house brushes the level just above
-        the Underhall. The older wards gather here to listen.”
-      </p>
-      <p>
-        As you draw near, your talisman warms. The bands of light along the door vibrate, threads of brilliance
-        reaching toward the metal at your throat.
-      </p>
-      <p class="rw-intro-dialog">
-        “It wants to see you,” Mira says. “Let it.”
-      </p>
-    `,
+            <p>The doors close behind you with a sound that echoes too long.</p>
+            <p class="rw-intro-dialog">“Mira Ashbourne,” she says. “Keeper of the Manor. Ward-tender. Listener.”</p>
+            <p>Her eyes flick once to your chest, where metal rests warm as a heartbeat.</p>
+            <p class="rw-intro-dialog">“You didn’t come here by accident,” she adds. “The road doesn’t allow it.”</p>
+          `,
           choices: [
-            { text: "Press your palm to the door.", to: "4", key: "p3_hand" },
-            {
-              text: "Raise the talisman toward the bands of light.",
-              to: "4",
-              key: "p3_talisman",
-            },
-            { text: "Whisper your name to the wood.", to: "4", key: "p3_name" },
+            { text: "Follow her deeper into the manor.", to: "4", key: "p3_follow" },
+            { text: "Ask what the talisman is supposed to do.", to: "4", key: "p3_ask_talisman" },
           ],
         },
 
-        "4": {
-          title: "Contact",
-          image: "book-page-4.png",
-          body: `
-      <p>
-        The moment you touch the carved wood, the bands of light flare. A low note thrums through your
-        bones. Images tumble across your mind—fractured pieces of yourself the Manor has no right to know:
-        childhood rooms, a familiar voice calling you back, the first time you dreamed of a hill crowned with
-        a house you’d never seen.
-      </p>
-      <p>
-        The talisman sears hot, then cools. Threads of light leap from the door to the metal, then sink inward,
-        vanishing beneath your skin.
-      </p>
-      <p>
-        The door hums approval. Something deeper beneath the Manor hums back.
-      </p>
-      <p class="rw-intro-dialog">
-        “The first gate is open,” Mira says quietly. “And the Underhall knows your name now.”
-      </p>
-    `,
-          choices: [
-            { text: "Step through the door.", to: "5", key: "p4_step" },
-            {
-              text: "Ask what changed when the gate opened.",
-              to: "5",
-              key: "p4_ask_change",
-            },
-            {
-              text: "Demand to know what the Underhall is.",
-              to: "5",
-              key: "p4_demand_underhall",
-            },
-          ],
-        },
+        // ============================
+// BOOK I · Pages 4–10 (paste into BOOK_PAGES)
+// ============================
 
-        "5": {
-          title: "The Wall That Breathes",
-          image: "book-page-5.png",
-          body: `
-      <p>
-        Beyond the listening door, the corridor slopes downward in a slow arc. Lanterns burn with a cold,
-        silver-blue flame. The air smells of stone, old wax, and something like rain trapped underground.
-      </p>
-      <p>
-        You feel the Manor thin here. Its skin brushes something deeper—the Underhall’s unseen tide.
-      </p>
-      <p>
-        Halfway down the passage, your talisman jolts. Heat flares against your skin, then tugs, insistent,
-        pulling your attention toward an unremarkable stretch of wall.
-      </p>
-      <p>
-        To the eye, it is only stone. To the talisman, it <em>breathes</em>.
-      </p>
-      <p>
-        As you watch, faint lines ripple across the surface—an almost-circle, not yet complete. An old lock
-        waiting to remember its key.
-      </p>
-      <p class="rw-intro-dialog">
-        “That shouldn’t be waking,” Mira whispers. “If you’re going to use the talisman… do it carefully.”
-      </p>
-      <p class="small text-muted mb-0">
-        <em>Open your inventory, select the talisman, and choose <strong>Use</strong> when you’re ready to test the waking wall.</em>
-      </p>
-    `,
-          requiresTalisman: true,
-          dropHint:
-            "The hidden lock warms as the talisman nears. Use the talisman while you’re looking at the wall.",
-          dropSuccessText:
-            "The stone drinks in the talisman’s light. A circle completes itself in the wall with a soft chime, and the rock folds inward, revealing a narrow vault beyond.",
-          choices: [
-            {
-              text: "Step into the newly opened vault.",
-              to: "6",
-              key: "p5_enter_vault",
-            },
-            {
-              text: "Look back at Mira before entering.",
-              to: "6",
-              key: "p5_look_mira",
-            },
-          ],
-        },
+"4": {
+  title: "The Closing Doors",
+  image: "b1-p4.png",
+  body: `
+    <p>The doors shut behind you.</p>
+    <p>Not slammed. Not forced. Simply <em>closed</em>—with the calm finality of something that already decided you were staying.</p>
+    <p>For a moment you listen for a latch, a lock, the sound of a mechanism.</p>
+    <p>There is none.</p>
+    <p>The silence that follows is long enough for your thoughts to turn sharp.</p>
+    <p><em>I can still leave.</em></p>
+    <p>The manor does not respond.</p>
+    <p>But the air changes slightly, as if the house is now paying closer attention to the shape of your breathing.</p>
+  `,
+  choices: [
+    { text: "Follow Mira deeper into the manor.", to: "5", key: "p4_follow" },
+    { text: "Turn back and test the door anyway.", to: "5", key: "p4_test_door" },
+  ],
+},
 
-        "6": {
-          title: "The Thread-Vault",
-          image: "book-page-6.png",
-          body: `
-      <p>
-        The passage beyond the wall is narrow and warm, lit by no visible lanterns—only a suspended web of
-        silver threads, each one softly luminous. They sway in a breeze you cannot feel.
-      </p>
-      <p>
-        At the center of the chamber stands a pedestal. Resting on it is a single feather made of shifting light,
-        its edges dissolving into glowing motes before reforming again.
-      </p>
-      <p>
-        The talisman, still warm against your skin, thrums in time with the feather’s slow pulse.
-      </p>
-      <p class="rw-intro-dialog">
-        “An echo-vault,” Mira breathes. “Untouched since before my grandmother’s time. The Manor hid this from me.”
-      </p>
-      <p>
-        Silver threads brush against your shoulders as you move, humming like distant voices. You have the
-        unsettling feeling that every step you take in here will matter more than the ones outside.
-      </p>
-    `,
-          choices: [
-            {
-              text: "Reach toward the feather of light.",
-              to: "7",
-              key: "take_feather",
-            },
-            {
-              text: "Back away—this is too much for one night.",
-              to: "8",
-              key: "leave_feather",
-            },
-          ],
-        },
+"5": {
+  title: "The Hall of Faces",
+  image: "b1-p5.png",
+  body: `
+    <p>Mira leads you into a long corridor lit by low lanterns that hang from carved stone pillars.</p>
+    <p>Portraits line the walls—dozens of them, maybe more—frames tarnished with age, corners softened by time.</p>
+    <p>At first glance, their faces are indistinct, blurred as if the painter refused to finish them.</p>
+    <p>But their eyes are sharp.</p>
+    <p>One set follows you too closely, tracking your movement with an attention that feels uncomfortably personal.</p>
+    <p>You slow without meaning to.</p>
+    <p class="rw-intro-dialog">“They won’t speak,” Mira says, as if answering a question you didn’t ask. “Not unless the house asks them to.”</p>
+    <p>You look again.</p>
+    <p>And realize something worse.</p>
+    <p>It isn’t that the portraits are watching you.</p>
+    <p>It’s that they are watching <em>to see what the manor will do with you.</em></p>
+  `,
+  choices: [
+    { text: "Keep your eyes forward and keep walking.", to: "6", key: "p5_forward" },
+    { text: "Look directly at the portrait that follows you.", to: "6", key: "p5_stare_back" },
+    { text: "Ask Mira who these people were.", to: "6", key: "p5_ask_portraits" },
+  ],
+},
 
-        "7": {
-          title: "Echo Taken",
-          image: "book-page-7.png",
-          body: `
-      <p>
-        Your fingers close around the feather of light. It is not solid, but it is not nothing either—like
-        gripping the memory of a storm. The moment you touch it, the vault inhales.
-      </p>
-      <p>
-        Threads of silver whip inward, lashing through your chest, your ribs, your bones. For a heartbeat you are
-        not in the vault at all: you are standing in the Town Square under a different sky, watching a younger Mira
-        argue with a circle of robed figures whose faces blur like the old portraits upstairs.
-      </p>
-      <p>
-        The image shatters. You are back in the vault, gasping. The feather has vanished. The threads settle,
-        but some of their light has sunk into your hands, your veins, the talisman at your throat.
-      </p>
-      <p class="rw-intro-dialog">
-        “It chose you,” Mira says hoarsely. “That echo has been sleeping here for generations. Now it rides your
-        anchor-line instead of the Manor’s shelves.”
-      </p>
-      <p>
-        The vault trembles once, like a held breath finally released. Then the threads dim, gently steering you
-        back toward the corridor.
-      </p>
-    `,
-          choices: [
-            {
-              text: "Let the vault close and follow Mira out.",
-              to: "9",
-              key: "p7_follow_out",
-            },
-            {
-              text: "Look back once more before you leave.",
-              to: "9",
-              key: "p7_look_back",
-            },
-          ],
-        },
+"6": {
+  title: "The Manor Takes Your Measure",
+  image: "b1-p6.png",
+  body: (S) => {
+    const f = S.flags || {};
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
 
-        "8": {
-          title: "Echo Refused",
-          image: "book-page-8.png",
-          body: `
-      <p>
-        You stop just short of the pedestal. Instinct claws up your spine—too much, too fast, too soon. Whatever
-        the feather holds, it feels like more life than you are ready to remember.
-      </p>
-      <p>
-        You step back. The silver threads around you shiver, then still. The feather flickers, its light dimming
-        as if in disappointment, but it does not vanish.
-      </p>
-      <p class="rw-intro-dialog">
-        “Good,” Mira says quietly. “Anchors are not puppets. The Manor does not get to decide how much of itself
-        you carry—not on the first night.”
-      </p>
-      <p>
-        She lays two fingers against the talisman. The metal cools, the humming in your bones easing to a tolerable
-        thrum. The vault’s threads loosen, gently guiding you back toward the corridor.
-      </p>
-      <p>
-        As you pass the threshold, the wall seals behind you. The almost-circle mark on the stone glows once in
-        farewell, then sinks out of sight.
-      </p>
-    `,
-          choices: [
-            {
-              text: "Follow Mira back toward the hall.",
-              to: "9",
-              key: "p8_follow",
-            },
-            {
-              text: "Glance at the sealed wall, uneasy.",
-              to: "9",
-              key: "p8_uneasy",
-            },
-          ],
-        },
+    const opener =
+      f.p5_reach_out ? `<p>Mira’s hand is still on your wrist—only for a second—then she releases you with a look that says <em>you felt that too</em>.</p>` :
+      f.p5_stare_back ? `<p>You can still feel the weight of the portrait’s gaze like cold fingers at the base of your skull.</p>` :
+      `<p>The corridor behind you seems to swallow its own echoes. The manor has noticed you… and kept its opinion to itself.</p>`;
 
-        "9": {
-          title: "Ward Feedback",
-          image: "book-page-9.png",
-          body: `
-      <p>
-        The corridor seems narrower on the way back. Lantern flames flare as you pass, then lean toward you,
-        their light threading briefly between your talisman and the stones.
-      </p>
-      <p>
-        Halfway up the slope, the wards test your footing. The floor tilts—not physically, but in your nerves—
-        as if the Manor is trying to see whether you will fall inward toward it or pull yourself back to center.
-      </p>
-      <p>
-        Your body remembers the echo-vault, the feather you touched or refused, the choice you made. Your breath
-        evens out on instinct. The humming in the walls steadies to match.
-      </p>
-      <p class="rw-intro-dialog">
-        “There,” Mira murmurs. “Feel that? That’s the house adjusting around you. Deciding which way your gravity
-        pulls.”
-      </p>
-      <p>
-        By the time you reach the listening door again, the bands of light have settled. They still cling to the
-        wood, but now a faint second ring circles your talisman—a thread that was not there before.
-      </p>
-    `,
-          choices: [
-            {
-              text: "Ask Mira what the Manor just decided about you.",
-              to: "10",
-              key: "p9_ask_decision",
-            },
-            {
-              text: "Stay silent and listen for yourself.",
-              to: "10",
-              key: "p9_listen_self",
-            },
-          ],
-        },
+    const manorMood =
+      attitude === "welcoming" ? `<p class="rw-intro-dialog">“It’s… calmer,” Mira murmurs, surprised. “Like it’s letting you breathe.”</p>` :
+      attitude === "wary" ? `<p class="rw-intro-dialog">Mira’s voice drops to a whisper. “Don’t give it a reason to tighten.”</p>` :
+      `<p class="rw-intro-dialog">“Watchful,” Mira says. “That’s better than hostile.”</p>`;
 
-        "10": {
-          title: "The Anchor Explained",
-          image: "book-page-10.png",
-          body: `
-      <p>
-        Back in the entry hall, the air feels thinner, easier to breathe. The sigil-circle in the floor glows a
-        fraction brighter where your footsteps cross it, recognizing the new thread braided through your name.
-      </p>
-      <p class="rw-intro-dialog">
-        “Anchors are bargains,” Mira says at last. “You promise not to look away when the house shows you what it’s
-        keeping out. In return, it promises not to lock you out of yourself when the old stories wake up.”
-      </p>
-      <p>
-        She gestures toward the staircase that curves upward along the far wall.
-      </p>
-      <p class="rw-intro-dialog">
-        “Come. There’s one more thing you need to see tonight. After that, the Manor will let you rest—and send you
-        wandering through the town it’s tied to you.”
-      </p>
-      <p>
-        As you climb, you feel the pull of other places through the stone: the Moonwell’s still water, the Old
-        Chapel’s stained glass, the leaning trees at Witchwood’s edge. Each tug feels like a question the house
-        is waiting for you to answer.
-      </p>
-    `,
-          choices: [
-            {
-              text: "Follow Mira to the upper gallery.",
-              to: "11",
-              key: "p10_follow",
-            },
-            {
-              text: "Pause on the stairs, testing each tug of the wards.",
-              to: "11",
-              key: "p10_test_tugs",
-            },
-          ],
-        },
+    const heatLine =
+      heat >= 2 ? `<p>A thin, invisible pressure slides over your skin as you walk—like stepping through webbing you can’t see.</p>` :
+      `<p>The air carries a faint mineral tang, as if old stone has been rubbed raw.</p>`;
 
-        "11": {
-          title: "Balcony Over Ravenwood",
-          image: "book-page-11.png",
-          body: `
-      <p>
-        The staircase spills you onto a wide gallery. Tall windows look out over the sleeping town. From here,
-        Ravenwood is a scatter of lantern-pricks in the fog—streets and roofs and distant trees stitched together
-        by silver threads only you and the Manor seem to see.
-      </p>
-      <p>
-        One thread runs bright toward the Town Square fountain, another coils around the dark shape of the Old
-        Chapel. A thinner filament shivers at the edge of Witchwood, where the forest watches the houses back.
-      </p>
-      <p class="rw-intro-dialog">
-        “These are your first bindings,” Mira says. “Places the wards will nudge you toward. They change as you do.
-        As you choose.”
-      </p>
-      <p>
-        The talisman warms in your palm. For an instant, three possible futures flicker at once: you standing in
-        Market Lane with charms buzzing in your pockets; you knee-deep in Moonwell water as the sky refuses to show
-        a moon; you alone in the Chapel when the stained glass saints all look away at once.
-      </p>
-      <p class="rw-intro-dialog">
-        “Before the Manor sets its first mark,” Mira says, “you should decide what kind of anchor you intend to be.”
-      </p>
-    `,
-          choices: [
-            {
-              text: "“I’ll anchor the people first. The wards can wait.”",
-              to: "12",
-              key: "anchor_people",
-            },
-            {
-              text: "“I’ll hold the house steady, no matter what it asks me to see.”",
-              to: "12",
-              key: "anchor_house",
-            },
-            {
-              text: "“I’ll stand between—no one gets swallowed, not the town, not the Manor.”",
-              to: "12",
-              key: "anchor_between",
-            },
-          ],
-        },
+    return `
+      ${opener}
+      <p>Mira walks a pace ahead, lantern low, as if the light itself could be overheard.</p>
+      <p class="rw-intro-dialog">“Rule one,” she says, without turning. “Don’t lie to the house.”</p>
+      <p class="rw-intro-dialog">“Rule two: don’t challenge it unless you’re ready to lose.”</p>
+      ${heatLine}
+      ${manorMood}
+      <p>The next archway is carved with overlapping sigils—wards braided like rope.</p>
+      <p>Some of them look freshly repaired.</p>
+      <p class="rw-intro-dialog">“Pages six through ten are the part where most people decide they’re brave,” Mira adds. “Or decide they’re smart. Try to be neither. Try to be <em>aware</em>.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Search the archway for a 'safe seam' in the wardwork. (Insight DC 12)",
+      to: "7",
+      key: "p6_search_seam",
+      check: {
+        label: "Search",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You spot a faint break in the sigil braid—an intentional 'breathing stitch.'",
+        failMsg: "The runes blur for a heartbeat. You realize you were looking where it wanted you to look.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Ask Mira what happens if you lie to the house. (Presence DC 11)",
+      to: "7",
+      key: "p6_ask_lie",
+      check: {
+        label: "Persuasion",
+        stat: "presence",
+        dc: 11,
+        successMsg: "Mira answers—directly. The manor seems to approve honest questions.",
+        failMsg: "Mira’s mouth tightens. “Not here.” The lantern flame shrinks.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Say nothing. Match Mira’s pace. Let the manor listen.",
+      to: "7",
+      key: "p6_silent",
+      deltaAttitude: 0,
+    },
+  ],
+},
 
-        "12": {
-          title: "First Mark",
-          image: "book-page-12.png",
-          body: `
-      <p>
-        The words leave your mouth, and the Manor listens.
-      </p>
-      <p>
-        Light gathers at the edges of your vision, then narrows into a single thread that drops from the ceiling,
-        coils once around your wrist, and sinks into the talisman. It does not burn. It simply <em>settles</em>,
-        the way a promise settles when both sides agree to keep it.
-      </p>
-      <p>
-        Somewhere below, a door unlatches itself. Lanterns along the town streets flare, as if the whole of
-        Ravenwood is exhaling in relief.
-      </p>
-      <p class="rw-intro-dialog">
-        “The Manor knows you now,” Mira says. “And the town will start to recognize your footsteps. Go where it
-        pulls you. Listen when the wards twitch. Bring back what should not be walking its streets alone.”
-      </p>
-      <p>
-        She rests a hand briefly on your shoulder, eyes distant as if listening to a dozen whispered reports at once.
-      </p>
-      <p class="rw-intro-dialog">
-        “For tonight, that is enough. Book I of your binding to the Wards is complete. The rest waits in the
-        crooked streets below.”
-      </p>
-      <p class="small text-muted mb-0">
-        <em>Book I: Wards of the Manor complete. You can return to the Town &amp; Manor page and let your choices
-        lead you through Ravenwood.</em>
-      </p>
-    `,
-          choices: [
-            {
-              text: "Let the Manor dim and return to Ravenwood.",
-              to: "1",
-              key: "p12_return",
-            },
-          ],
-        },
-      };
+"7": {
+  title: "First Ward: The Listening Glyphs",
+  image: "b1-p7.png",
+  body: (S) => {
+    const f = S.flags || {};
+    const attitude = getManorAttitudeLabel();
 
-      // --- INVENTORY LOADING (from game if possible, else fallback) ---
-      function loadBookInventory() {
-        // 1) If world page seeded inventory from Supabase, use that
-        if (Array.isArray(window.rwInitialInventory) && window.rwInitialInventory.length) {
-          return [...window.rwInitialInventory];
-        }
+    const seam =
+      f.p6_search_seam_success ? `<p>You angle your steps toward the ward’s breathing stitch. The pressure eases, just slightly—like the house acknowledges you’re paying attention.</p>` :
+      f.p6_search_seam_fail ? `<p>You step forward and feel the ward <em>notice</em> the motion. Not attack. Just… record.</p>` :
+      `<p>The braided sigils over the archway hum in a pitch you feel more than hear.</p>`;
 
-        // 2) Try localStorage fallback
-        try {
-          const raw = localStorage.getItem("ravenwoodInventory");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length) {
-              return parsed;
-            }
-          }
-        } catch (e) {
-          console.warn("Could not load book inventory from localStorage:", e);
-        }
+    const miraAnswer =
+      f.p6_ask_lie_success ? `<p class="rw-intro-dialog">“If you lie,” Mira says, “it rewrites you as a threat. And then it treats you like one.”</p>` :
+      f.p6_ask_lie_fail ? `<p class="rw-intro-dialog">“Later,” she repeats, eyes on the runes. “If we’re still welcomed.”</p>` :
+      ``;
 
-        // 3) Last resort: grant a basic talisman so the puzzle works
-        return [
-          {
-            id: TALISMAN_ITEM_ID,
-            name: "Old Talisman",
-            icon: "tal-tri.png",
-            quantity: 1,
-          },
-        ];
+    const manorTone =
+      attitude === "welcoming" ? `<p>The lantern light stretches farther than it should, as if the corridor is offering you a clearer view.</p>` :
+      attitude === "wary" ? `<p>The shadows gather closer to the floor, like they’ve been told to keep their hands where you can’t see them.</p>` :
+      `<p>The corridor holds steady—neutral, listening.</p>`;
+
+    return `
+      ${seam}
+      ${miraAnswer}
+      ${manorTone}
+      <p>Halfway down the corridor, the stones underfoot change texture—subtle, but deliberate.</p>
+      <p>Mira stops. Her free hand rises, palm outward.</p>
+      <p class="rw-intro-dialog">“First ward,” she whispers. “Listening glyphs. It hears intent through your feet.”</p>
+      <p>The sigils aren’t painted. They’re <em>in</em> the stone, like scars.</p>
+      <p class="rw-intro-dialog">“Walk like you belong,” Mira adds. “Not like you’re sneaking. Not like you’re storming.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Cross normally, steady and honest. (Will DC 11)",
+      to: "8",
+      key: "p7_cross_honest",
+      check: {
+        label: "Composure",
+        stat: "will",
+        dc: 11,
+        successMsg: "Your heartbeat slows. The ward hears no threat in you.",
+        failMsg: "Your fear spikes—just enough. The glyphs drink it like wine.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Study the glyph rhythm and step between the 'beats.' (Agility DC 12)",
+      to: "8",
+      key: "p7_step_between",
+      check: {
+        label: "Dexterity",
+        stat: "agility",
+        dc: 12,
+        successMsg: "You move with a dancer’s timing. The ward’s attention slides past you.",
+        failMsg: "Your heel lands on the wrong stone. The air snaps tight—warning, not punishment.",
+        deltaAttitudeSuccess: 0,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Murmur a respectful greeting to the house as you pass. (Presence DC 12)",
+      to: "8",
+      key: "p7_greet_house",
+      check: {
+        label: "Etiquette",
+        stat: "presence",
+        dc: 12,
+        successMsg: "The lantern flame lifts. The manor doesn’t answer… but it listens differently.",
+        failMsg: "Your words feel swallowed. Mira gives you a quick, warning look—timing matters.",
+        deltaAttitudeSuccess: +2,
+        deltaAttitudeFail: -1,
+      },
+    },
+  ],
+},
+
+"8": {
+  title: "Second Ward: The Breath-Tithe",
+  image: "b1-p8.png",
+  body: (S) => {
+    const f = S.flags || {};
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
+
+    const last =
+      f.p7_cross_honest_success ? `<p>You cross the listening stones without flinching. Mira’s shoulders loosen a fraction.</p>` :
+      f.p7_step_between_success ? `<p>Your timing holds. The corridor’s attention slips away like mist.</p>` :
+      f.p7_greet_house_success ? `<p>The greeting lands like a coin on a table: acknowledged.</p>` :
+      (f.p7_cross_honest_fail || f.p7_step_between_fail || f.p7_greet_house_fail) ? `<p>The glyphs remember you. You feel it in the way the air stays a little too tight.</p>` :
+      `<p>The corridor releases you into a narrow stairwell.</p>`;
+
+    const heatWarn =
+      heat >= 2 ? `<p class="rw-intro-dialog">“It’s warmed up,” Mira mutters. “We’re on the edge of ‘wary.’ Keep your breath.”</p>` :
+      `<p class="rw-intro-dialog">“Next is a soft ward,” Mira says. “Soft doesn’t mean kind.”</p>`;
+
+    const attitudeLine =
+      attitude === "welcoming" ? `<p>The air here is cooler—cleaner—like the manor is letting you borrow comfort.</p>` :
+      attitude === "wary" ? `<p>The stairwell smells faintly of candle smoke and old iron. The manor is not offering comfort now.</p>` :
+      `<p>The stairwell is still. Too still.</p>`;
+
+    return `
+      ${last}
+      <p>The stairwell bends out of sight—stone steps worn smooth by centuries of careful feet.</p>
+      ${attitudeLine}
+      <p>Halfway down, the lantern flame narrows… and begins to pulse in time with your breathing.</p>
+      ${heatWarn}
+      <p class="rw-intro-dialog">“Breath-tithe,” she explains. “It counts you. If you panic, it takes more.”</p>
+      <p>Your throat tightens as if the air has learned your name.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Control your breathing and descend slowly. (Will DC 12)",
+      to: "9",
+      key: "p8_breath_control",
+      check: {
+        label: "Fear Save",
+        stat: "will",
+        dc: 12,
+        successMsg: "You keep your breath steady. The pulsing lantern relaxes.",
+        failMsg: "Your lungs hitch. The ward 'collects'—a cold pressure at your ribs.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -2,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Count the pulses and match them like a metronome. (Insight DC 12)",
+      to: "9",
+      key: "p8_match_pulse",
+      check: {
+        label: "Pattern",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You find the ward’s rhythm. You descend inside it, not against it.",
+        failMsg: "The rhythm changes mid-count. Your mind stumbles—and the ward notes it.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Grip the railing and force yourself downward. (Might DC 11)",
+      to: "9",
+      key: "p8_force_down",
+      check: {
+        label: "Athletics",
+        stat: "might",
+        dc: 11,
+        successMsg: "You move with stubborn certainty. The ward has less to take from you.",
+        failMsg: "The railing feels slick—almost alive. You lurch, breath breaking.",
+        deltaAttitudeSuccess: 0,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+  ],
+},
+
+"9": {
+  title: "Third Ward: The Name-Thread",
+  image: "b1-p9.png",
+  body: (S) => {
+    const f = S.flags || {};
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
+
+    const outcome =
+      f.p8_breath_control_success ? `<p>You reach the bottom with your breath intact. Mira gives you a single, approving nod.</p>` :
+      f.p8_match_pulse_success ? `<p>You arrive as the lantern pulse softens—like you solved something without breaking it.</p>` :
+      f.p8_force_down_success ? `<p>You descend like a person refusing to be measured. The manor does not like it… but it respects the effort.</p>` :
+      (f.p8_breath_control_fail || f.p8_match_pulse_fail || f.p8_force_down_fail) ? `<p>You reach the bottom and realize your ribs hurt—not from impact, but from <em>collection</em>. Mira notices. Her jaw tightens.</p>` :
+      `<p>The stairwell ends in a small landing of black stone.</p>`;
+
+    const wardHeatLine =
+      heat >= 2 ? `<p>A thin silver filament hangs across the next doorway—so fine you almost miss it. It hums like a plucked nerve.</p>` :
+      `<p>A pale filament hangs across the doorway—fine as spider silk, bright as moonlight.</p>`;
+
+    const manorLine =
+      attitude === "welcoming" ? `<p class="rw-intro-dialog">“It’s giving you a chance,” Mira whispers. “Don’t waste it.”</p>` :
+      attitude === "wary" ? `<p class="rw-intro-dialog">“Careful,” Mira warns. “It’s deciding what you are.”</p>` :
+      `<p class="rw-intro-dialog">“This one likes truths,” Mira says. “Speak plainly.”</p>`;
+
+    return `
+      ${outcome}
+      ${wardHeatLine}
+      <p>The thread is anchored to runes carved into the doorframe—older than the rest, sharper, less forgiving.</p>
+      <p class="rw-intro-dialog">“Name-thread,” Mira says. “It tests what you call yourself.”</p>
+      ${manorLine}
+      <p>Your tongue goes dry as if the air is waiting for your answer.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "State your name and intent honestly. (Presence DC 12)",
+      to: "10",
+      key: "p9_name_honest",
+      check: {
+        label: "Truth",
+        stat: "presence",
+        dc: 12,
+        successMsg: "The filament loosens—acceptance, cautious but real.",
+        failMsg: "The filament tightens. Not cutting—warning. The manor doesn’t like how you said it.",
+        deltaAttitudeSuccess: +2,
+        deltaAttitudeFail: -2,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Study the runes and mirror their phrasing. (Insight DC 13)",
+      to: "10",
+      key: "p9_mirror_runes",
+      check: {
+        label: "Arcana",
+        stat: "insight",
+        dc: 13,
+        successMsg: "You echo the old structure of permission. The ward recognizes the form.",
+        failMsg: "You misread a stroke. The filament snaps against your wrist—stinging cold.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -2,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Try to pass without speaking. (Agility DC 12)",
+      to: "10",
+      key: "p9_sneak_thread",
+      check: {
+        label: "Stealth",
+        stat: "agility",
+        dc: 12,
+        successMsg: "You slip under the filament with breath held. Mira’s expression says: risky, but clean.",
+        failMsg: "The filament catches your shoulder. A whisper crawls through your bones: <em>Not welcome.</em>",
+        deltaAttitudeSuccess: 0,
+        deltaAttitudeFail: -3,
+        deltaWardHeatFail: +1,
+      },
+    },
+  ],
+},
+
+"10": {
+  title: "The Candle Chamber",
+  image: "b1-p10.png",
+  body: (S) => {
+    const f = S.flags || {};
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
+
+    const arrival =
+      (f.p9_name_honest_success || f.p9_mirror_runes_success || f.p9_sneak_thread_success)
+        ? `<p>The filament releases you with a soft, almost reluctant sigh. The doorway opens into warmer light.</p>`
+        : `<p>The filament does not cut you—but it marks you. When the doorway yields, it feels like permission granted under protest.</p>`;
+
+    const chamberMood =
+      attitude === "welcoming" ? `<p>The chamber feels strangely… expectant. Not hostile. Like a room that has been waiting for the right person to arrive.</p>` :
+      attitude === "wary" ? `<p>The chamber is silent in a way that makes your teeth ache. Every candle flame seems to watch you back.</p>` :
+      `<p>The chamber is balanced—still, attentive, measuring.</p>`;
+
+    const heatFlavor =
+      heat >= 2 ? `<p>The runes in the floor glow a little too bright. You suspect the wards are only one mistake away from snapping.</p>` :
+      `<p>The runes in the floor pulse faintly, patient as tidewater.</p>`;
+
+    const p5callback =
+      f.p5_reach_out ? `<p class="rw-intro-dialog">“You already tried to touch it,” Mira says softly. “So now… let it touch <em>you</em>.”</p>` :
+      f.p5_stare_back ? `<p class="rw-intro-dialog">Mira glances at the portraits behind you. “If you stare at the old things, they stare back harder.”</p>` :
+      `<p class="rw-intro-dialog">“This is where the house decides what you are to it,” Mira says.</p>`;
+
+    return `
+      ${arrival}
+      ${chamberMood}
+      <p>The room is circular, carved from black stone, with a ring of candles on a low altar.</p>
+      ${heatFlavor}
+      <p>Four flames burn in different colors—each one steady, each one wrong in its own way.</p>
+      ${p5callback}
+      <p class="rw-intro-dialog">“Choose,” she says. “Not the one you want. The one that answers when you breathe.”</p>
+      <p>Somewhere above you, the manor shifts—subtle as a thought changing shape.</p>
+    `;
+  },
+  choices: [
+    { text: "Reach for the Wind Candle (Shadow Witch).", to: "11_shadow", key: "class_shadow" },
+    { text: "Reach for the Water Candle (Scholar of Runes).", to: "11_rune", key: "class_rune" },
+    { text: "Reach for the Stone Candle (Guardian of Gates).", to: "11_guardian", key: "class_guardian" },
+    { text: "Reach for the Flame Candle (Seer of Moons).", to: "11_moon", key: "class_moon" },
+  ],
+},
+
+
+
+// ============================
+// BOOK I · Page 11 — Class-Specific Branches
+// ============================
+
+"11": {
+  title: "After the Name-Thread",
+  image: "b1-p11.png",
+  body: (S) => {
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
+
+    const tone =
+      attitude === "welcoming"
+        ? `<p>The air eases, just slightly. The house seems… satisfied.</p>`
+        : attitude === "wary"
+        ? `<p>The air remains tight. The house has not relaxed its judgment.</p>`
+        : `<p>The manor remains watchful, neither opening nor closing itself to you.</p>`;
+
+    return `
+      <p>The filament withdraws, not disappearing—just retreating.</p>
+      ${tone}
+      <p>Mira studies the doorway as the wards settle.</p>
+      <p class="rw-intro-dialog">“You’re past the threshold,” she says. “For now.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Ask what the house decided about you. (Presence DC 11)",
+      to: "12",
+      key: "p11_ask_decision",
+      check: {
+        stat: "presence",
+        dc: 11,
+        successMsg: "Mira answers honestly. The manor approves of directness.",
+        failMsg: "Mira hesitates. The manor prefers fewer questions right now.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Say nothing and observe the space.",
+      to: "12",
+      key: "p11_observe",
+    },
+  ],
+},
+
+// ============================
+// BOOK I · Pages 12–16
+// ============================
+
+"12": {
+  title: "The Pillar Hall",
+  image: "b1-p12.png",
+  body: `
+    <p>Stone pillars rise around you, carved in spirals that seem to shift when unobserved.</p>
+    <p>You feel a subtle awareness—not watching, but measuring.</p>
+  `,
+  choices: [
+    {
+      text: "Study the carvings for meaning. (Insight DC 12)",
+      to: "13",
+      key: "p12_study_pillars",
+      check: {
+        stat: "insight",
+        dc: 12,
+        successMsg: "You sense the pillars record presence, not action.",
+        failMsg: "The patterns blur. You feel gently dismissed.",
+        deltaAttitudeSuccess: +1,
+      },
+    },
+    {
+      text: "Walk through without engaging.",
+      to: "13",
+      key: "p12_ignore",
+      deltaWardHeat: 0,
+    },
+  ],
+},
+
+"13": {
+  title: "The First Offering",
+  image: "b1-p13.png",
+  body: `
+    <p>A shallow stone basin rests at the center of the hall.</p>
+    <p class="rw-intro-dialog">“Voluntary,” Mira says. “But noted.”</p>
+  `,
+  choices: [
+    {
+      text: "Offer a memory willingly. (Will DC 12)",
+      to: "14",
+      key: "p13_offer_memory",
+      check: {
+        stat: "will",
+        dc: 12,
+        successMsg: "The stone warms beneath your hand.",
+        failMsg: "The memory resists. The manor still records the attempt.",
+        deltaAttitudeSuccess: +2,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Offer only a breath.",
+      to: "14",
+      key: "p13_offer_breath",
+    },
+  ],
+},
+
+"14": {
+  title: "What the House Keeps",
+  image: "b1-p14.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    return `
+      <p>The basin accepts what you give.</p>
+      ${
+        heat >= 2
+          ? "<p>The stone lingers warm longer than expected.</p>"
+          : "<p>The basin cools quickly, as if satisfied.</p>"
       }
+    `;
+  },
+  choices: [
+    {
+      text: "Ask what happens to offerings. (Insight DC 11)",
+      to: "15",
+      key: "p14_ask_offerings",
+      check: {
+        stat: "insight",
+        dc: 11,
+        successMsg: "Mira answers carefully. Some truths are archived.",
+        failMsg: "Mira deflects. The house is listening too closely.",
+      },
+    },
+    {
+      text: "Move on without asking.",
+      to: "15",
+      key: "p14_move_on",
+    },
+  ],
+},
 
-      function renderBookInventory() {
-        const grid = document.getElementById("rwBookInventoryGrid");
-        if (!grid) return;
+"15": {
+  title: "The Weight That Follows",
+  image: "b1-p15.png",
+  body: `
+    <p>You leave the hall with a faint pressure between your shoulders.</p>
+    <p>Not pain. Not restraint.</p>
+    <p>Awareness.</p>
+  `,
+  choices: [
+    {
+      text: "Acknowledge the presence silently.",
+      to: "16",
+      key: "p15_acknowledge",
+      deltaAttitude: +1,
+    },
+    {
+      text: "Resist the feeling and push forward. (Will DC 12)",
+      to: "16",
+      key: "p15_resist",
+      check: {
+        stat: "will",
+        dc: 12,
+        successMsg: "You steady yourself. The manor takes note.",
+        failMsg: "The pressure deepens—briefly.",
+        deltaWardHeatFail: +1,
+      },
+    },
+  ],
+},
 
-        grid.innerHTML = "";
+// ============================
+// BOOK I · Pages 16–30 (mechanics + choices)
+// ============================
 
-        const items = BOOK_STATE.inventory;
-        const maxSlots = 12;
-        const safeItems = Array.isArray(items) ? items : [];
+"16": {
+  title: "The Question of Leaving",
+  image: "b1-p16.png",
+  body: (S) => {
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
 
-        safeItems.forEach((item) => {
-          const slot = document.createElement("div");
-          slot.className = "rw-inventory-slot";
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The manor does not push back. It listens—curious, almost patient.</p>`
+        : attitude === "wary"
+        ? `<p>The air tightens the moment you form the question. The manor is already bracing.</p>`
+        : `<p>The silence feels measured, like something counting your words.</p>`;
 
-          if (item && item.icon) {
-            const img = document.createElement("img");
-            img.src = item.icon;
-            img.alt = item.name || "Item";
-            img.className = "rw-inventory-item-icon";
-            img.dataset.itemId = item.id;
+    const heatLine =
+      heat >= 2
+        ? `<p>A thin pressure sits behind your ribs—warning you not to speak carelessly.</p>`
+        : `<p>The lantern flame holds steady, waiting.</p>`;
 
-            // Click to open Use / Description menu (book context)
-            if (window.rwOpenItemMenu) {
-              img.addEventListener("click", () =>
-                window.rwOpenItemMenu(item, { origin: "book" })
-              );
-            }
+    return `
+      <p>Mira pauses at the next threshold.</p>
+      <p class="rw-intro-dialog">“This is where most people ask if they can leave,” she says.</p>
+      ${mood}
+      ${heatLine}
+      <p class="rw-intro-dialog">“It’s not the question that matters,” Mira adds. “It’s <em>why</em> you’re asking it.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Ask plainly: “Can I leave?” (Presence DC 12)",
+      to: "17",
+      key: "p16_can_i_leave",
+      check: {
+        label: "Directness",
+        stat: "presence",
+        dc: 12,
+        successMsg: "Mira answers without flinching. The manor seems to prefer clean truth.",
+        failMsg: "Mira hesitates. The manor is listening too closely for fear.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Ask instead: “What happens if I try?” (Insight DC 12)",
+      to: "17",
+      key: "p16_what_if_i_try",
+      check: {
+        label: "Reading the Room",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You catch a flicker in Mira’s eyes—this question matters more.",
+        failMsg: "The air shifts. You realize the manor wanted a different question.",
+        deltaAttitudeSuccess: +1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Say nothing. Let the manor hear your silence.",
+      to: "17",
+      key: "p16_silence",
+      deltaAttitude: 0,
+    },
+  ],
+},
 
-            slot.appendChild(img);
-          }
+"17": {
+  title: "The Corridor That Narrows",
+  image: "b1-p17.png",
+  body: (S) => {
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
+    const f = S.flags || {};
 
-          if (item && item.quantity && item.quantity > 1) {
-            const badge = document.createElement("span");
-            badge.className = "rw-inventory-qty";
-            badge.textContent = item.quantity;
-            slot.appendChild(badge);
-          }
+    const answerEcho =
+      f.p16_can_i_leave_success
+        ? `<p class="rw-intro-dialog">“Yes,” Mira said. “But it will remember how you left.”</p>`
+        : f.p16_can_i_leave_fail
+        ? `<p class="rw-intro-dialog">Mira didn’t like how that landed. “Not now,” she said quietly.</p>`
+        : f.p16_what_if_i_try_success
+        ? `<p class="rw-intro-dialog">“It closes behind some people,” Mira admitted. “Not as punishment—as classification.”</p>`
+        : f.p16_what_if_i_try_fail
+        ? `<p class="rw-intro-dialog">Mira’s jaw tightened. “Careful.”</p>`
+        : ``;
 
-          grid.appendChild(slot);
-        });
+    const corridor =
+      heat >= 2
+        ? `<p>The passage ahead feels subtly smaller—like the manor is re-measuring your edges.</p>`
+        : `<p>The passage ahead is narrow, but not threatening. Just… deliberate.</p>`;
 
-        // Fill empty slots
-        for (let i = safeItems.length; i < maxSlots; i++) {
-          const empty = document.createElement("div");
-          empty.className = "rw-inventory-slot";
-          grid.appendChild(empty);
-        }
-      }
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The lantern light reaches farther than it should, offering you an easier path.</p>`
+        : attitude === "wary"
+        ? `<p>Shadows gather closer to the baseboards, as if told not to look away from you.</p>`
+        : `<p>The corridor holds its breath.</p>`;
 
-      // --- SYSTEM MESSAGE ---
-      function setSystemMessage(text, kind = "warning") {
-        const el = document.getElementById("rwBookSystemMessage");
-        if (!el) return;
-        if (!text) {
-          el.classList.add("d-none");
-          el.textContent = "";
-          return;
-        }
-        el.classList.remove("d-none");
-        el.textContent = text;
-        el.classList.toggle("text-warning", kind === "warning");
-        el.classList.toggle("text-success", kind === "success");
-        el.classList.toggle("text-danger", kind === "danger");
-      }
+    return `
+      ${answerEcho}
+      ${corridor}
+      ${mood}
+      <p>Chalk sigils line the stone in half-erased layers—rewritten, reinforced, corrected.</p>
+      <p class="rw-intro-dialog">“Containment path,” Mira says. “For when something inside forgets its boundaries.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Walk carefully and keep your pace steady. (Will DC 12)",
+      to: "18",
+      key: "p17_steady",
+      check: {
+        label: "Composure",
+        stat: "will",
+        dc: 12,
+        successMsg: "Your body stays calm. The corridor does not tighten further.",
+        failMsg: "Your breath catches. The sigils brighten—alert, not attack.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Study the chalk marks for what changed. (Insight DC 13)",
+      to: "18",
+      key: "p17_study_chalk",
+      check: {
+        label: "Arcana Sense",
+        stat: "insight",
+        dc: 13,
+        successMsg: "You recognize repair-work—patching weak seams in old wards.",
+        failMsg: "The patterns refuse to settle in your mind. The manor keeps its handwriting private.",
+        deltaAttitudeSuccess: +1,
+      },
+    },
+    {
+      text: "Ask Mira what happened here.",
+      to: "18",
+      key: "p17_ask_happened",
+      deltaAttitude: 0,
+    },
+  ],
+},
 
-      // --- BOOK CONTEXT: inventory item use handler ---
-      // Called from app.js via handleItemUse(..., { origin: "book" })
-      window.rwBookHandleItemUse = function (item) {
-        if (!item || !item.id) return;
+"18": {
+  title: "A Misstep (or Not)",
+  image: "b1-p18.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
 
-        const pageId = BOOK_STATE.currentPageId;
-        const page = BOOK_PAGES[pageId];
+    const tension =
+      heat >= 2
+        ? `<p>The floor feels slightly uneven—like the manor arranged the stones to test you.</p>`
+        : `<p>The stones are worn, but stable. Still, you feel the corridor waiting for a mistake.</p>`;
 
-        // The talisman has special behavior
-        if (item.id === TALISMAN_ITEM_ID) {
-          if (page && page.requiresTalisman) {
-            if (!BOOK_STATE.talismanUsedPages[pageId]) {
-              BOOK_STATE.talismanUsedPages[pageId] = true;
-            }
-            setSystemMessage(
-              "The talisman warms in your hand. Light seeps into the waiting ward.",
-              "success"
-            );
-            renderPage(pageId); // re-render so success text + choices unlock
-          } else {
-            setSystemMessage(
-              "You lift the talisman, but the wards here stay quiet. Nothing happens.",
-              "warning"
-            );
-          }
-          return;
-        }
+    const mood =
+      attitude === "wary"
+        ? `<p>Mira’s hand hovers near the wall, ready to steady something you can’t see.</p>`
+        : `<p>Mira watches your feet more than your face.</p>`;
 
-        // Any other item (for now): nothing happens
-        setSystemMessage(
-          "You try to use that here, but the scene doesn’t respond. Nothing happens.",
-          "danger"
+    return `
+      ${tension}
+      ${mood}
+      <p>Your boot catches the slightest rise in the stone.</p>
+      <p>The corridor shivers—attention snapping tight for a heartbeat.</p>
+      <p class="rw-intro-dialog">“Easy,” Mira murmurs. “It’s deciding what that meant.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Recover smoothly, like it never happened. (Agility DC 12)",
+      to: "19",
+      key: "p18_recover_smooth",
+      check: {
+        label: "Balance",
+        stat: "agility",
+        dc: 12,
+        successMsg: "You flow back into stride. The corridor’s interest fades.",
+        failMsg: "Your recovery turns into a stumble. The sigils flare—recording.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Stop and acknowledge the ward aloud—respectfully. (Presence DC 13)",
+      to: "19",
+      key: "p18_acknowledge",
+      check: {
+        label: "Etiquette",
+        stat: "presence",
+        dc: 13,
+        successMsg: "The air relaxes. The manor prefers recognition over denial.",
+        failMsg: "Your words land wrong. The corridor stays tense.",
+        deltaAttitudeSuccess: +2,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Clench your jaw and push forward.",
+      to: "19",
+      key: "p18_push_forward",
+      deltaWardHeat: +1,
+    },
+  ],
+},
+
+"19": {
+  title: "When the Manor Decides",
+  image: "b1-p19.png",
+  body: (S) => {
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
+    const f = S.flags || {};
+
+    const outcome =
+      f.p18_recover_smooth_success
+        ? `<p>The corridor releases you—like a hand letting go.</p>`
+        : f.p18_acknowledge_success
+        ? `<p>The lantern flame lifts. Something in the stone seems… satisfied.</p>`
+        : (f.p18_recover_smooth_fail || f.p18_acknowledge_fail)
+        ? `<p>The corridor remains tight. Not hostile—just watchful in a sharper way.</p>`
+        : `<p>The corridor settles into stillness again.</p>`;
+
+    const label =
+      attitude === "welcoming"
+        ? `<p class="rw-intro-dialog">“Still guest,” Mira says softly. “That’s good.”</p>`
+        : attitude === "wary"
+        ? `<p class="rw-intro-dialog">“Still undecided,” Mira whispers. “That’s not as good.”</p>`
+        : `<p class="rw-intro-dialog">“It hasn’t filed you as threat,” Mira says. “Yet.”</p>`;
+
+    const heatLine =
+      heat >= 2
+        ? `<p>You feel the manor’s attention sliding ahead of you now—like it’s preparing the next test.</p>`
+        : `<p>The air tastes faintly of mineral stone and candle smoke.</p>`;
+
+    return `
+      ${outcome}
+      ${label}
+      ${heatLine}
+      <p>The corridor opens to a spiral stair descending into shadow.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Descend carefully, counting your steps. (Insight DC 12)",
+      to: "20",
+      key: "p19_count_steps",
+      check: {
+        label: "Pattern",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You feel where the ward-lines cross the stairwell—like invisible seams.",
+        failMsg: "Your count slips. The stairwell’s rhythm changes just to catch you.",
+        deltaAttitudeSuccess: +1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Descend with steady courage. (Will DC 12)",
+      to: "20",
+      key: "p19_descend_will",
+      check: {
+        label: "Resolve",
+        stat: "will",
+        dc: 12,
+        successMsg: "Your breath stays even. The stairwell stays calm.",
+        failMsg: "Cold creeps into your lungs. The manor notes your fear.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Ask Mira what’s below before moving.", to: "20", key: "p19_ask_below" },
+  ],
+},
+
+"20": {
+  title: "The Stair of Descent",
+  image: "b1-p20.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+
+    const cold =
+      heat >= 2
+        ? `<p>The cold rising from below feels sharper—clean, but insistent.</p>`
+        : `<p>Cold rises from below—clean stone cold, old as buried rivers.</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The lantern light steadies, as if offering you a safer descent.</p>`
+        : attitude === "wary"
+        ? `<p>The flame bends inward, as if trying to hide from what’s below.</p>`
+        : `<p>The light holds neutral, neither warning nor guiding.</p>`;
+
+    return `
+      ${cold}
+      ${mood}
+      <p class="rw-intro-dialog">“This isn’t a dungeon,” Mira says. “It’s where the manor keeps what it can’t afford to forget.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Keep one hand on the wall and feel for ward-lines. (Insight DC 13)",
+      to: "21",
+      key: "p20_feel_wardlines",
+      check: {
+        label: "Ward Sense",
+        stat: "insight",
+        dc: 13,
+        successMsg: "You feel the wards like faint vibration—alive, layered, old.",
+        failMsg: "The stone goes numb under your touch. The manor refuses to be read that way.",
+        deltaAttitudeSuccess: +1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Ask Mira what the manor forgets. (Presence DC 12)",
+      to: "21",
+      key: "p20_ask_forgets",
+      check: {
+        label: "Gentle Questions",
+        stat: "presence",
+        dc: 12,
+        successMsg: "Mira answers—quietly. The manor seems to tolerate the truth.",
+        failMsg: "Mira shuts it down with a look. “Not here.”",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    { text: "Say nothing and keep going.", to: "21", key: "p20_silent" },
+  ],
+},
+
+"21": {
+  title: "The Archive Below",
+  image: "b1-p21.png",
+  body: (S) => {
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
+
+    const room =
+      heat >= 2
+        ? `<p>The chamber below feels occupied—like something is already awake down here.</p>`
+        : `<p>The chamber below is vast and still—shelving carved into the stone like rib bones.</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The air is cool but not hostile. Like entering a library that has decided to tolerate you.</p>`
+        : attitude === "wary"
+        ? `<p>The air is cold and measuring. Like entering a room where you are already suspected.</p>`
+        : `<p>The air is neutral, heavy with old silence.</p>`;
+
+    return `
+      ${room}
+      ${mood}
+      <p>Objects sit wrapped in cloth, sealed in glass, bound in runes—none labeled.</p>
+      <p class="rw-intro-dialog">“Archives,” Mira says. “Not records. Relics of decisions.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Approach the nearest glass case carefully. (Agility DC 12)",
+      to: "22",
+      key: "p21_approach_case",
+      check: {
+        label: "Careful Steps",
+        stat: "agility",
+        dc: 12,
+        successMsg: "You move without disturbing the ward-fog around the display.",
+        failMsg: "A thin chime rings out—quiet, but loud enough to be recorded.",
+        deltaWardHeatFail: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Ask Mira what the cases hold. (Presence DC 11)",
+      to: "22",
+      key: "p21_ask_cases",
+      check: {
+        label: "Plain Ask",
+        stat: "presence",
+        dc: 11,
+        successMsg: "Mira answers with one sentence. No more.",
+        failMsg: "Mira’s eyes flick to the shelves. “Some things don’t like being named.”",
+      },
+    },
+    { text: "Scan the room for anything that reacts to you. (Insight DC 12)", to: "22", key: "p21_scan_react",
+      check: {
+        label: "Notice",
+        stat: "insight",
+        dc: 12,
+        successMsg: "One shelf hums faintly when you look at it—recognition, not threat.",
+        failMsg: "Everything looks still… and you realize that means you’re missing the real movement.",
+        deltaWardHeatFail: +1,
+      },
+    },
+  ],
+},
+
+"22": {
+  title: "The Case That Watches Back",
+  image: "b1-p22.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const f = S.flags || {};
+
+    const react =
+      f.p21_scan_react_success
+        ? `<p>You know exactly which shelf is listening. You can feel it like a fingertip on your spine.</p>`
+        : `<p>Glass reflects your lantern light in soft, shifting shapes.</p>`;
+
+    const tension =
+      heat >= 2
+        ? `<p>The air around the cases feels charged—like a storm held behind teeth.</p>`
+        : `<p>The air is cool and still—too still for a place full of memory.</p>`;
+
+    return `
+      ${react}
+      ${tension}
+      <p>Inside one case rests a small object wrapped in dark cloth, bound with a single silver thread.</p>
+      <p class="rw-intro-dialog">“Don’t touch glass in the archive,” Mira says. “It counts as asking.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Ask permission aloud before getting closer. (Presence DC 13)",
+      to: "23",
+      key: "p22_ask_permission",
+      check: {
+        label: "Respect",
+        stat: "presence",
+        dc: 13,
+        successMsg: "The pressure eases. The manor seems to accept the courtesy.",
+        failMsg: "Silence. Heavy silence. The manor does not answer—yet it hears you clearly.",
+        deltaAttitudeSuccess: +2,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Study the silver thread binding it. (Insight DC 13)",
+      to: "23",
+      key: "p22_study_thread",
+      check: {
+        label: "Wardwork",
+        stat: "insight",
+        dc: 13,
+        successMsg: "It’s a sealing thread—meant to contain a story that bites.",
+        failMsg: "Your eyes sting. You look away too late.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Step back and choose a different shelf.",
+      to: "23",
+      key: "p22_step_back",
+      deltaAttitude: 0,
+    },
+  ],
+},
+
+"23": {
+  title: "The Archive’s Price",
+  image: "b1-p23.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+    const f = S.flags || {};
+
+    const line =
+      f.p22_ask_permission_success
+        ? `<p>The room loosens around you—subtle, but undeniable.</p>`
+        : f.p22_ask_permission_fail
+        ? `<p>The room holds its breath. You realize that was an answer.</p>`
+        : f.p22_study_thread_success
+        ? `<p>The silver thread seems to pulse once, like a living vein.</p>`
+        : `<p>The shelves remain quiet, waiting for what you do next.</p>`;
+
+    const heatLine =
+      heat >= 2
+        ? `<p class="rw-intro-dialog">“We should be quick,” Mira mutters. “The wards are warm.”</p>`
+        : `<p class="rw-intro-dialog">“Only take what you can carry,” Mira says. “Even if it’s not in your hands.”</p>`;
+
+    const mood =
+      attitude === "wary"
+        ? `<p>The lantern flame flickers low, like it wants you to leave this place unchanged.</p>`
+        : `<p>The lantern flame steadies, watching without judgment.</p>`;
+
+    return `
+      ${line}
+      ${mood}
+      ${heatLine}
+      <p>You feel it then: the archive doesn’t punish curiosity… it charges for it.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Pay attention to your body—what changes as you look around? (Will DC 12)",
+      to: "24",
+      key: "p23_body_awareness",
+      check: {
+        label: "Grounding",
+        stat: "will",
+        dc: 12,
+        successMsg: "You stay present. The archive can’t hook as easily.",
+        failMsg: "A memory rises uninvited—sharp, specific, not yours.",
+        deltaWardHeatFail: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Ask Mira what the archive wants. (Insight DC 12)",
+      to: "24",
+      key: "p23_ask_wants",
+      check: {
+        label: "Interpretation",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You understand: it wants consistent truth, not bravery.",
+        failMsg: "The meaning slips. The manor keeps its motives behind stone.",
+        deltaAttitudeSuccess: +1,
+      },
+    },
+    { text: "Back away and follow Mira out.", to: "24", key: "p23_follow_out" },
+  ],
+},
+
+"24": {
+  title: "A Shelf That Knows You",
+  image: "b1-p24.png",
+  body: (S) => {
+    const f = S.flags || {};
+    const heat = getWardHeat();
+
+    const hook =
+      f.p23_body_awareness_fail
+        ? `<p>The чуж́д memory clings like smoke. You can’t tell where it came from.</p>`
+        : `<p>The air tastes like old paper and stone dust—memory made physical.</p>`;
+
+    const charge =
+      heat >= 2
+        ? `<p>One shelf hums before you even look at it.</p>`
+        : `<p>When your gaze drifts, one shelf answers with a faint vibration.</p>`;
+
+    return `
+      ${hook}
+      ${charge}
+      <p>Not invitation. Not warning.</p>
+      <p>Recognition.</p>
+      <p class="rw-intro-dialog">“Don’t take it personally,” Mira says softly. “The manor recognizes patterns.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Approach the shelf that reacted. (Will DC 13)",
+      to: "25",
+      key: "p24_approach_reactive",
+      check: {
+        label: "Steady Nerves",
+        stat: "will",
+        dc: 13,
+        successMsg: "You hold your ground. The shelf’s hum becomes… less sharp.",
+        failMsg: "Your chest tightens. The hum deepens—like a hook setting.",
+        deltaWardHeatFail: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Refuse the pull and choose another shelf. (Might DC 12)",
+      to: "25",
+      key: "p24_refuse_pull",
+      check: {
+        label: "Stubbornness",
+        stat: "might",
+        dc: 12,
+        successMsg: "You break the thread of attention. The manor notices the boundary.",
+        failMsg: "The pull follows anyway—subtle, persistent.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Ask Mira why that shelf reacted to you.", to: "25", key: "p24_ask_why" },
+  ],
+},
+
+"25": {
+  title: "A Memory Not Yours",
+  image: "b1-p25.png",
+  body: (S) => {
+    const f = S.flags || {};
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+
+    const memory =
+      f.p24_approach_reactive_success
+        ? `<p>A flicker crosses your mind—lantern light in a different hand. A voice you don’t recognize saying your name like a warning.</p>`
+        : f.p24_approach_reactive_fail
+        ? `<p>The memory hits like a sudden bruise. A door slamming. A child crying. Not your life—yet it lands in you.</p>`
+        : `<p>Something brushes your mind, like fingertips testing a page edge.</p>`;
+
+    const heatLine =
+      heat >= 2
+        ? `<p class="rw-intro-dialog">“Enough,” Mira snaps under her breath. “Not that one.”</p>`
+        : `<p class="rw-intro-dialog">“If it offers you something,” Mira warns, “make sure you know what you’re paying.”</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The manor’s presence feels curious, not cruel.</p>`
+        : attitude === "wary"
+        ? `<p>The manor’s presence feels clinical—like a blade deciding where to cut.</p>`
+        : `<p>The manor’s presence feels neutral, like stone listening to rain.</p>`;
+
+    return `
+      ${memory}
+      ${mood}
+      ${heatLine}
+      <p>You realize the archive isn’t only storing history.</p>
+      <p>It’s storing <em>experiences</em>.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Push the чуж́д memory out. (Will DC 13)",
+      to: "26",
+      key: "p25_push_out",
+      check: {
+        label: "Mental Guard",
+        stat: "will",
+        dc: 13,
+        successMsg: "You regain ownership of your thoughts. The shelf’s hum fades.",
+        failMsg: "It clings. Not fully. But enough.",
+        deltaWardHeatFail: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Look for Mira’s cues and follow her lead. (Insight DC 12)",
+      to: "26",
+      key: "p25_follow_cues",
+      check: {
+        label: "Read Mira",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You move exactly when she moves. The manor approves coordination.",
+        failMsg: "You’re half a heartbeat late. The wards notice the lag.",
+        deltaAttitudeSuccess: +1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Ask Mira what that memory was.", to: "26", key: "p25_ask_memory" },
+  ],
+},
+
+"26": {
+  title: "The Manor Answers First",
+  image: "b1-p26.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+
+    const first =
+      heat >= 2
+        ? `<p>You feel it before anything happens—pressure shifting in the stone, like the manor preparing a response.</p>`
+        : `<p>You notice it only after: the lantern flame leaning, the air changing direction.</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The change feels like guidance—subtle, careful.</p>`
+        : attitude === "wary"
+        ? `<p>The change feels like containment—soft, but unmistakable.</p>`
+        : `<p>The change feels observational, like being studied through glass.</p>`;
+
+    return `
+      ${first}
+      ${mood}
+      <p class="rw-intro-dialog">“That’s new,” Mira whispers. “It usually waits for a choice.”</p>
+      <p>The archive has decided you’re worth reacting to.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Hold still and let it pass over you. (Will DC 12)",
+      to: "27",
+      key: "p26_hold_still",
+      check: {
+        label: "Stillness",
+        stat: "will",
+        dc: 12,
+        successMsg: "The pressure passes without catching. The manor notes your control.",
+        failMsg: "You flinch. The manor records the reflex.",
+        deltaAttitudeSuccess: +1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Speak a calm boundary aloud: “Not mine.” (Presence DC 13)",
+      to: "27",
+      key: "p26_boundary",
+      check: {
+        label: "Boundary",
+        stat: "presence",
+        dc: 13,
+        successMsg: "The air loosens. The manor accepts the boundary as valid.",
+        failMsg: "Your voice shakes. The boundary lands as fear instead of fact.",
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Take Mira’s arm and follow her out now.", to: "27", key: "p26_exit_now", deltaWardHeat: -1 },
+  ],
+},
+
+"27": {
+  title: "The Exit Path",
+  image: "b1-p27.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const f = S.flags || {};
+
+    const after =
+      f.p26_exit_now
+        ? `<p>Mira doesn’t argue. That alone tells you enough.</p>`
+        : `<p>Mira angles her body subtly—guiding you away without making it obvious to the room.</p>`;
+
+    const tension =
+      heat >= 2
+        ? `<p>The archive’s attention follows like a slow turn of a head.</p>`
+        : `<p>The shelves quiet again, as if satisfied with what they learned.</p>`;
+
+    return `
+      ${after}
+      ${tension}
+      <p class="rw-intro-dialog">“We’re leaving,” Mira says—not to you, but to the manor.</p>
+      <p>The stairwell waits like an answer you haven’t asked yet.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Descend quickly before the archive changes its mind. (Agility DC 12)",
+      to: "28",
+      key: "p27_descend_fast",
+      check: {
+        label: "Speed",
+        stat: "agility",
+        dc: 12,
+        successMsg: "You move cleanly. The pressure behind you doesn’t catch.",
+        failMsg: "Your foot slips. The archive flares—one last note taken.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Leave slowly, respectfully. (Presence DC 12)",
+      to: "28",
+      key: "p27_leave_respect",
+      check: {
+        label: "Ritual Exit",
+        stat: "presence",
+        dc: 12,
+        successMsg: "The manor accepts your exit as proper. The air stays calm.",
+        failMsg: "Your respect lands uncertain. The manor remains watchful.",
+        deltaAttitudeFail: -1,
+      },
+    },
+    { text: "Ask Mira if the archive will follow you.", to: "28", key: "p27_ask_follow" },
+  ],
+},
+
+"28": {
+  title: "The Hall Above, Changed",
+  image: "b1-p28.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+
+    const change =
+      heat >= 2
+        ? `<p>The corridor feels smaller than before—like the manor adjusted it while you were gone.</p>`
+        : `<p>The corridor feels the same… until you realize the portraits are different.</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The lanterns brighten as you step in. A small, unmistakable mercy.</p>`
+        : attitude === "wary"
+        ? `<p>The lanterns stay low. The shadows feel organized.</p>`
+        : `<p>The light remains neutral, but attentive.</p>`;
+
+    return `
+      ${change}
+      ${mood}
+      <p class="rw-intro-dialog">“It updates,” Mira says quietly. “It always updates.”</p>
+      <p>You realize the manor has already filed today under a category.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Try to sense what category it filed you under. (Insight DC 13)",
+      to: "29",
+      key: "p28_sense_category",
+      check: {
+        label: "Sense",
+        stat: "insight",
+        dc: 13,
+        successMsg: "You feel it: not threat. Not friend. Something like… 'possible.'",
+        failMsg: "Your mind skids off the meaning. The manor keeps its labels private.",
+        deltaAttitudeSuccess: +1,
+      },
+    },
+    {
+      text: "Ask Mira what she thinks the manor decided. (Presence DC 12)",
+      to: "29",
+      key: "p28_ask_mira_decision",
+      check: {
+        label: "Trust",
+        stat: "presence",
+        dc: 12,
+        successMsg: "Mira answers honestly. That honesty seems to help.",
+        failMsg: "Mira hesitates. The manor listens harder when you ask that.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Keep walking. Don’t give it more data.", to: "29", key: "p28_keep_walking", deltaWardHeat: 0 },
+  ],
+},
+
+"29": {
+  title: "The Fourth Ward: The Mirror-Lintels",
+  image: "b1-p29.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+
+    const ward =
+      heat >= 2
+        ? `<p>A pair of mirror-like lintels waits ahead. Their surfaces ripple faintly as you approach.</p>`
+        : `<p>Two pale stone lintels flank the doorway, each polished to a faint reflective sheen.</p>`;
+
+    const mood =
+      attitude === "wary"
+        ? `<p class="rw-intro-dialog">“This one catches self-deception,” Mira warns. “Don’t argue with what it shows.”</p>`
+        : `<p class="rw-intro-dialog">“Mirror-lintels,” Mira says. “They reflect what you’re trying not to admit.”</p>`;
+
+    return `
+      ${ward}
+      ${mood}
+      <p>Your reflection is not quite aligned with your movements.</p>
+      <p>It lags—like it’s choosing what to show.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Cross while holding a single honest thought. (Will DC 13)",
+      to: "30",
+      key: "p29_hold_truth",
+      check: {
+        label: "Inner Truth",
+        stat: "will",
+        dc: 13,
+        successMsg: "The reflection aligns. The lintels let you pass without friction.",
+        failMsg: "The reflection smiles when you don’t. The lintels tighten—recording denial.",
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Meet your reflection’s eyes and do not look away. (Presence DC 13)",
+      to: "30",
+      key: "p29_meet_eyes",
+      check: {
+        label: "Self-Possession",
+        stat: "presence",
+        dc: 13,
+        successMsg: "The reflection stills. The manor respects ownership.",
+        failMsg: "Your gaze breaks. The reflection moves on its own for a heartbeat.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Ask Mira to go first so you can watch what happens.",
+      to: "30",
+      key: "p29_watch_mira",
+      deltaAttitude: 0,
+    },
+  ],
+},
+
+"30": {
+  title: "Filed Under: Possible",
+  image: "b1-p30.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+    const f = S.flags || {};
+
+    const passage =
+      f.p29_hold_truth_success || f.p29_meet_eyes_success
+        ? `<p>You pass through with minimal resistance. The air behind you seals like a page turning.</p>`
+        : f.p29_hold_truth_fail || f.p29_meet_eyes_fail
+        ? `<p>You pass through, but the lintels keep a thin pressure on your shoulders—like a bookmark pressed into place.</p>`
+        : `<p>Mira passes first. The lintels stay neutral, then turn their attention to you.</p>`;
+
+    const tag =
+      attitude === "welcoming"
+        ? `<p class="rw-intro-dialog">“It’s… almost kind,” Mira says softly, as if surprised by the word.</p>`
+        : attitude === "wary"
+        ? `<p class="rw-intro-dialog">“It hasn’t rejected you,” Mira says. “That’s not approval. But it’s not a sentence.”</p>`
+        : `<p class="rw-intro-dialog">“Watchful,” Mira says. “Still watchful.”</p>`;
+
+    const heatLine =
+      heat >= 2
+        ? `<p>You feel it: the manor now reacts before you act. It’s started anticipating you.</p>`
+        : `<p>You feel it: the manor is beginning to treat you as a variable worth tracking.</p>`;
+
+    return `
+      ${passage}
+      ${tag}
+      ${heatLine}
+      <p>The next corridor is darker, quieter—like the manor is saving something for later.</p>
+      <p class="rw-intro-dialog">“Tomorrow,” Mira murmurs, “it’ll test you differently.”</p>
+    `;
+  },
+  choices: [
+    { text: "Continue (Book I · Part II begins).", to: "31", key: "p30_continue" },
+    { text: "Open Inventory.", to: "30", key: "p30_inventory_hint" },
+  ],
+},
+
+// ============================
+// BOOK I · Pages 31–45 (mechanics + choices)
+// ============================
+
+"31": {
+  title: "Part II · The Manor’s Inner Rules",
+  image: "b1-p31.png",
+  body: (S) => {
+    const attitude = getManorAttitudeLabel();
+    const heat = getWardHeat();
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The corridor ahead feels less like a test and more like a guided passage.</p>`
+        : attitude === "wary"
+        ? `<p>The corridor ahead feels like a hallway in a courthouse: quiet, controlled, unforgiving.</p>`
+        : `<p>The corridor ahead is neutral—listening for what you’ll become.</p>`;
+
+    const heatLine =
+      heat >= 2
+        ? `<p>The air has a faint static bite to it, as if the wards are already awake.</p>`
+        : `<p>The lantern flame holds steady, as if waiting for permission to flicker.</p>`;
+
+    return `
+      <p>The stone underfoot changes—subtle at first—then unmistakable.</p>
+      <p>Less worn. Less forgiving.</p>
+      ${mood}
+      ${heatLine}
+      <p class="rw-intro-dialog">“This is where the manor stops pretending it’s a building,” Mira murmurs. “And starts behaving like a rule-set.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Ask what rule you’re most likely to break. (Insight DC 12)",
+      to: "32",
+      key: "p31_ask_rule",
+      check: {
+        label: "Interpretation",
+        stat: "insight",
+        dc: 12,
+        successMsg: "Mira answers quickly—like she’s been waiting for you to ask the right thing.",
+        failMsg: "Mira’s gaze sharpens. “Not that question. Not yet.”",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Say nothing. Let the manor gather data from your silence.",
+      to: "32",
+      key: "p31_silent",
+      deltaAttitude: 0,
+    },
+  ],
+},
+
+"32": {
+  title: "Fourth Ward: The Threshold-Count",
+  image: "b1-p32.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+    const f = S.flags || {};
+
+    const miraLine =
+      f.p31_ask_rule_success
+        ? `<p class="rw-intro-dialog">“Most people try to outsmart it,” Mira said. “The manor hates theatrics.”</p>`
+        : f.p31_ask_rule_fail
+        ? `<p class="rw-intro-dialog">“Walk,” Mira said quietly. “We don’t feed it extra words right now.”</p>`
+        : `<p class="rw-intro-dialog">“This ward counts thresholds,” Mira whispers. “It prefers consistency.”</p>`;
+
+    const ward =
+      heat >= 2
+        ? `<p>A faint set of tally-marks glimmers along the lintel—like scratches in moonlight.</p>`
+        : `<p>The lintel bears shallow marks—too clean to be accidental.</p>`;
+
+    const mood =
+      attitude === "wary"
+        ? `<p>The air tightens as if waiting for you to slip.</p>`
+        : `<p>The air stays neutral, listening for intent.</p>`;
+
+    return `
+      ${ward}
+      ${miraLine}
+      ${mood}
+      <p>Something about the doorway makes your steps feel louder than they should.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Cross with steady, repeated cadence. (Will DC 12)",
+      to: "33",
+      key: "p32_steady_cadence",
+      check: {
+        label: "Composure",
+        stat: "will",
+        dc: 12,
+        successMsg: "The lintel’s pressure fades. You feel counted—then accepted.",
+        failMsg: "Your rhythm breaks. The tally-marks brighten—recording inconsistency.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Try to “skip” the count by stepping oddly. (Agility DC 13)",
+      to: "33",
+      key: "p32_skip_count",
+      check: {
+        label: "Trick Step",
+        stat: "agility",
+        dc: 13,
+        successMsg: "You slip through the seam between beats. The manor notes the skill—warily.",
+        failMsg: "The lintel snaps tight for a heartbeat. It counts you twice on purpose.",
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Ask permission before crossing. (Presence DC 13)",
+      to: "33",
+      key: "p32_ask_permission",
+      check: {
+        label: "Ritual Courtesy",
+        stat: "presence",
+        dc: 13,
+        successMsg: "The doorway softens. Courtesy lands well here.",
+        failMsg: "No answer. The silence feels like a warning, but the path remains open.",
+        deltaAttitudeSuccess: +2,
+      },
+    },
+  ],
+},
+
+"33": {
+  title: "The Corridor of Soft Footfalls",
+  image: "b1-p33.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+    const f = S.flags || {};
+
+    const echo =
+      f.p32_steady_cadence_success
+        ? `<p>Your feet feel lighter after the lintel—like the manor stopped pressing its thumb into you.</p>`
+        : f.p32_skip_count_success
+        ? `<p>The corridor feels alert now—less hostile, more… interested in your tactics.</p>`
+        : (f.p32_steady_cadence_fail || f.p32_skip_count_fail)
+        ? `<p>Your shoulders carry a faint pressure—like the manor stamped a note into your file.</p>`
+        : `<p>The corridor stretches ahead, quiet as a held breath.</p>`;
+
+    const ward =
+      heat >= 2
+        ? `<p>The stone here seems to absorb sound. You can’t tell if that’s kindness or control.</p>`
+        : `<p>The stone here muffles your steps, as if the manor is reducing noise on purpose.</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The lanterns brighten a fraction, offering clearer edges to the hall.</p>`
+        : attitude === "wary"
+        ? `<p>The lanterns stay low. Shadows hold their places like disciplined soldiers.</p>`
+        : `<p>The light stays neutral, but attentive.</p>`;
+
+    return `
+      ${echo}
+      ${ward}
+      ${mood}
+      <p class="rw-intro-dialog">“This corridor hears lies,” Mira says. “Not words—<em>posture</em>.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Walk honestly—no performance. (Presence DC 12)",
+      to: "34",
+      key: "p33_walk_honest",
+      check: {
+        label: "Authenticity",
+        stat: "presence",
+        dc: 12,
+        successMsg: "The corridor loosens. The manor prefers unadorned truth.",
+        failMsg: "You try too hard. The corridor feels colder—like it hates being impressed.",
+        deltaAttitudeSuccess: +1,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Focus inward and keep your fear from spiking. (Will DC 13)",
+      to: "34",
+      key: "p33_keep_calm",
+      check: {
+        label: "Fear Control",
+        stat: "will",
+        dc: 13,
+        successMsg: "Your breath stays even. The corridor stops leaning into you.",
+        failMsg: "A flicker of panic rises. The stone drinks it like fuel.",
+        deltaWardHeatFail: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    { text: "Ask Mira what it does when it ‘hears’ a lie.", to: "34", key: "p33_ask_consequence" },
+  ],
+},
+
+"34": {
+  title: "The First Door With a Handle",
+  image: "b1-p34.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+
+    const door =
+      heat >= 2
+        ? `<p>The door handle looks ordinary—until you notice a faint rune-ring around its base.</p>`
+        : `<p>The door has a handle. A real one. Almost mundane.</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The handle feels cool, not hostile—like a test offered gently.</p>`
+        : attitude === "wary"
+        ? `<p>The handle feels cold in a way that suggests consequence.</p>`
+        : `<p>The handle feels neutral—waiting for your intent.</p>`;
+
+    return `
+      ${door}
+      ${mood}
+      <p class="rw-intro-dialog">“Don’t pull,” Mira warns. “Not yet.”</p>
+      <p>You realize this is the first door that expects you to participate.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Study the rune-ring for meaning. (Insight DC 12)",
+      to: "35",
+      key: "p34_study_ring",
+      check: {
+        label: "Reading Wards",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You see it: the handle measures intent—escape, entry, curiosity.",
+        failMsg: "The ring blurs like oil on water. The manor won’t let you read it cleanly.",
+        deltaAttitudeSuccess: +1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Place your palm near the handle without touching. (Will DC 12)",
+      to: "35",
+      key: "p34_palm_near",
+      check: {
+        label: "Restraint",
+        stat: "will",
+        dc: 12,
+        successMsg: "You hold still. The ring’s pressure fades—approval of control.",
+        failMsg: "Your fingers twitch toward it. The ring tightens—recording impulse.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Ask Mira what’s behind this door.", to: "35", key: "p34_ask_behind" },
+  ],
+},
+
+"35": {
+  title: "The Door That Measures Want",
+  image: "b1-p35.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const f = S.flags || {};
+
+    const read =
+      f.p34_study_ring_success
+        ? `<p>You can almost <em>feel</em> the door sorting intentions—like cards being shuffled.</p>`
+        : f.p34_study_ring_fail
+        ? `<p>The door remains unreadable, but you feel it reading you anyway.</p>`
+        : `<p>The rune-ring around the handle hums softly, like a held note.</p>`;
+
+    const tension =
+      heat >= 2
+        ? `<p>The air tastes metallic for a moment, like the manor is charging the space.</p>`
+        : `<p>The lantern flame steadies, waiting for your choice.</p>`;
+
+    return `
+      ${read}
+      ${tension}
+      <p class="rw-intro-dialog">“If you touch it wanting to leave,” Mira murmurs, “it won’t open the same way.”</p>
+      <p class="rw-intro-dialog">“Touch it wanting to understand… and it might let you in.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Touch the handle with curiosity, not urgency. (Presence DC 13)",
+      to: "36",
+      key: "p35_touch_curiosity",
+      check: {
+        label: "Intent",
+        stat: "presence",
+        dc: 13,
+        successMsg: "The rune-ring warms. The latch loosens like a sigh.",
+        failMsg: "Your pulse betrays you. The ring tightens—measuring need as threat.",
+        deltaAttitudeSuccess: +2,
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Refuse to touch. Ask Mira to open it. (Insight DC 12)",
+      to: "36",
+      key: "p35_ask_mira_open",
+      check: {
+        label: "Delegation",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You recognize a safe move: let the ward-tender lead.",
+        failMsg: "Mira’s look says: you’re still responsible for your own thresholds here.",
+        deltaAttitudeFail: -1,
+      },
+    },
+    { text: "Step back and breathe first.", to: "36", key: "p35_step_back", deltaWardHeat: -1 },
+  ],
+},
+
+"36": {
+  title: "A Room That Isn’t a Room",
+  image: "b1-p36.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+    const f = S.flags || {};
+
+    const entry =
+      f.p35_touch_curiosity_success
+        ? `<p>The door opens like it recognizes the shape of your question.</p>`
+        : f.p35_touch_curiosity_fail
+        ? `<p>The door opens, but reluctantly—like it’s keeping one hand on the chain.</p>`
+        : `<p>Mira opens the door with a single careful movement, as if speaking a quiet password.</p>`;
+
+    const space =
+      heat >= 2
+        ? `<p>Inside is a dim chamber that feels too large for the manor’s footprint—space folding wrong.</p>`
+        : `<p>Inside is a dim chamber that feels… misaligned, like it was added later by something clever.</p>`;
+
+    const mood =
+      attitude === "wary"
+        ? `<p>The air presses against your skin—containment disguised as calm.</p>`
+        : `<p>The air is cool and still, like a paused thought.</p>`;
+
+    return `
+      ${entry}
+      ${space}
+      ${mood}
+      <p class="rw-intro-dialog">“Anchor room,” Mira says. “The manor uses these to keep itself… stable.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Look for the room’s anchor point. (Insight DC 13)",
+      to: "37",
+      key: "p36_find_anchor",
+      check: {
+        label: "Locate Anchor",
+        stat: "insight",
+        dc: 13,
+        successMsg: "You spot it: a small sigil in the floor that hums under your attention.",
+        failMsg: "The geometry refuses to settle. You feel briefly dizzy—like the room shifted behind your eyes.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Ground yourself and resist the wrongness. (Will DC 12)",
+      to: "37",
+      key: "p36_ground",
+      check: {
+        label: "Grounding",
+        stat: "will",
+        dc: 12,
+        successMsg: "Your breath steadies. The room stops leaning into you.",
+        failMsg: "Your balance wavers. The room notes it—quietly.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Ask Mira why the manor needs stability.", to: "37", key: "p36_ask_stable" },
+  ],
+},
+
+"37": {
+  title: "The Anchor-Sigil",
+  image: "b1-p37.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const f = S.flags || {};
+
+    const anchor =
+      f.p36_find_anchor_success
+        ? `<p>The anchor-sigil sits like a nail pinning the room to reality.</p>`
+        : `<p>You feel there is an anchor here even if you can’t see it—like a weight in water.</p>`;
+
+    const warn =
+      heat >= 2
+        ? `<p class="rw-intro-dialog">“Don’t step on it,” Mira warns quickly. “Not unless you want to be counted as part of the structure.”</p>`
+        : `<p class="rw-intro-dialog">“Respect it,” Mira says. “These sigils keep the manor from… drifting.”</p>`;
+
+    return `
+      ${anchor}
+      ${warn}
+      <p>The room feels like it’s waiting to see whether you treat the anchor like a tool… or a boundary.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Step around the sigil carefully. (Agility DC 12)",
+      to: "38",
+      key: "p37_step_around",
+      check: {
+        label: "Careful Movement",
+        stat: "agility",
+        dc: 12,
+        successMsg: "You move with respect. The room stays quiet.",
+        failMsg: "Your heel brushes the line. The sigil hums—recording contact.",
+        deltaWardHeatFail: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Ask the room (not Mira) to remain stable. (Presence DC 13)",
+      to: "38",
+      key: "p37_ask_room",
+      check: {
+        label: "Address the House",
+        stat: "presence",
+        dc: 13,
+        successMsg: "The air relaxes slightly. The manor recognizes the address.",
+        failMsg: "The request lands flat. The manor does not reward uncertain ritual.",
+        deltaAttitudeSuccess: +2,
+        deltaAttitudeFail: -1,
+      },
+    },
+    { text: "Study the sigil’s shape for family resemblance. (Insight DC 12)", to: "38", key: "p37_study_shape",
+      check: {
+        label: "Pattern",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You recognize a familiar motif—echoes of the wards you’ve already passed.",
+        failMsg: "The lines seem to rearrange under scrutiny.",
+        deltaAttitudeSuccess: +1,
+      },
+    },
+  ],
+},
+
+"38": {
+  title: "The Manor’s Quiet Hunger",
+  image: "b1-p38.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+
+    const hunger =
+      heat >= 2
+        ? `<p>You feel it clearly here: the manor gathers attention like fuel.</p>`
+        : `<p>You sense it faintly: the manor prefers engagement, not avoidance.</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The sensation feels like curiosity—sharp but not cruel.</p>`
+        : attitude === "wary"
+        ? `<p>The sensation feels like appetite—clinical, measuring, detached.</p>`
+        : `<p>The sensation feels like observation—calm but constant.</p>`;
+
+    return `
+      ${hunger}
+      ${mood}
+      <p class="rw-intro-dialog">“Anchor rooms are safe,” Mira says. “Until you try to use them like leverage.”</p>
+      <p>You realize the manor is not only defending itself. It’s… learning.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Offer a single honest sentence to the manor. (Presence DC 12)",
+      to: "39",
+      key: "p38_offer_sentence",
+      check: {
+        label: "Honesty",
+        stat: "presence",
+        dc: 12,
+        successMsg: "The air warms, barely. The manor accepts the offering.",
+        failMsg: "Your sentence is true but guarded. The manor prefers clean truth.",
+        deltaAttitudeSuccess: +2,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Refuse to offer anything. Hold your boundaries. (Will DC 13)",
+      to: "39",
+      key: "p38_hold_boundary",
+      check: {
+        label: "Boundary",
+        stat: "will",
+        dc: 13,
+        successMsg: "The pressure eases. The manor notes your boundary as stable.",
+        failMsg: "The pressure persists. The manor records resistance as data.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Ask Mira what the manor learns from you.", to: "39", key: "p38_ask_learns" },
+  ],
+},
+
+"39": {
+  title: "A Gift: The Journal",
+  image: "b1-p39.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+
+    // --- GUARANTEED JOURNAL GRANT (runs once) ---
+    if (!S.flags?.p39_journal_granted) {
+      S.flags = S.flags || {};
+      S.flags.p39_journal_granted = true;
+
+      // Add journal entry
+      if (typeof window.rwAddJournalEntry === "function") {
+        window.rwAddJournalEntry(
+          "The manor placed a journal for me as if it had been waiting. Mira said it’s for what I can’t carry.",
+          { source: "system", location: "Anchor Room" }
         );
-      };
-
-      // --- PAGE RENDERING ---
-      function renderPage(pageId) {
-        const page = BOOK_PAGES[pageId];
-        if (!page) return;
-
-        BOOK_STATE.currentPageId = pageId;
-
-        const titleEl = document.getElementById("rwBookPageTitle");
-        const bodyEl = document.getElementById("rwBookPageBody");
-        const imgEl = document.getElementById("rwBookImage");
-        const metaEl = document.getElementById("rwBookPageMeta");
-        const dropZone = document.getElementById("rwBookDropHotspot");
-
-        if (titleEl) titleEl.textContent = page.title || "";
-        if (metaEl) metaEl.textContent = "Page " + pageId;
-
-        // Build body HTML with contextual reactions
-        let bodyHtml = page.body || "";
-        const lastKey = BOOK_STATE.lastChoiceKey;
-
-        // Page 2 reacts to how you entered (from Page 1)
-        if (pageId === "2") {
-          if (lastKey === "p1_cautious") {
-            bodyHtml += `
-              <p>
-                Mira’s gaze tracks the way you hover just inside the threshold.
-                One corner of her mouth lifts.
-                <span class="rw-intro-dialog">“Good,”</span> she says quietly.
-                <em>“The Manor respects caution more than bravado.”</em>
-              </p>
-            `;
-          } else if (lastKey === "p1_belong") {
-            bodyHtml += `
-              <p>
-                You move as if this place has always been yours.
-                For a heartbeat, something like recognition flickers in Mira’s eyes.
-                <span class="rw-intro-dialog">“You walk like someone who’s been here before,”</span> she murmurs.
-              </p>
-            `;
-          } else if (lastKey === "p1_ask_who") {
-            bodyHtml += `
-              <p>
-                The fact that you stopped to ask her name first seems to soften her.
-                <span class="rw-intro-dialog">“Most people let the house speak before they let me,”</span> she says.
-                <em>“Thank you for the courtesy.”</em>
-              </p>
-            `;
-          }
-        }
-
-        // Page 3 reacts to what you asked / did on Page 2
-        if (pageId === "3") {
-          if (lastKey === "p2_ask_anchor") {
-            bodyHtml += `
-              <p class="rw-intro-dialog">
-                “You asked what it means to be an anchor,” Mira says as you walk.
-                “It means the Manor can lean some of its weight on you without breaking you—or itself.”
-              </p>
-              <p>
-                Her fingers brush the air near the glowing door.
-                <em>“The wards need a mind to steady them. An anchor is the one who keeps them from tearing holes in the world when they panic.”</em>
-              </p>
-            `;
-            BOOK_STATE.flags.askedAnchor = true;
-          } else if (lastKey === "p2_ask_wards") {
-            bodyHtml += `
-              <p class="rw-intro-dialog">
-                “You felt it, didn’t you,” she says. “The wards are fraying.
-                They wake at the wrong times, sleep through the right ones.
-                Something is pulling at them from beneath the Underhall.”
-              </p>
-              <p>
-                Her jaw tightens. <em>“I’ve been patching them alone for years.
-                But they don’t want just me anymore. They want someone the house chose.”</em>
-              </p>
-            `;
-            BOOK_STATE.flags.askedWards = true;
-          } else if (lastKey === "p2_touch_talisman") {
-            bodyHtml += `
-              <p>
-                Mira’s eyes drop briefly to your hand where you touched the talisman.
-                The metal still hums faintly.
-                <span class="rw-intro-dialog">“It answers you quickly,”</span> she notes.
-                <em>“That’s rare. Most anchors have to earn that kind of trust.”</em>
-              </p>
-            `;
-            BOOK_STATE.flags.touchedTalismanEarly = true;
-          }
-        }
-
-        // Page 9 reacts to whether you took or refused the echo
-        if (pageId === "9") {
-          if (BOOK_STATE.flags.tookFeather) {
-            bodyHtml += `
-              <p>
-                The echo you pulled into yourself still crackles under your skin. Every time the floor tilts,
-                you feel the vault tug at your balance, testing how much of its memory you can carry without breaking.
-              </p>
-              <p>
-                The lanterns seem to approve. Their flames lean toward you, bright and intent,
-                as if the house has decided you’re the kind of anchor who says <em>yes</em> when it asks too much.
-              </p>
-            `;
-          } else if (BOOK_STATE.flags.refusedFeather) {
-            bodyHtml += `
-              <p>
-                A faint coolness lingers where the feather waited. When the corridor shivers, you feel the absence
-                of that echo as clearly as its weight might have been—a space you chose to keep for yourself.
-              </p>
-              <p>
-                The lanterns burn steady instead of flaring. The Manor files that away:
-                an anchor who will hold the line, even against the house itself.
-              </p>
-            `;
-          }
-        }
-
-        // Page 12 reacts to the anchor stance chosen on Page 11
-        if (pageId === "12") {
-          const focus = BOOK_STATE.flags.anchorFocus;
-          if (focus === "anchor_people") {
-            bodyHtml += `
-              <p>
-                Somewhere in the square below, a window latch lifts of its own accord and a frightened heart
-                suddenly finds it easier to breathe. The Manor routes its first trust in you toward the people
-                walking its streets.
-              </p>
-            `;
-          } else if (focus === "anchor_house") {
-            bodyHtml += `
-              <p>
-                Deep in the foundations, an old ward sighs in relief. Cracked lines knit the slightest bit tighter
-                as the Manor leans more of its weight onto you, certain you won’t flinch when it shows you the worst of itself.
-              </p>
-            `;
-          } else if (focus === "anchor_between") {
-            bodyHtml += `
-              <p>
-                The tug from town and house evens out, neither winning, neither ignored.
-                For a moment the whole weave of Ravenwood balances on the point of your choice—
-                a promise to keep every side from swallowing the other.
-              </p>
-            `;
-          }
-        }
-
-        if (bodyEl) {
-          bodyEl.innerHTML = bodyHtml;
-        }
-
-        if (imgEl) {
-          if (page.image) {
-            imgEl.src = page.image;
-            imgEl.style.display = "";
-          } else {
-            imgEl.style.display = "none";
-          }
-        }
-
-        const needsTalisman = !!page.requiresTalisman;
-        const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
-
-        // Hotspot currently unused; keep hidden
-        if (dropZone) {
-          dropZone.classList.add("d-none");
-        }
-
-        if (needsTalisman && alreadyUsed && page.dropSuccessText && bodyEl) {
-          const extra = document.createElement("p");
-          extra.className = "rw-body mt-2";
-          extra.innerHTML = `<em>${page.dropSuccessText}</em>`;
-          bodyEl.appendChild(extra);
-          setSystemMessage("The talisman answered. New paths are open.", "success");
-        }
-
-        renderChoicesForPage(pageId);
-
-        // Save progress whenever we fully render this page
-        saveBookProgress(pageId, { completed: pageId === "12" });
       }
 
-      function renderChoicesForPage(pageId) {
-        const page = BOOK_PAGES[pageId];
-        if (!page) return;
-
-        const choicesEl = document.getElementById("rwBookChoices");
-        if (!choicesEl) return;
-
-        const needsTalisman = !!page.requiresTalisman;
-        const alreadyUsed = !!BOOK_STATE.talismanUsedPages[pageId];
-
-        choicesEl.innerHTML = "";
-
-        if (!Array.isArray(page.choices) || !page.choices.length) {
-          const p = document.createElement("p");
-          p.className = "small text-muted";
-          p.textContent = "There are no choices here yet.";
-          choicesEl.appendChild(p);
-          return;
-        }
-
-        page.choices.forEach((choice) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "btn rw-btn-main w-100";
-          btn.textContent = choice.text;
-
-          if (needsTalisman && !alreadyUsed) {
-            btn.disabled = true;
-          }
-
-          btn.addEventListener("click", () => {
-            // Remember what the player picked
-            if (choice.key) {
-              BOOK_STATE.lastChoiceKey = choice.key;
-
-              // Track some broader flags based on page + choice
-              if (pageId === "1") {
-                BOOK_STATE.flags.entryStyle = choice.key;
-              }
-
-              if (pageId === "6") {
-                if (choice.key === "take_feather") {
-                  BOOK_STATE.flags.tookFeather = true;
-                  BOOK_STATE.flags.refusedFeather = false;
-                } else if (choice.key === "leave_feather") {
-                  BOOK_STATE.flags.refusedFeather = true;
-                  BOOK_STATE.flags.tookFeather = false;
-                }
-              }
-
-              if (pageId === "11") {
-                BOOK_STATE.flags.anchorFocus = choice.key;
-              }
-            } else {
-              BOOK_STATE.lastChoiceKey = null;
-            }
-
-            if (choice.to && BOOK_PAGES[choice.to]) {
-              renderPage(choice.to);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
+      // Add quest item to inventory (id-safe)
+      if (Array.isArray(window.rwInventory)) {
+        const hasJournal = window.rwInventory.some(
+          (i) => i && i.id === "ravenwood_journal"
+        );
+        if (!hasJournal) {
+          window.rwInventory.push({
+            id: "ravenwood_journal",
+            name: "Ravenwood Journal",
+            icon: "item-journal.png",
+            quest: true,
           });
 
-          choicesEl.appendChild(btn);
-        });
-
-        if (needsTalisman && !alreadyUsed) {
-          setSystemMessage(
-            page.dropHint ||
-              "The wall is still waiting. Use your talisman here before you choose your next step.",
-            "warning"
-          );
-        } else {
-          // Clear any lingering message if this page doesn't need the talisman
-          setSystemMessage(null);
+          if (typeof window.syncInventoryToSupabase === "function") {
+            window.syncInventoryToSupabase(window.rwInventory);
+          }
         }
       }
+    }
 
-      // --- INVENTORY TOGGLE CONTROLS ---
-      function initInventoryToggle() {
-        const toggleBtn = document.getElementById("rwBookInventoryToggle");
-        const closeBtn = document.getElementById("rwBookInventoryClose");
-        const panel = document.getElementById("rwBookInventoryPanel");
-        if (!toggleBtn || !panel) return;
+    // --- NARRATIVE TONE ---
+    const itemTone =
+      attitude === "welcoming"
+        ? `<p>The object feels like a gift.</p>`
+        : attitude === "wary"
+        ? `<p>The object feels like a leash disguised as courtesy.</p>`
+        : `<p>The object feels like a tool left where you would notice it.</p>`;
 
-        function showPanel() {
-          panel.classList.remove("d-none");
-        }
-        function hidePanel() {
-          panel.classList.add("d-none");
-        }
+    const heatLine =
+      heat >= 2
+        ? `<p>The air around it hums faintly, as if the manor wants the moment recorded.</p>`
+        : `<p>It sits quietly, already accounted for.</p>`;
 
-        toggleBtn.addEventListener("click", () => {
-          if (panel.classList.contains("d-none")) {
-            showPanel();
-          } else {
-            hidePanel();
-          }
-        });
+    return `
+      <p>You blink and realize something has changed.</p>
+      ${itemTone}
+      ${heatLine}
+      <p>A dark leather journal rests on a stone table—no dust, no age.</p>
+      <p class="rw-intro-dialog">
+        Mira’s voice lowers. “It does that sometimes. It gives people a place to put what they can’t carry.”
+      </p>
+    `;
+  },
+  choices: [
+    {
+      text: "Take the journal.",
+      to: "40",
+      key: "p39_take_journal",
+      deltaAttitude: +1,
+    },
+    {
+      text: "Leave it where it is—for now.",
+      to: "40",
+      key: "p39_leave_journal",
+      deltaWardHeat: +1,
+    },
+    {
+      text: "Ask Mira if the journal ever writes back. (Insight DC 12)",
+      to: "40",
+      key: "p39_writes_back",
+      check: {
+        stat: "insight",
+        dc: 12,
+        successMsg: "Mira answers with a look: yes. Sometimes. Not safely.",
+        failMsg: "Mira avoids the answer. That tells you enough.",
+        deltaAttitudeSuccess: +1,
+      },
+    },
+  ],
+},
 
-        if (closeBtn) {
-          closeBtn.addEventListener("click", hidePanel);
-        }
-      }
+"40": {
+  title: "Leaving the Anchor Room",
+  image: "b1-p40.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const f = S.flags || {};
 
-      // --- INIT ON LOAD ---
-      document.addEventListener("DOMContentLoaded", async () => {
-        // 1) Ensure a logged-in Supabase user
-        try {
-          const { data, error } = await supabaseClient.auth.getUser();
-          if (error || !data || !data.user || !data.user.email) {
-            window.location.href = "login.html";
-            return;
-          }
-          currentBookEmail = data.user.email.toLowerCase();
+    const journal =
+      f.p39_take_journal
+        ? `<p>The journal is warm against your palm, like it’s already aware of your grip.</p>`
+        : `<p>You leave the table behind without touching what the manor offered.</p>`;
 
-          // 2) Load their character row
-          try {
-            currentBookChar = await fetchCharacterByEmail(currentBookEmail);
-          } catch (e) {
-            console.error("Could not load character for book:", e);
-          }
-        } catch (e) {
-          console.error("Supabase auth error in book:", e);
-        }
+    const exit =
+      heat >= 2
+        ? `<p>The doorway feels narrower on the way out—like the room is reluctant to release you.</p>`
+        : `<p>The doorway releases you without fuss.</p>`;
 
-        // 3) Seed inventory (prefer Supabase)
-        if (currentBookChar && Array.isArray(currentBookChar.inventory)) {
-          BOOK_STATE.inventory = [...currentBookChar.inventory];
-        } else {
-          BOOK_STATE.inventory = loadBookInventory();
-        }
-        renderBookInventory();
+    return `
+      ${journal}
+      ${exit}
+      <p class="rw-intro-dialog">“Don’t read too much into gifts,” Mira says. “The manor doesn’t gift. It <em>places</em>.”</p>
+      <p>The corridor beyond feels different—like the manor updated its expectations again.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Ask Mira what the manor expects now. (Presence DC 12)",
+      to: "41",
+      key: "p40_expect_now",
+      check: {
+        label: "Ask",
+        stat: "presence",
+        dc: 12,
+        successMsg: "Mira answers carefully. The manor seems to tolerate honest questions.",
+        failMsg: "Mira’s eyes flick to the walls. “Not while it’s listening that closely.”",
+        deltaAttitudeSuccess: +1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Stay quiet and watch for the next ward’s shape. (Insight DC 12)",
+      to: "41",
+      key: "p40_watch_next",
+      check: {
+        label: "Observe",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You notice it early: a thin shimmer in the air where the next ward begins.",
+        failMsg: "You miss the seam until you’re already inside it.",
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Keep walking. Don’t invite extra tests.", to: "41", key: "p40_keep_walking", deltaWardHeat: 0 },
+  ],
+},
 
-        // Inventory UI
-        initInventoryToggle();
+"41": {
+  title: "Fifth Ward: The Oath-Air",
+  image: "b1-p41.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
 
-        // 4) Decide starting page (resume if possible)
-        let startPage = "1";
-        if (
-          currentBookChar &&
-          currentBookChar.book1_last_page &&
-          BOOK_PAGES[currentBookChar.book1_last_page]
-        ) {
-          startPage = currentBookChar.book1_last_page;
-        }
+    const shimmer =
+      heat >= 2
+        ? `<p>The air ahead shimmers like heat above stone, though the corridor is cold.</p>`
+        : `<p>A faint distortion hangs across the hallway, nearly invisible unless you look sideways.</p>`;
 
-        BOOK_STATE.currentPageId = startPage;
+    const mira =
+      attitude === "wary"
+        ? `<p class="rw-intro-dialog">“This ward punishes false vows,” Mira warns. “Don’t promise anything.”</p>`
+        : `<p class="rw-intro-dialog">“Oath-air,” Mira says. “It listens for vows you don’t realize you’re making.”</p>`;
 
-        // Mark as started & save initial progress
-        await saveBookProgress(startPage);
+    return `
+      ${shimmer}
+      ${mira}
+      <p>You realize how many of your ordinary sentences are actually promises in disguise.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Cross without making any statement at all. (Will DC 12)",
+      to: "42",
+      key: "p41_cross_silent",
+      check: {
+        label: "Restraint",
+        stat: "will",
+        dc: 12,
+        successMsg: "You hold your tongue. The air lets you pass cleanly.",
+        failMsg: "A word rises anyway—half-formed. The ward catches the intention.",
+        deltaWardHeatFail: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Speak one careful truth with no promise attached. (Presence DC 13)",
+      to: "42",
+      key: "p41_one_truth",
+      check: {
+        label: "Exact Speech",
+        stat: "presence",
+        dc: 13,
+        successMsg: "The ward relaxes. Precision lands as respect.",
+        failMsg: "Your phrasing tilts into vow. The air tightens—recording.",
+        deltaAttitudeSuccess: +2,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Ask Mira for a safe sentence to say here. (Insight DC 12)",
+      to: "42",
+      key: "p41_safe_sentence",
+      check: {
+        label: "Prudence",
+        stat: "insight",
+        dc: 12,
+        successMsg: "Mira gives you a single neutral phrase—and the ward accepts it.",
+        failMsg: "Mira refuses. “You have to learn your own edges.”",
+        deltaAttitudeFail: -1,
+      },
+    },
+  ],
+},
 
-        // Render starting page
-        renderPage(startPage);
+"42": {
+  title: "The Oath That Almost Happened",
+  image: "b1-p42.png",
+  body: (S) => {
+    const f = S.flags || {};
+    const heat = getWardHeat();
+
+    const after =
+      f.p41_cross_silent_success
+        ? `<p>You pass cleanly. The air feels clearer on the other side.</p>`
+        : f.p41_one_truth_success
+        ? `<p>The shimmer disperses. You feel… acknowledged.</p>`
+        : (f.p41_cross_silent_fail || f.p41_one_truth_fail)
+        ? `<p>The air clings briefly, like it took a small copy of your intent.</p>`
+        : `<p>You pass, and only afterward realize how close you were to promising something aloud.</p>`;
+
+    const heatLine =
+      heat >= 2
+        ? `<p class="rw-intro-dialog">“That ward just put you on a shorter leash,” Mira mutters.</p>`
+        : `<p class="rw-intro-dialog">“Good,” Mira says softly. “It didn’t hook you.”</p>`;
+
+    return `
+      ${after}
+      ${heatLine}
+      <p>The corridor bends toward a door marked with a faint crescent carved into the stone.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Follow Mira to the crescent-marked door.",
+      to: "43",
+      key: "p42_follow_crescent",
+    },
+    {
+      text: "Ask what the crescent means. (Insight DC 12)",
+      to: "43",
+      key: "p42_ask_crescent",
+      check: {
+        label: "Symbol",
+        stat: "insight",
+        dc: 12,
+        successMsg: "You sense it’s not ‘moon’—it’s ‘cycle.’ A door that repeats.",
+        failMsg: "The meaning slips. The manor keeps some symbols private until you earn them.",
+        deltaAttitudeSuccess: +1,
+      },
+    },
+  ],
+},
+
+"43": {
+  title: "The Crescent Door",
+  image: "b1-p43.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+
+    const door =
+      heat >= 2
+        ? `<p>The crescent mark seems to darken as you approach, like ink soaking into stone.</p>`
+        : `<p>The crescent mark catches lantern light like polished bone.</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p>The handle feels cool but not punishing.</p>`
+        : attitude === "wary"
+        ? `<p>The handle feels like consequence waiting to happen.</p>`
+        : `<p>The handle feels neutral—ready to become whatever you bring to it.</p>`;
+
+    return `
+      ${door}
+      ${mood}
+      <p class="rw-intro-dialog">“This door repeats itself,” Mira says. “It asks the same thing different ways.”</p>
+      <p class="rw-intro-dialog">“If you answer inconsistently… it notices.”</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Answer the door’s question with consistency. (Will DC 13)",
+      to: "44",
+      key: "p43_consistent",
+      check: {
+        label: "Consistency",
+        stat: "will",
+        dc: 13,
+        successMsg: "The latch softens. The door accepts a stable self.",
+        failMsg: "Your intent wobbles. The crescent mark darkens—recording instability.",
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Try to outsmart the repetition. (Insight DC 13)",
+      to: "44",
+      key: "p43_outsmart",
+      check: {
+        label: "Cleverness",
+        stat: "insight",
+        dc: 13,
+        successMsg: "You spot the repeating pattern and step through on the ‘quiet’ beat.",
+        failMsg: "The door repeats faster. You lose the rhythm—and it counts that as failure.",
+        deltaWardHeatFail: +1,
+        deltaAttitudeFail: -1,
+      },
+    },
+    {
+      text: "Ask Mira to anchor you before you touch it. (Presence DC 12)",
+      to: "44",
+      key: "p43_anchor_me",
+      check: {
+        label: "Trust Mira",
+        stat: "presence",
+        dc: 12,
+        successMsg: "Mira steadies your focus with one sentence. The door responds better.",
+        failMsg: "Mira tries, but your mind still scatters. The door catches the scatter.",
+        deltaAttitudeSuccess: +1,
+        deltaWardHeatFail: +1,
+      },
+    },
+  ],
+},
+
+"44": {
+  title: "A Hallway You’ve Already Walked",
+  image: "b1-p44.png",
+  body: (S) => {
+    const f = S.flags || {};
+    const heat = getWardHeat();
+
+    const loop =
+      (f.p43_consistent_success || f.p43_outsmart_success || f.p43_anchor_me_success)
+        ? `<p>The door opens—and you step into a corridor that feels oddly familiar.</p>`
+        : `<p>The door opens—and you step into a corridor that feels <em>exactly</em> familiar.</p>`;
+
+    const sting =
+      heat >= 2
+        ? `<p>The lanterns are in the same positions… but the shadows are not.</p>`
+        : `<p>The walls are the same stone… but the air tastes slightly different.</p>`;
+
+    return `
+      ${loop}
+      ${sting}
+      <p>You realize the manor just showed you a version of the path you already took.</p>
+      <p class="rw-intro-dialog">“It’s checking if you’ve changed,” Mira whispers.</p>
+    `;
+  },
+  choices: [
+    {
+      text: "Prove you remember: name one ward you passed correctly. (Insight DC 12)",
+      to: "45",
+      key: "p44_name_ward",
+      check: {
+        label: "Recall",
+        stat: "insight",
+        dc: 12,
+        successMsg: "The corridor relaxes. Memory counts as competence here.",
+        failMsg: "You hesitate too long. The manor marks uncertainty.",
+        deltaAttitudeSuccess: +1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    {
+      text: "Don’t perform. Walk with the same honesty as before. (Presence DC 12)",
+      to: "45",
+      key: "p44_no_perform",
+      check: {
+        label: "No Performance",
+        stat: "presence",
+        dc: 12,
+        successMsg: "The corridor accepts the consistency. Performance would have been the trap.",
+        failMsg: "Your posture shifts into defense. The manor reads it as concealment.",
+        deltaAttitudeFail: -1,
+        deltaWardHeatFail: +1,
+      },
+    },
+    { text: "Ask Mira if this is a loop or a test.", to: "45", key: "p44_loop_or_test" },
+  ],
+},
+
+"45": {
+  title: "Filed Under: Repeatable",
+  image: "b1-p45.png",
+  body: (S) => {
+    const heat = getWardHeat();
+    const attitude = getManorAttitudeLabel();
+    const f = S.flags || {};
+
+    const pass =
+      (f.p44_name_ward_success || f.p44_no_perform_success)
+        ? `<p>The corridor loosens, as if it accepted your stability as real.</p>`
+        : (f.p44_name_ward_fail || f.p44_no_perform_fail)
+        ? `<p>The corridor remains tight—like the manor added a note to your file.</p>`
+        : `<p>The corridor holds neutral, watching.</p>`;
+
+    const mood =
+      attitude === "welcoming"
+        ? `<p class="rw-intro-dialog">“It likes you more when you’re consistent,” Mira says, almost reluctantly.</p>`
+        : attitude === "wary"
+        ? `<p class="rw-intro-dialog">“It’s still deciding,” Mira murmurs. “But it’s decided you’re… repeatable.”</p>`
+        : `<p class="rw-intro-dialog">“Watchful,” Mira says. “But not shutting you out.”</p>`;
+
+    const heatLine =
+      heat >= 2
+        ? `<p>You feel it: the manor is now predicting your choices before you make them.</p>`
+        : `<p>You feel it: the manor has started building expectations around your behavior.</p>`;
+
+    return `
+      ${pass}
+      ${mood}
+      ${heatLine}
+      <p>A new door waits ahead—unmarked, unadorned, almost politely plain.</p>
+      <p class="rw-intro-dialog">“Next,” Mira says, “is where it asks for something back.”</p>
+    `;
+  },
+  choices: [
+    { text: "Continue.", to: "46", key: "p45_continue" },
+    { text: "Open Inventory.", to: "45", key: "p45_inventory_hint" },
+  ],
+},
+
+"46": {
+  title: "The Final Filing",
+  body: `
+    <p>The corridor opens into a circular chamber.</p>
+    <p>No wards flare. No pressure rises.</p>
+    <p>The manor is no longer testing.</p>
+    <p>It is <em>deciding</em>.</p>
+    <p class="rw-intro-dialog">“This is where it finishes your file,” Mira says.</p>
+  `,
+  choices: [
+    { text: "Stand still and let it decide.", to: "47", key: "p46_still" },
+    { text: "Ask if the decision can change.", to: "47", key: "p46_ask" },
+  ],
+},
+
+"47": {
+  title: "What the Manor Saw",
+  body: `
+    <p>You feel moments replay—not images, but <em>weight</em>.</p>
+    <p>When you held.</p>
+    <p>When you pushed.</p>
+    <p>When you chose not to speak.</p>
+    <p>The manor does not judge.</p>
+    <p>It categorizes.</p>
+  `,
+  choices: [{ text: "Continue.", to: "48" }],
+},
+
+"48": {
+  title: "The Name It Uses",
+  body: (S) => {
+    const archetype = resolveBook1Class();
+    const affinity = resolveBook1Affinity();
+
+    // Persist
+    window.rwPlayerClass = archetype;
+    window.rwMagicAffinity = affinity;
+
+    if (typeof window.syncCharacterProfile === "function") {
+      window.syncCharacterProfile({
+        archetype,
+        affinity,
       });
+    }
+
+    return `
+      <p>The manor settles on a designation.</p>
+      <p class="rw-intro-dialog">“Not a title,” Mira says. “A shorthand.”</p>
+      <p class="rw-highlight">
+        ${archetype.replace("_", " ").toUpperCase()}
+      </p>
+      <p>
+        The magic that answers you first:
+        <strong>${affinity.toUpperCase()}</strong>
+      </p>
+    `;
+  },
+  choices: [{ text: "Accept.", to: "49" }],
+},
+
+"49": {
+  title: "What You Look Like to the Manor",
+  body: (S) => {
+    const archetype = window.rwPlayerClass;
+
+    const avatarMap = {
+      ward_witch: "avatar-ward.png",
+      wild_witch: "avatar-wild.png",
+      seer_witch: "avatar-seer.png",
+      anchor_witch: "avatar-anchor.png",
+      ritualist_witch: "avatar-ritualist.png",
+      shadow_witch: "avatar-shadow.png",
+    };
+
+    const avatar = avatarMap[archetype];
+
+    if (typeof window.unlockAvatar === "function") {
+      window.unlockAvatar(avatar);
+    }
+
+    return `
+      <p>The mirror-lintels no longer distort.</p>
+      <p>They reflect you clearly.</p>
+      <p class="rw-intro-dialog">“That’s how it sees you,” Mira says.</p>
+      <p class="rw-note">New avatar unlocked.</p>
+    `;
+  },
+  choices: [{ text: "Continue.", to: "50" }],
+},
+
+"50": {
+  title: "Initiation Complete",
+  body: `
+    <p>The manor does not say goodbye.</p>
+    <p>It simply stops watching so closely.</p>
+    <p class="rw-intro-dialog">
+      “You’re not a guest anymore,” Mira says.
+      “But you’re not finished.”
+    </p>
+    <p>Book I complete.</p>
+    <p><strong>Book II unlocked.</strong></p>
+  `,
+  choices: [
+    { text: "Begin Book II.", to: "book-2-start" },
+    { text: "Open Character Sheet.", to: "character" },
+  ],
+},
+
+      };
+
+      function renderBookInventory() {
+  invGrid.innerHTML = "";
+
+  const inv = window.rwInventory || [];
+
+  if (!inv.length) {
+    invGrid.innerHTML = `<p class="small text-muted">Your pack is empty.</p>`;
+    return;
+  }
+
+  inv.forEach(item => {
+    const slot = document.createElement("div");
+    slot.className = "rw-inventory-slot";
+
+    const meta = getItemMetadata(item);
+    if (!meta) return;
+
+    const img = document.createElement("img");
+    img.src = meta.icon || "";
+    img.alt = meta.title;
+
+    img.addEventListener("click", () => {
+      selectedItem = item;
+      itemModalTitle.textContent = meta.title;
+      itemModalDesc.textContent = meta.description;
+      itemModal.show();
+    });
+
+    slot.appendChild(img);
+    invGrid.appendChild(slot);
+  });
+}
+
+invToggle.addEventListener("click", () => {
+  renderBookInventory();
+  invPanel.classList.remove("d-none");
+});
+
+invClose.addEventListener("click", () => {
+  invPanel.classList.add("d-none");
+});
+
+      // ----------------------------
+      // Helpers
+      // ----------------------------
+      function showSystemMessage(msg) {
+        if (!elSys) return;
+        if (!msg) {
+          elSys.classList.add("d-none");
+          elSys.textContent = "";
+          return;
+        }
+        elSys.textContent = msg;
+        elSys.classList.remove("d-none");
+      }
+
+      function setPageImage(src) {
+        if (!elImage) return;
+        if (!src) {
+          elImage.style.display = "none";
+          elImage.src = "";
+          return;
+        }
+        elImage.style.display = "block";
+        elImage.src = src;
+      }
+
+      // ----------------------------
+// REQUIRED GLUE: metadata + choice handling + deltas + echo
+// ----------------------------
+
+// If app.js already provides this, we use it.
+// Otherwise: fallback metadata so the book inventory never breaks.
+function getItemMetadata(item) {
+  if (!item) return null;
+
+  // Prefer a global helper if you have one in app.js
+  if (typeof window.getItemMetadata === "function") {
+    return window.getItemMetadata(item);
+  }
+
+  // Common shapes
+  const title = item.title || item.name || item.id || "Item";
+  const icon = item.icon || item.image || item.img || "";
+  const description =
+    item.description ||
+    item.desc ||
+    (item.quest ? "A quest item. It feels important." : "No description.");
+
+  return { title, icon, description };
+}
+
+function applyChoiceDeltas(choice) {
+  // Support inline deltas on choices
+  if (Number.isFinite(Number(choice?.deltaAttitude))) bumpManorAttitude(Number(choice.deltaAttitude));
+  if (Number.isFinite(Number(choice?.deltaWardHeat))) bumpWardHeat(Number(choice.deltaWardHeat));
+}
+
+// Make sure the “echo” has somewhere to show up.
+// We inject it at the top of the body each render.
+function injectChoiceEchoIntoBody(pageId) {
+  const echoHtml = buildChoiceEchoHtml(BOOK_STATE, pageId);
+  if (!echoHtml) return;
+
+  // prepend echo block
+  elBody.innerHTML =
+    `<div class="rw-choice-echo small text-muted mb-3"><strong>—</strong> ${echoHtml}</div>` +
+    elBody.innerHTML;
+}
+
+function handleChoice(choice) {
+  if (!choice) return;
+
+  // Remember last choice key (for echo + flags)
+  BOOK_STATE.lastChoiceKey = choice.key || null;
+
+  // Apply check (if any)
+  if (choice.check) {
+    const r = rollCheck(choice.check);
+
+    // Store success/fail flags for *this* choice key
+    if (choice.key) {
+      BOOK_STATE.flags = BOOK_STATE.flags || {};
+      BOOK_STATE.flags[`${choice.key}_${r.success ? "success" : "fail"}`] = true;
+    }
+  }
+
+  // Apply deltas on the choice itself (even if there was a check)
+  applyChoiceDeltas(choice);
+
+  // Go to next page
+  const next = String(choice.to || "");
+  if (next && BOOK_PAGES[next]) {
+    renderPage(next);
+  } else {
+    // If a page target is missing, don’t crash—show a system message.
+    showSystemMessage(`That path isn’t written yet (${next || "no target"}).`);
+  }
+}
+
+// --- OPTIONAL: make “Use” button do something for book inventory items ---
+if (itemUseBtn) {
+  itemUseBtn.addEventListener("click", async () => {
+    if (!selectedItem) return;
+
+    // If app.js has a unified "use item" hook, prefer it
+    if (typeof window.useSelectedItem === "function") {
+      await window.useSelectedItem(selectedItem);
+      if (itemModal) itemModal.hide();
+      renderBookInventory();
+      return;
+    }
+
+    // Minimal: journal opens journal modal if you built one in app.js
+    if (selectedItem.id === "ravenwood_journal") {
+      if (typeof window.rwOpenJournal === "function") window.rwOpenJournal();
+      showSystemMessage("The journal’s ink stirs—as if listening.");
+      if (itemModal) itemModal.hide();
+      return;
+    }
+
+    showSystemMessage("That item can’t be used here (yet).");
+    if (itemModal) itemModal.hide();
+  });
+}
+
+      
+// ----------------------------
+// Choice Echo (reactive narration)
+// Shows immediate, matching response to the player's *last* choice / roll.
+// ----------------------------
+function buildChoiceEchoHtml(state, pageId) {
+  if (!state || !state.lastChoiceKey) return "";
+  if (String(pageId) === "1") return "";
+
+  const k = String(state.lastChoiceKey || "");
+  const f = state.flags || {};
+
+  // Prefer roll-flavored echoes if present
+  const success = !!f[`${k}_success`];
+  const fail = !!f[`${k}_fail`];
+
+  const E = {
+    // Page 1
+    p1_listen: "You slow and listen. The fog answers with silence heavy enough to feel like a warning.",
+    p1_belong: "You walk like you belong. The road accepts the lie—just long enough to test you.",
+    p1_breathe: "You stop and breathe. The threshold stone warms as if acknowledging your restraint.",
+
+    // Page 2
+    p2_step_in: "You step inside without bargaining. Mira’s eyes soften—only slightly.",
+    p2_ask_who: "You ask first. Mira gives her name like a key: offered, but not handed over.",
+    p2_talisman: "You touch the talisman. Mira’s gaze snaps to it, and the air tightens around the chain.",
+
+    // Page 3
+    p3_follow: "You follow. The manor notes your compliance the way a lock notes the right turn.",
+    p3_ask_talisman: "You ask what the talisman is for. Mira doesn’t answer fully—only enough to keep you alive.",
+
+    // Page 4
+    p4_follow: "You keep moving forward. Behind you, the doors stay quiet—too quiet.",
+    p4_test_door: "You test the door. It doesn’t fight you. It simply refuses, like a rule older than iron.",
+
+    // Page 5
+    p5_forward: "You keep your eyes forward. The portraits track you anyway, measuring your nerve.",
+    p5_stare_back: "You stare back. One portrait’s eyes sharpen, and you feel briefly… recognized.",
+    p5_ask_portraits: "You ask who they were. Mira’s answer is careful: “Not all of them stayed human.”",
+
+    // Page 6
+    p6_search_seam: success
+      ? "You find a hidden seam in the wardwork—an intentional breathing stitch. The manor grows… curious."
+      : "You search for a seam and find only smooth stone. Your fingertips go numb, as if the ward denies inquiry.",
+    p6_ask_lie: "You ask what counts as a lie here. Mira’s mouth twists: “Whatever the house decides.”",
+    p6_silent: "You stay silent. The manor rewards silence the way predators reward stillness.",
+
+    // Page 7
+    p7_cross_honest: "You cross honestly. The ward does not welcome you—but it does *record* you.",
+    p7_step_between: "You try to step between the lines. The ward flares—annoyed you thought it wouldn’t notice.",
+    p7_greet_house: "You greet the manor. The lanterns answer with a faint, synchronized pulse.",
+
+    // Page 8
+    p8_breath_control: "You control your breathing. The descending air feels less like drowning and more like initiation.",
+    // was: p8_count_steps
+p8_match_pulse: "You count the pulses. The number refuses to stay consistent—like the stairs are rewriting themselves.",
+
+    p8_dont_trust: "You admit you don’t trust this. Mira doesn’t argue. She only says, “Good. Keep that.”",
+
+    // Page 9
+    p9_touch_circle: "You touch the circle. Cold bites your palm—and something beneath the stone shifts its attention.",
+    p9_ask_candles: "You ask about the candles. Mira: “They are questions. The house lights them when it likes your answers.”",
+    p9_hold_back: "You hold back. The chamber remains patient, as if it prefers cautious guests.",
+
+    // Page 10
+    p10_speak_name: "You speak your name aloud. The room *takes* it—quietly, permanently.",
+    p10_refuse_name: "You refuse your name. The manor doesn’t punish you. It simply marks you as… complicated.",
+    p10_offer_truth: "You offer a true thing instead. The wardwork relaxes a fraction, like it recognizes sincerity.",
+
+    // Page 11 (archetype pick)
+    p11_shadow: "Shadow answers you—cold, elegant, and hungry for quiet power.",
+    p11_rune: "Runes answer you—patient, exact, and more dangerous than they look.",
+    p11_guardian: "Gates answer you—duty, weight, and a promise you didn’t realize you were making.",
+    p11_moon: "Moon answers you—lunar, ancient, and intensely personal.",
+
+    // Page 12
+    p12_accept_mark: "You accept the mark. The talisman warms—approval without affection.",
+    p12_refuse_mark: "You resist the mark. The ward doesn’t force you—yet—but the manor becomes watchful in a new way.",
+    p12_question_mira: "You press Mira for more. She gives you a look that says: *later, if you survive.*",
+
+    // Page 13
+    p13_search_niche: success
+      ? "You discover a niche in the stone—fresh enough to be recent. Something has been moved here."
+      : "You search the walls and find nothing, but the search itself stirs the wardheat like a brushed hive.",
+    p13_follow_hum: "You follow the hum. It leads you toward a place that feels *forbidden*, not hidden.",
+    p13_wait: "You wait. The manor *likes* patience—then tests it.",
+
+    // Page 14
+    p14_open_door: success
+      ? "You open the door without breaking the ward. The manor notes your finesse."
+      : "The ward snaps. The latch burns cold, and the corridor seems to recoil from you.",
+    p14_force: "You force it. The manor yields, but your name becomes sharper in its memory.",
+    p14_back: "You step back. The house exhales—like you avoided a mistake it expected you to make.",
+
+    // Page 15
+    p15_take_journal: "You take the journal. The paper feels warm—as if it has already been waiting in your hands.",
+    p15_leave_journal: "You leave the journal. Behind you, the desk drawer shuts by itself—quietly offended.",
+    p15_read_margins: "You read the margins. The ink shifts, and you realize someone wrote to *you*, not the page.",
+
+    // Page 16
+    p16_accept_help: "You accept Mira’s help. The manor’s attention loosens—barely—like it respects cooperation.",
+    p16_refuse_help: "You refuse help. Mira doesn’t shame you. She only watches, measuring how long pride lasts under wards.",
+
+    // Page 17
+    p17_drink: "You drink. Warmth spreads like a vow being signed inside your ribs.",
+    p17_hesitate: "You hesitate. The manor does not rush you. It simply waits—confident you will choose eventually.",
+
+    // Page 18
+    p18_steady: "You steady yourself. The corridor feels less hostile—more… evaluative.",
+    p18_press: "You press forward anyway. Your courage earns you no comfort—only more scrutiny.",
+
+    // Page 19
+    p19_still: "You go still. The ward passes over you like moonlight over stone.",
+    p19_search: success
+      ? "You find a hidden sigil-thread. It is *new*. Someone has been meddling with old protections."
+      : "You search and the ward bites back—your vision swims with symbols that refuse interpretation.",
+
+    // Page 20
+    p20_found: "You admit you found something. Mira’s expression goes tight: “Don’t show it to the wrong part of the house.”",
+    p20_return: "You return it where it was. The manor’s mood improves—welcoming, in its own severe way.",
+
+    // Page 21
+    p21_remain: "You remain in the circle. The air grows dense with expectation—as if the house is about to speak.",
+    p21_retreat: "You retreat. The house doesn’t chase you. It simply remembers you chose distance.",
+
+    // Page 22
+    p22_hold_ground: "You hold your ground. The wardheat rises—like the manor respects defiance but refuses to *reward* it.",
+    p22_step_back: "You step back. Mira nods once: “Good. Live first. Learn second.”",
+
+    // Page 23
+    p23_dodge: success
+      ? "You dodge cleanly. The ward’s strike misses by inches, and the chamber resets—as if impressed."
+      : "You try to dodge and stumble. The ward’s pressure clips you—painful, but not fatal.",
+    p23_freeze: "You freeze. For a heartbeat nothing happens—then the ward answers, brutal in its patience.",
+
+    // Page 24
+    p24_scramble: "You scramble. The manor’s lanterns gutter, as if laughing without sound.",
+    p24_stand: "You force yourself upright. The house goes very still, and something ancient listens.",
+
+    // Page 25
+    p25_hold: "You hold on. The fear doesn’t vanish—but it becomes fuel.",
+
+    // Page 26
+    p26_awaken: "You stop fighting what’s inside you. The manor holds its breath, waiting to see what you are.",
+
+    // Page 27
+    p27_aftermath: "In the aftermath, the silence isn’t empty. It’s the manor deciding what you’ve earned.",
+
+    // Page 28
+    p28_next: "You choose what comes next. The house shifts—subtle—rearranging doors like possibilities.",
+    p28_silent: "You stay silent. The manor seems almost pleased, as if silence is one of its native tongues.",
+
+    // Page 29
+    p29_close: "You close the journal. The ink settles, obedient, like it knows it will be read again.",
+
+    // Page 30
+    p30_end: "You leave Book I changed. The manor doesn’t say goodbye. It simply… keeps a door ready.",
+  };
+
+  const line = E[k];
+  if (!line) return "";
+
+  // Also hint at ward heat / attitude shifts (without exposing numbers)
+  const label = getManorAttitudeLabel();
+  const heat = getWardHeat();
+
+  const heatLabel = heat >= 3 ? "high" : heat === 2 ? "rising" : heat === 1 ? "low" : "calm";
+
+  return `
+    <div class="rw-choice-echo alert alert-dark border border-secondary mb-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <strong>Echo:</strong>
+        <span class="small text-muted">Manor: <span class="text-uppercase">${label}</span> · Wards: ${heatLabel}</span>
+      </div>
+      <div class="mt-2">${line}</div>
+    </div>
+  `;
+}
+
+function renderChoices(page) {
+  if (!elChoices) return;
+  elChoices.innerHTML = "";
+
+  const choices = Array.isArray(page.choices) ? page.choices : [];
+  choices.forEach((c) => {
+    const btn = document.createElement("button");
+    btn.className = "btn btn-outline-light";
+    btn.type = "button";
+    btn.textContent = c.text || "Continue";
+
+    btn.addEventListener("click", async () => {
+      // choice bookkeeping
+      if (c.key) {
+        BOOK_STATE.flags[c.key] = true;
+        BOOK_STATE.lastChoiceKey = c.key;
+      }
+
+      // optional roll
+      let roll = null;
+      if (c.check) {
+        roll = rollCheck(c.check);
+
+        // store success/fail flavor flags for page reactivity
+        if (c.key) {
+          BOOK_STATE.flags[`${c.key}_${roll.success ? "success" : "fail"}`] = true;
+        } else if (c.check?.flagKey) {
+          BOOK_STATE.flags[`${c.check.flagKey}_${roll.success ? "success" : "fail"}`] = true;
+        }
+      }
+
+      // optional direct attitude change (no roll)
+      if (!c.check && Number.isFinite(Number(c.deltaAttitude))) {
+        bumpManorAttitude(Number(c.deltaAttitude));
+      }
+      if (!c.check && Number.isFinite(Number(c.deltaWardHeat))) {
+        bumpWardHeat(Number(c.deltaWardHeat));
+      }
+
+      // Handle END
+      if (String(c.to).toUpperCase() === "END") {
+        window.location.href = "ravenwood.html";
+        return;
+      }
+
+      // resolve destination (supports object form)
+      let dest = c.to;
+      if (dest && typeof dest === "object") {
+        const s = !!roll?.success;
+        dest = s ? (dest.success || dest.ok) : (dest.fail || dest.no);
+      } else if (roll && (c.toSuccess || c.toFail)) {
+        dest = roll.success ? c.toSuccess : c.toFail;
+      }
+
+      await goToPage(String(dest || "1"));
+    });
+
+    elChoices.appendChild(btn);
+  });
+}
+
+      function renderPage(pageId) {
+  const page = BOOK_PAGES[pageId];
+  if (!page) return;
+
+  BOOK_STATE.currentPageId = pageId;
+
+  // Header meta (with Manor Attitude)
+  if (elMeta) {
+    const n = String(pageId).split("_")[0];
+    const label = getManorAttitudeLabel();
+    const badgeClass =
+      label === "welcoming" ? "bg-success" :
+      label === "wary" ? "bg-danger" :
+      "bg-warning text-dark";
+
+    elMeta.innerHTML = `Page ${n} · Manor: <span class="badge ${badgeClass} text-uppercase">${label}</span>`;
+  }
+
+  if (elTitle) elTitle.textContent = page.title || "";
+
+  const bodyHtml = (typeof page.body === "function") ? page.body(BOOK_STATE) : (page.body || "");
+  const echoHtml = buildChoiceEchoHtml(BOOK_STATE, pageId);
+  if (elBody) elBody.innerHTML = echoHtml + bodyHtml;
+
+  injectChoiceEchoIntoBody(pageId);
+
+  setPageImage(page.image || "");
+  showSystemMessage(page.systemMessage || "");
+
+  renderChoices(page);
+  applyAffinityBranches();
+}
+
+
+function applyDeltas(choice) {
+  if (Number.isFinite(Number(choice.deltaAttitude))) bumpManorAttitude(Number(choice.deltaAttitude));
+  if (Number.isFinite(Number(choice.deltaWardHeat))) bumpWardHeat(Number(choice.deltaWardHeat));
+}
+
+function handleChoice(choice) {
+  if (!choice) return;
+
+  // record choice
+  BOOK_STATE.lastChoiceKey = choice.key || null;
+  BOOK_STATE.flags = BOOK_STATE.flags || {};
+  if (choice.key) BOOK_STATE.flags[choice.key] = true;
+
+  // rolls (optional)
+  if (choice.check) {
+    const r = rollCheck(choice.check);
+    const key = choice.key || "choice";
+    BOOK_STATE.flags[`${key}_${r.success ? "success" : "fail"}`] = true;
+  }
+
+  // simple deltas
+  applyDeltas(choice);
+
+  // go to next page
+  const next = String(choice.to || "");
+  if (next && BOOK_PAGES[next]) renderPage(next);
+}
+
+      async function goToPage(pageId) {
+  // If user lands on a class page, persist archetype
+  if (pageId === "11_shadow") await setArchetype("shadow-witch");
+  if (pageId === "11_rune") await setArchetype("scholar-of-runes");
+  if (pageId === "11_guardian") await setArchetype("guardian-of-gates");
+  if (pageId === "11_moon") await setArchetype("seer-of-moons");
+
+  await saveBookProgress(pageId);   // ✅ ADD THIS
+
+  renderPage(pageId);
+}
+
+function handleChoice(choice) {
+  BOOK_STATE.lastChoiceKey = choice.key;
+
+  // Simple flag
+  if (choice.key) {
+    BOOK_STATE.flags[choice.key] = true;
+  }
+
+  // Skill check
+  if (choice.check) {
+    const result = rollCheck(choice.check);
+
+    BOOK_STATE.flags[`${choice.key}_${result.success ? "success" : "fail"}`] = true;
+  }
+
+  // Attitude delta without check
+  if (Number.isFinite(choice.deltaAttitude)) {
+    bumpManorAttitude(choice.deltaAttitude);
+  }
+
+  // Move to next page
+  if (choice.to) {
+    renderPage(choice.to);
+  }
+}
+
+async function setArchetype(archetype) {
+  const email = localStorage.getItem("ravenwoodEmail");
+  const sb = window.supabaseClient || null;
+  if (!email || !sb) return;
+
+  try {
+    const { error } = await sb
+      .from("data")
+      .update({ archetype })
+      .eq("email", email);
+
+    if (error) throw error;
+  } catch (e) {
+    console.warn("setArchetype failed:", e);
+  }
+}
+
+function applyAffinityBranches() {
+  const affinity =
+    BOOK_STATE.flags?.class_shadow ? "wind" :
+    BOOK_STATE.flags?.class_rune ? "water" :
+    BOOK_STATE.flags?.class_guardian ? "stone" :
+    BOOK_STATE.flags?.class_moon ? "flame" :
+    "flame";
+
+  document.querySelectorAll(".rw-awaken-branch").forEach((el) => {
+    const isMatch = el.dataset.affinity === affinity;
+    el.classList.toggle("d-none", !isMatch);
+  });
+}
+
+
+      // ----------------------------
+      // Inventory (Book view)
+      // Uses window.rwInventory + helpers from app.js
+      // ----------------------------
+      function getCurrentInventory() {
+        // Prefer Supabase-loaded memory if your app sets it; fallback to local loadInventory()
+        if (Array.isArray(window.rwInventory)) return window.rwInventory;
+        if (typeof window.loadInventory === "function") return window.loadInventory();
+        return [];
+      }
+
+      async function setCurrentInventory(items) {
+        window.rwInventory = Array.isArray(items) ? items : [];
+        if (typeof window.syncInventoryToSupabase === "function") {
+          await window.syncInventoryToSupabase(window.rwInventory);
+        }
+      }
+
+      async function saveBookProgress(pageId) {
+  const pid = String(pageId || "1");
+
+  // local fallback (so refresh works even if offline)
+  try { localStorage.setItem("rwBook1Progress", pid); } catch {}
+
+  const email = window.rwEmail || localStorage.getItem("ravenwoodEmail");
+  const sb = window.supabaseClient || null;
+  if (!email || !sb) return;
+
+  try {
+    // Preferred: store directly in data.book1_progress (text)
+    let { error } = await sb
+      .from("data")
+      .update({ book1_progress: pid })
+      .eq("email", email);
+
+    if (error) {
+      // If the row doesn't exist yet, try upsert (requires unique constraint on email)
+      const up = await sb
+        .from("data")
+        .upsert({ email, book1_progress: pid }, { onConflict: "email" });
+
+      if (up.error) throw up.error;
+    }
+  } catch (e) {
+    console.warn("saveBookProgress failed:", e);
+  }
+}
+
+
+async function loadBookProgress() {
+  const email = window.rwEmail || localStorage.getItem("ravenwoodEmail");
+  const sb = window.supabaseClient || null;
+
+  // Supabase first
+  if (email && sb) {
+    try {
+      const { data, error } = await sb
+        .from("data")
+        .select("book1_progress")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (!error && data && data.book1_progress) {
+        const pid = String(data.book1_progress);
+        try { localStorage.setItem("rwBook1Progress", pid); } catch {}
+        return pid;
+      }
+    } catch (e) {
+      console.warn("loadBookProgress failed:", e);
+    }
+  }
+
+  // local fallback
+  try {
+    const raw = localStorage.getItem("rwBook1Progress");
+    return raw ? String(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+
+      function openInventory() {
+        if (!invPanel) return;
+        invPanel.classList.remove("d-none");
+        renderInventoryGrid();
+      }
+
+      function closeInventory() {
+        if (!invPanel) return;
+        invPanel.classList.add("d-none");
+      }
+
+      function renderInventoryGrid() {
+        if (!invGrid) return;
+        const inv = getCurrentInventory();
+
+        invGrid.innerHTML = "";
+
+        if (!inv.length) {
+          invGrid.innerHTML = `<div class="small text-muted p-2">Your pack is empty.</div>`;
+          return;
+        }
+
+        inv.forEach((item) => {
+          const meta = (typeof window.getItemMetadata === "function")
+            ? window.getItemMetadata(item)
+            : { title: item?.name || item?.id || "Item", description: "" };
+
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "rw-inventory-slot btn btn-sm btn-outline-light";
+          cell.style.display = "flex";
+          cell.style.flexDirection = "column";
+          cell.style.alignItems = "center";
+          cell.style.justifyContent = "center";
+          cell.style.gap = "0.25rem";
+
+          // icon (optional)
+          const iconSrc = meta.icon || item.icon || "";
+          if (iconSrc) {
+            const img = document.createElement("img");
+            img.src = iconSrc;
+            img.alt = meta.title;
+            img.style.width = "42px";
+            img.style.height = "42px";
+            img.style.objectFit = "contain";
+            img.onerror = () => img.remove();
+            cell.appendChild(img);
+          }
+
+          const label = document.createElement("div");
+          label.className = "small";
+          label.textContent = meta.title;
+          cell.appendChild(label);
+
+          cell.addEventListener("click", () => {
+            selectedItem = item;
+            if (itemModalTitle) itemModalTitle.textContent = meta.title || "Item";
+            if (itemModalDesc) itemModalDesc.textContent = meta.description || "";
+            if (itemModal) itemModal.show();
+          });
+
+          invGrid.appendChild(cell);
+        });
+      }
+
+      async function useSelectedItem() {
+  if (!selectedItem) return;
+
+  // Health potion
+  if (selectedItem.id === "health_potion") {
+    if (typeof window.rwAdjustHP === "function") {
+      await window.rwAdjustHP(+20);
+    }
+
+    // remove ONE from inventory
+    if (typeof window.rwRemoveOneFromInventory === "function") {
+      await window.rwRemoveOneFromInventory(selectedItem.id);
+    } else {
+      
+
+  // Ravenwood Journal (quest item)
+  if (selectedItem.id === "ravenwood_journal") {
+    showSystemMessage("You open the journal. The ink stirs—like it was waiting for your attention.");
+
+    // If the main journal modal exists on this page, open it
+    try {
+      const modalEl = document.getElementById("rwJournalModal");
+      if (modalEl && window.bootstrap && bootstrap.Modal) {
+        const jm = bootstrap.Modal.getOrCreateInstance(modalEl);
+        if (typeof window.renderJournal === "function") window.renderJournal();
+        jm.show();
+      }
+    } catch {}
+
+    if (itemModal) itemModal.hide();
+    return;
+  }
+
+  showSystemMessage("You aren’t sure how to use that here… yet.");
+  if (itemModal) itemModal.hide();
+}
+
+          // remove 1 potion from inventory
+          
+          const inv = getCurrentInventory();
+const idx = inv.indexOf(selectedItem);
+if (idx >= 0) inv.splice(idx, 1);
+await setCurrentInventory(inv);
+
+          await setCurrentInventory(next);
+
+          showSystemMessage("Warmth spreads through your chest. Your breath steadies.");
+          renderInventoryGrid();
+        } else {
+          showSystemMessage("You aren’t sure how to use that here… yet.");
+        }
+
+        if (itemModal) itemModal.hide();
+      }
+
+      // Inventory buttons
+      if (invToggle) invToggle.addEventListener("click", openInventory);
+      if (invClose) invClose.addEventListener("click", closeInventory);
+      if (itemUseBtn) itemUseBtn.addEventListener("click", useSelectedItem);
+
+      // ----------------------------
+      // Boot
+      // ----------------------------
+    document.addEventListener("DOMContentLoaded", async () => {
+      const email = localStorage.getItem("ravenwoodEmail");
+      if (!email) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      // Load last saved page from Supabase (book1_progress)
+      const saved = (typeof loadBookProgress === "function") ? await loadBookProgress() : null;
+      if (saved) BOOK_STATE.currentPageId = String(saved);
+
+      // Render the current page (defaults to "1")
+      if (typeof goToPage === "function") {
+        await goToPage(BOOK_STATE.currentPageId || "1");
+      } else if (typeof renderPage === "function") {
+        renderPage(BOOK_STATE.currentPageId || "1");
+      }
+    });
+
+
     })();
-  </script>
+</script>
+
 </body>
 </html>

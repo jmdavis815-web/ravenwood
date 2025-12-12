@@ -11,6 +11,8 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_ANON_KEY
 );
 
+window.supabaseClient = supabaseClient;
+
 // LocalStorage keys
 const RAVENWOOD_EMAIL_KEY = "ravenwoodEmail";
 const RAVENWOOD_SECRETS_KEY = "ravenwoodTownSecrets";
@@ -326,6 +328,14 @@ const ITEM_METADATA = {
     icon: "item-health-potion.png",
     questItem: false,
   },
+
+"ravenwood_journal": {
+  title: "Ravenwood Journal",
+  description:
+    "A dark leather journal the Manor gives to those it intends to remember. Some pages write themselves. You can record secrets and clues here.",
+  icon: "item-journal.png",
+  questItem: true,
+},
 };
 
 // --------------------------------------
@@ -516,6 +526,29 @@ function mergeStatBlocks(...blocks) {
   }
   return result;
 }
+
+// ============================
+// Ravenwood Dice System
+// ============================
+
+function rollCheck(stat, difficulty = 12) {
+  const roll = Math.floor(Math.random() * 20) + 1;
+  const bonus = window.rwChar?.stats?.[stat] || 0;
+  const total = roll + bonus;
+
+  return {
+    roll,
+    bonus,
+    total,
+    result:
+      total >= difficulty + 5 ? "strong" :
+      total >= difficulty     ? "partial" :
+                                "fail"
+  };
+}
+
+// Global flags for narrative outcomes
+window.rwFlags = window.rwFlags || {};
 
 // Compute stats for a character given archetype, affinity, and avatar
 function computeStatsForCharacter(char, avatarKey) {
@@ -3897,9 +3930,5 @@ function playChapelBellIfAllowed() {
     console.warn("Chapel bell threw:", err);
   }
 }
-
-
-
-
 
 
