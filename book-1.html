@@ -180,7 +180,8 @@
     </div>
   </div>
 
-    <!-- Bootstrap JS -->
+    
+  <!-- Bootstrap JS -->
   <script
     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     crossorigin="anonymous"
@@ -192,156 +193,220 @@
   <!-- Ravenwood core logic (Supabase client, inventory helpers, HP/Mana, stats, etc.) -->
   <script src="app.js"></script>
 
-    <script>
-(function () {
-  // ----------------------------
-  // Book I State
-  // ----------------------------
-  const BOOK_STATE = {
-    currentPageId: "1",
-    flags: {},
-    lastChoiceKey: null,
-    lastRoll: null,
-  };
+  <!-- Clean, reusable Book Engine -->
+  <script src="rw-book-engine.js"></script>
 
-  // expose for debugging (optional)
-  window.BOOK_STATE = BOOK_STATE;
+  <script>
+  (function () {
+    "use strict";
 
-  // ----------------------------
-  // Manor Attitude + Ward Heat
-  // ----------------------------
-  function getSavedNumberFlag(key, fallback = 0) {
-    const v = BOOK_STATE.flags?.[key];
-    const n = Number(v);
-    return Number.isFinite(n) ? n : fallback;
-  }
+    // ----------------------------------------------------
+    // Helpers: Manor Attitude + Ward Heat live in BOOK_STATE.flags
+    // ----------------------------------------------------
+    function getState() {
+      return window.BOOK_STATE || (window.BOOK_STATE = { flags: {}, currentPageId: "1" });
+    }
 
-  function setNumberFlag(key, value) {
-    if (!BOOK_STATE.flags) BOOK_STATE.flags = {};
-    BOOK_STATE.flags[key] = Number(value) || 0;
-  }
+    function getSavedNumberFlag(key, fallback = 0) {
+      const S = getState();
+      const v = S.flags?.[key];
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
+    }
 
-  function getManorAttitudeScore() {
-    return getSavedNumberFlag("__attitudeScore", 0);
-  }
+    function setNumberFlag(key, value) {
+      const S = getState();
+      if (!S.flags) S.flags = {};
+      S.flags[key] = Number(value) || 0;
+    }
 
-  function setManorAttitudeScore(score) {
-    setNumberFlag("__attitudeScore", score);
-    window.rwManorAttitude = getManorAttitudeLabel();
-  }
+    function getManorAttitudeScore() {
+      return getSavedNumberFlag("__attitudeScore", 0);
+    }
 
-  function bumpManorAttitude(delta) {
-    const next = getManorAttitudeScore() + (Number(delta) || 0);
-    setManorAttitudeScore(next);
-    return next;
-  }
+    function setManorAttitudeScore(score) {
+      setNumberFlag("__attitudeScore", score);
+      window.rwManorAttitude = getManorAttitudeLabel();
+    }
 
-  function getManorAttitudeLabel() {
-    const s = getManorAttitudeScore();
-    if (s >= 2) return "welcoming";
-    if (s <= -2) return "wary";
-    return "watchful";
-  }
+    function bumpManorAttitude(delta) {
+      const next = getManorAttitudeScore() + (Number(delta) || 0);
+      setManorAttitudeScore(next);
+      return next;
+    }
 
-  function getWardHeat() {
-    return getSavedNumberFlag("__wardHeat", 0);
-  }
+    function getManorAttitudeLabel() {
+      const s = getManorAttitudeScore();
+      if (s >= 2) return "welcoming";
+      if (s <= -2) return "wary";
+      return "watchful";
+    }
 
-  function setWardHeat(v) {
-    const clamped = Math.max(0, Math.min(3, Number(v) || 0));
-    setNumberFlag("__wardHeat", clamped);
-    return clamped;
-  }
+    function getWardHeat() {
+      return getSavedNumberFlag("__wardHeat", 0);
+    }
 
-  function bumpWardHeat(delta) {
-    return setWardHeat(getWardHeat() + (Number(delta) || 0));
-  }
+    function setWardHeat(v) {
+      const clamped = Math.max(0, Math.min(3, Number(v) || 0));
+      setNumberFlag("__wardHeat", clamped);
+      return clamped;
+    }
 
-  // ----------------------------
-  // D&D-ish Rolls
-  // ----------------------------
-  function getPlayerStat(statKey) {
-    const s = window.rwStats || window.ravenwoodStats || null;
-    if (s && typeof s === "object" && s[statKey] != null) return Number(s[statKey]) || 8;
+    function bumpWardHeat(delta) {
+      return setWardHeat(getWardHeat() + (Number(delta) || 0));
+    }
 
-    try {
-      const raw = localStorage.getItem("ravenwoodStats");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === "object" && parsed[statKey] != null) return Number(parsed[statKey]) || 8;
+    // ----------------------------------------------------
+    // Inventory UI (book overlay)
+    // ----------------------------------------------------
+    const invToggle = document.getElementById("rwBookInventoryToggle");
+    const invPanel  = document.getElementById("rwBookInventoryPanel");
+    const invClose  = document.getElementById("rwBookInventoryClose");
+    const invGrid   = document.getElementById("rwBookInventoryGrid");
+
+    const itemModalEl    = document.getElementById("rwBookItemModal");
+    const itemModal      = itemModalEl ? new bootstrap.Modal(itemModalEl) : null;
+    const itemModalTitle = document.getElementById("rwBookItemModalTitle");
+    const itemModalDesc  = document.getElementById("rwBookItemModalDesc");
+    const itemUseBtn     = document.getElementById("rwBookItemUseBtn");
+
+    let selectedItem = null;
+
+    function getCurrentInventory() {
+      // Prefer the live in-memory inventory if you keep one there
+      if (Array.isArray(window.rwInventory)) return window.rwInventory;
+
+      // Fallback to localStorage-based inventory
+      try {
+        const raw = localStorage.getItem("ravenwoodInventory");
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
       }
-    } catch {}
+    }
 
-    return 8;
-  }
+    async function setCurrentInventory(inv) {
+      // Keep in-memory copy if you use it
+      window.rwInventory = Array.isArray(inv) ? inv : [];
 
-  function statModFromScore(score) {
-    const n = Number(score) || 0;
-    return Math.floor((n - 10) / 2);
-  }
+      // Persist via your existing helper (Supabase + local cache)
+      if (typeof window.syncInventoryToSupabase === "function") {
+        await window.syncInventoryToSupabase(window.rwInventory);
+      } else {
+        try {
+          localStorage.setItem("ravenwoodInventory", JSON.stringify(window.rwInventory));
+        } catch {}
+      }
+    }
 
-  function d20() {
-    return Math.floor(Math.random() * 20) + 1;
-  }
+    function openItemModal(item) {
+      selectedItem = item || null;
+      if (!selectedItem || !itemModal) return;
 
-  function rollCheck(check) {
-    const stat = String(check?.stat || "insight");
-    const dc = Number(check?.dc || 10);
-    const label = String(check?.label || "Check");
+      const meta = (typeof window.getItemMetadata === "function")
+        ? window.getItemMetadata(selectedItem)
+        : { title: selectedItem.name || "Item", description: "" };
 
-    const score = getPlayerStat(stat);
-    const mod = statModFromScore(score);
-    const die = d20();
-    const total = die + mod;
-    const success = total >= dc;
+      if (itemModalTitle) itemModalTitle.textContent = meta.title || "Item";
+      if (itemModalDesc)  itemModalDesc.textContent  = meta.description || "";
 
-    const result = { label, stat, score, mod, die, dc, total, success };
-    BOOK_STATE.lastRoll = result;
+      if (itemUseBtn) {
+        const equippable = (typeof window.isEquippable === "function") ? window.isEquippable(selectedItem) : false;
+        // In-book, we support "Use" for consumables (like health potions) and journal.
+        // Equip can be handled in the main Town/Manor screen.
+        const canUse =
+          selectedItem.id === "health_potion" ||
+          selectedItem.id === "ravenwood_journal";
 
-    const msg = success ? check?.successMsg : check?.failMsg;
-    if (msg) showSystemMessage(String(msg));
+        itemUseBtn.disabled = !canUse;
+        itemUseBtn.textContent = canUse ? "Use" : "Not usable here";
 
-    if (success && Number.isFinite(Number(check?.deltaAttitudeSuccess))) bumpManorAttitude(Number(check.deltaAttitudeSuccess));
-    if (!success && Number.isFinite(Number(check?.deltaAttitudeFail))) bumpManorAttitude(Number(check.deltaAttitudeFail));
+        itemUseBtn.onclick = async () => {
+          if (!selectedItem) return;
 
-    if (success && Number.isFinite(Number(check?.deltaWardHeatSuccess))) bumpWardHeat(Number(check.deltaWardHeatSuccess));
-    if (!success && Number.isFinite(Number(check?.deltaWardHeatFail))) bumpWardHeat(Number(check.deltaWardHeatFail));
+          // Health potion
+          if (selectedItem.id === "health_potion") {
+            if (typeof window.rwAdjustHP === "function") await window.rwAdjustHP(+20);
 
-    return result;
-  }
+            // remove ONE from inventory
+            const inv = getCurrentInventory();
+            const idx = inv.findIndex((i) => i && i.id === "health_potion");
+            if (idx >= 0) inv.splice(idx, 1);
+            await setCurrentInventory(inv);
 
-  // ✅ everything else you already have stays BELOW, still inside this IIFE...
+            // show feedback via engine system message region
+            const sys = document.getElementById("rwBookSystemMessage");
+            if (sys) {
+              sys.textContent = "Warmth spreads through your chest. Your breath steadies.";
+              sys.classList.remove("d-none");
+            }
 
+            renderBookInventory();
+            itemModal.hide();
+            return;
+          }
 
+          // Ravenwood Journal (quest item) — open journal modal if you’ve built it elsewhere
+          if (selectedItem.id === "ravenwood_journal") {
+            const sys = document.getElementById("rwBookSystemMessage");
+            if (sys) {
+              sys.textContent = "You open the journal. The ink stirs—like it was waiting for your attention.";
+              sys.classList.remove("d-none");
+            }
+            itemModal.hide();
+            return;
+          }
+        };
+      }
 
-      // Cached references
-      const elMeta = document.getElementById("rwBookPageMeta");
-      const elTitle = document.getElementById("rwBookPageTitle");
-      const elBody = document.getElementById("rwBookPageBody");
-      const elChoices = document.getElementById("rwBookChoices");
-      const elImage = document.getElementById("rwBookImage");
-      const elSys = document.getElementById("rwBookSystemMessage");
+      itemModal.show();
+    }
 
-      // Inventory UI
-      const invToggle = document.getElementById("rwBookInventoryToggle");
-      const invPanel = document.getElementById("rwBookInventoryPanel");
-      const invClose = document.getElementById("rwBookInventoryClose");
-      const invGrid = document.getElementById("rwBookInventoryGrid");
+    function renderBookInventory() {
+      if (!invGrid) return;
+      invGrid.innerHTML = "";
 
-      // Item modal
-      const itemModalEl = document.getElementById("rwBookItemModal");
-      const itemModal = itemModalEl ? new bootstrap.Modal(itemModalEl) : null;
-      const itemModalTitle = document.getElementById("rwBookItemModalTitle");
-      const itemModalDesc = document.getElementById("rwBookItemModalDesc");
-      const itemUseBtn = document.getElementById("rwBookItemUseBtn");
+      const inv = getCurrentInventory();
+      const maxSlots = 16;
 
-      let selectedItem = null;
+      for (let i = 0; i < maxSlots; i++) {
+        const slot = document.createElement("div");
+        slot.className = "rw-inventory-slot";
 
-      // ----------------------------
-      // Page content (start small)
-      // You’ll expand BOOK_PAGES next.
-      // ----------------------------
-      const BOOK_PAGES = {
+        const item = inv[i];
+        if (item && item.icon) {
+          const img = document.createElement("img");
+          img.src = item.icon;
+          img.alt = item.name || item.id || "Item";
+          img.addEventListener("click", () => openItemModal(item));
+          slot.appendChild(img);
+        } else if (item && !item.icon) {
+          // if icon missing, still clickable (shows description)
+          slot.textContent = "•";
+          slot.addEventListener("click", () => openItemModal(item));
+        }
+
+        invGrid.appendChild(slot);
+      }
+    }
+
+    if (invToggle && invPanel) {
+      invToggle.addEventListener("click", () => {
+        invPanel.classList.toggle("d-none");
+        renderBookInventory();
+      });
+    }
+
+    if (invClose && invPanel) {
+      invClose.addEventListener("click", () => invPanel.classList.add("d-none"));
+    }
+
+    // ----------------------------------------------------
+    // BOOK CONTENT
+    // ----------------------------------------------------
+
+const BOOK_PAGES = {
         "1": {
           title: "The Road That Remembers",
           image: "b1-p1.png",
@@ -793,10 +858,10 @@
     `;
   },
   choices: [
-    { text: "Reach for the Wind Candle (Shadow Witch).", to: "11_shadow", key: "class_shadow" },
-    { text: "Reach for the Water Candle (Scholar of Runes).", to: "11_rune", key: "class_rune" },
-    { text: "Reach for the Stone Candle (Guardian of Gates).", to: "11_guardian", key: "class_guardian" },
-    { text: "Reach for the Flame Candle (Seer of Moons).", to: "11_moon", key: "class_moon" },
+    { text: "Reach for the Wind Candle (Shadow Witch).", to: "11", key: "class_shadow" },
+    { text: "Reach for the Water Candle (Scholar of Runes).", to: "11", key: "class_rune" },
+    { text: "Reach for the Stone Candle (Guardian of Gates).", to: "11", key: "class_guardian" },
+    { text: "Reach for the Flame Candle (Seer of Moons).", to: "11", key: "class_moon" },
   ],
 },
 
@@ -2954,776 +3019,42 @@
 
       };
 
-      function renderBookInventory() {
-  invGrid.innerHTML = "";
-
-  const inv = window.rwInventory || [];
-
-  if (!inv.length) {
-    invGrid.innerHTML = `<p class="small text-muted">Your pack is empty.</p>`;
-    return;
-  }
-
-  inv.forEach(item => {
-    const slot = document.createElement("div");
-    slot.className = "rw-inventory-slot";
-
-    const meta = getItemMetadata(item);
-    if (!meta) return;
-
-    const img = document.createElement("img");
-    img.src = meta.icon || "";
-    img.alt = meta.title;
-
-    img.addEventListener("click", () => {
-      selectedItem = item;
-      itemModalTitle.textContent = meta.title;
-      itemModalDesc.textContent = meta.description;
-      itemModal.show();
-    });
-
-    slot.appendChild(img);
-    invGrid.appendChild(slot);
-  });
-}
-
-invToggle.addEventListener("click", () => {
-  renderBookInventory();
-  invPanel.classList.remove("d-none");
-});
-
-invClose.addEventListener("click", () => {
-  invPanel.classList.add("d-none");
-});
-
-      // ----------------------------
-      // Helpers
-      // ----------------------------
-      function showSystemMessage(msg) {
-        if (!elSys) return;
-        if (!msg) {
-          elSys.classList.add("d-none");
-          elSys.textContent = "";
-          return;
-        }
-        elSys.textContent = msg;
-        elSys.classList.remove("d-none");
-      }
-
-      function setPageImage(src) {
-        if (!elImage) return;
-        if (!src) {
-          elImage.style.display = "none";
-          elImage.src = "";
-          return;
-        }
-        elImage.style.display = "block";
-        elImage.src = src;
-      }
-
-      // ----------------------------
-// REQUIRED GLUE: metadata + choice handling + deltas + echo
-// ----------------------------
-
-// If app.js already provides this, we use it.
-// Otherwise: fallback metadata so the book inventory never breaks.
-function getItemMetadata(item) {
-  if (!item) return null;
-
-  // Prefer a global helper if you have one in app.js
-  if (typeof window.getItemMetadata === "function") {
-    return window.getItemMetadata(item);
-  }
-
-  // Common shapes
-  const title = item.title || item.name || item.id || "Item";
-  const icon = item.icon || item.image || item.img || "";
-  const description =
-    item.description ||
-    item.desc ||
-    (item.quest ? "A quest item. It feels important." : "No description.");
-
-  return { title, icon, description };
-}
-
-function applyChoiceDeltas(choice) {
-  // Support inline deltas on choices
-  if (Number.isFinite(Number(choice?.deltaAttitude))) bumpManorAttitude(Number(choice.deltaAttitude));
-  if (Number.isFinite(Number(choice?.deltaWardHeat))) bumpWardHeat(Number(choice.deltaWardHeat));
-}
-
-// Make sure the “echo” has somewhere to show up.
-// We inject it at the top of the body each render.
-function injectChoiceEchoIntoBody(pageId) {
-  const echoHtml = buildChoiceEchoHtml(BOOK_STATE, pageId);
-  if (!echoHtml) return;
-
-  // prepend echo block
-  elBody.innerHTML =
-    `<div class="rw-choice-echo small text-muted mb-3"><strong>—</strong> ${echoHtml}</div>` +
-    elBody.innerHTML;
-}
-
-function handleChoice(choice) {
-  if (!choice) return;
-
-  // Remember last choice key (for echo + flags)
-  BOOK_STATE.lastChoiceKey = choice.key || null;
-
-  // Apply check (if any)
-  if (choice.check) {
-    const r = rollCheck(choice.check);
-
-    // Store success/fail flags for *this* choice key
-    if (choice.key) {
-      BOOK_STATE.flags = BOOK_STATE.flags || {};
-      BOOK_STATE.flags[`${choice.key}_${r.success ? "success" : "fail"}`] = true;
-    }
-  }
-
-  // Apply deltas on the choice itself (even if there was a check)
-  applyChoiceDeltas(choice);
-
-  // Go to next page
-  const next = String(choice.to || "");
-  if (next && BOOK_PAGES[next]) {
-    renderPage(next);
-  } else {
-    // If a page target is missing, don’t crash—show a system message.
-    showSystemMessage(`That path isn’t written yet (${next || "no target"}).`);
-  }
-}
-
-// --- OPTIONAL: make “Use” button do something for book inventory items ---
-if (itemUseBtn) {
-  itemUseBtn.addEventListener("click", async () => {
-    if (!selectedItem) return;
-
-    // If app.js has a unified "use item" hook, prefer it
-    if (typeof window.useSelectedItem === "function") {
-      await window.useSelectedItem(selectedItem);
-      if (itemModal) itemModal.hide();
-      renderBookInventory();
-      return;
-    }
-
-    // Minimal: journal opens journal modal if you built one in app.js
-    if (selectedItem.id === "ravenwood_journal") {
-      if (typeof window.rwOpenJournal === "function") window.rwOpenJournal();
-      showSystemMessage("The journal’s ink stirs—as if listening.");
-      if (itemModal) itemModal.hide();
-      return;
-    }
-
-    showSystemMessage("That item can’t be used here (yet).");
-    if (itemModal) itemModal.hide();
-  });
-}
-
-      
-// ----------------------------
-// Choice Echo (reactive narration)
-// Shows immediate, matching response to the player's *last* choice / roll.
-// ----------------------------
-function buildChoiceEchoHtml(state, pageId) {
-  if (!state || !state.lastChoiceKey) return "";
-  if (String(pageId) === "1") return "";
-
-  const k = String(state.lastChoiceKey || "");
-  const f = state.flags || {};
-
-  // Prefer roll-flavored echoes if present
-  const success = !!f[`${k}_success`];
-  const fail = !!f[`${k}_fail`];
-
-  const E = {
-    // Page 1
-    p1_listen: "You slow and listen. The fog answers with silence heavy enough to feel like a warning.",
-    p1_belong: "You walk like you belong. The road accepts the lie—just long enough to test you.",
-    p1_breathe: "You stop and breathe. The threshold stone warms as if acknowledging your restraint.",
-
-    // Page 2
-    p2_step_in: "You step inside without bargaining. Mira’s eyes soften—only slightly.",
-    p2_ask_who: "You ask first. Mira gives her name like a key: offered, but not handed over.",
-    p2_talisman: "You touch the talisman. Mira’s gaze snaps to it, and the air tightens around the chain.",
-
-    // Page 3
-    p3_follow: "You follow. The manor notes your compliance the way a lock notes the right turn.",
-    p3_ask_talisman: "You ask what the talisman is for. Mira doesn’t answer fully—only enough to keep you alive.",
-
-    // Page 4
-    p4_follow: "You keep moving forward. Behind you, the doors stay quiet—too quiet.",
-    p4_test_door: "You test the door. It doesn’t fight you. It simply refuses, like a rule older than iron.",
-
-    // Page 5
-    p5_forward: "You keep your eyes forward. The portraits track you anyway, measuring your nerve.",
-    p5_stare_back: "You stare back. One portrait’s eyes sharpen, and you feel briefly… recognized.",
-    p5_ask_portraits: "You ask who they were. Mira’s answer is careful: “Not all of them stayed human.”",
-
-    // Page 6
-    p6_search_seam: success
-      ? "You find a hidden seam in the wardwork—an intentional breathing stitch. The manor grows… curious."
-      : "You search for a seam and find only smooth stone. Your fingertips go numb, as if the ward denies inquiry.",
-    p6_ask_lie: "You ask what counts as a lie here. Mira’s mouth twists: “Whatever the house decides.”",
-    p6_silent: "You stay silent. The manor rewards silence the way predators reward stillness.",
-
-    // Page 7
-    p7_cross_honest: "You cross honestly. The ward does not welcome you—but it does *record* you.",
-    p7_step_between: "You try to step between the lines. The ward flares—annoyed you thought it wouldn’t notice.",
-    p7_greet_house: "You greet the manor. The lanterns answer with a faint, synchronized pulse.",
-
-    // Page 8
-    p8_breath_control: "You control your breathing. The descending air feels less like drowning and more like initiation.",
-    // was: p8_count_steps
-p8_match_pulse: "You count the pulses. The number refuses to stay consistent—like the stairs are rewriting themselves.",
-
-    p8_dont_trust: "You admit you don’t trust this. Mira doesn’t argue. She only says, “Good. Keep that.”",
-
-    // Page 9
-    p9_touch_circle: "You touch the circle. Cold bites your palm—and something beneath the stone shifts its attention.",
-    p9_ask_candles: "You ask about the candles. Mira: “They are questions. The house lights them when it likes your answers.”",
-    p9_hold_back: "You hold back. The chamber remains patient, as if it prefers cautious guests.",
-
-    // Page 10
-    p10_speak_name: "You speak your name aloud. The room *takes* it—quietly, permanently.",
-    p10_refuse_name: "You refuse your name. The manor doesn’t punish you. It simply marks you as… complicated.",
-    p10_offer_truth: "You offer a true thing instead. The wardwork relaxes a fraction, like it recognizes sincerity.",
-
-    // Page 11 (archetype pick)
-    p11_shadow: "Shadow answers you—cold, elegant, and hungry for quiet power.",
-    p11_rune: "Runes answer you—patient, exact, and more dangerous than they look.",
-    p11_guardian: "Gates answer you—duty, weight, and a promise you didn’t realize you were making.",
-    p11_moon: "Moon answers you—lunar, ancient, and intensely personal.",
-
-    // Page 12
-    p12_accept_mark: "You accept the mark. The talisman warms—approval without affection.",
-    p12_refuse_mark: "You resist the mark. The ward doesn’t force you—yet—but the manor becomes watchful in a new way.",
-    p12_question_mira: "You press Mira for more. She gives you a look that says: *later, if you survive.*",
-
-    // Page 13
-    p13_search_niche: success
-      ? "You discover a niche in the stone—fresh enough to be recent. Something has been moved here."
-      : "You search the walls and find nothing, but the search itself stirs the wardheat like a brushed hive.",
-    p13_follow_hum: "You follow the hum. It leads you toward a place that feels *forbidden*, not hidden.",
-    p13_wait: "You wait. The manor *likes* patience—then tests it.",
-
-    // Page 14
-    p14_open_door: success
-      ? "You open the door without breaking the ward. The manor notes your finesse."
-      : "The ward snaps. The latch burns cold, and the corridor seems to recoil from you.",
-    p14_force: "You force it. The manor yields, but your name becomes sharper in its memory.",
-    p14_back: "You step back. The house exhales—like you avoided a mistake it expected you to make.",
-
-    // Page 15
-    p15_take_journal: "You take the journal. The paper feels warm—as if it has already been waiting in your hands.",
-    p15_leave_journal: "You leave the journal. Behind you, the desk drawer shuts by itself—quietly offended.",
-    p15_read_margins: "You read the margins. The ink shifts, and you realize someone wrote to *you*, not the page.",
-
-    // Page 16
-    p16_accept_help: "You accept Mira’s help. The manor’s attention loosens—barely—like it respects cooperation.",
-    p16_refuse_help: "You refuse help. Mira doesn’t shame you. She only watches, measuring how long pride lasts under wards.",
-
-    // Page 17
-    p17_drink: "You drink. Warmth spreads like a vow being signed inside your ribs.",
-    p17_hesitate: "You hesitate. The manor does not rush you. It simply waits—confident you will choose eventually.",
-
-    // Page 18
-    p18_steady: "You steady yourself. The corridor feels less hostile—more… evaluative.",
-    p18_press: "You press forward anyway. Your courage earns you no comfort—only more scrutiny.",
-
-    // Page 19
-    p19_still: "You go still. The ward passes over you like moonlight over stone.",
-    p19_search: success
-      ? "You find a hidden sigil-thread. It is *new*. Someone has been meddling with old protections."
-      : "You search and the ward bites back—your vision swims with symbols that refuse interpretation.",
-
-    // Page 20
-    p20_found: "You admit you found something. Mira’s expression goes tight: “Don’t show it to the wrong part of the house.”",
-    p20_return: "You return it where it was. The manor’s mood improves—welcoming, in its own severe way.",
-
-    // Page 21
-    p21_remain: "You remain in the circle. The air grows dense with expectation—as if the house is about to speak.",
-    p21_retreat: "You retreat. The house doesn’t chase you. It simply remembers you chose distance.",
-
-    // Page 22
-    p22_hold_ground: "You hold your ground. The wardheat rises—like the manor respects defiance but refuses to *reward* it.",
-    p22_step_back: "You step back. Mira nods once: “Good. Live first. Learn second.”",
-
-    // Page 23
-    p23_dodge: success
-      ? "You dodge cleanly. The ward’s strike misses by inches, and the chamber resets—as if impressed."
-      : "You try to dodge and stumble. The ward’s pressure clips you—painful, but not fatal.",
-    p23_freeze: "You freeze. For a heartbeat nothing happens—then the ward answers, brutal in its patience.",
-
-    // Page 24
-    p24_scramble: "You scramble. The manor’s lanterns gutter, as if laughing without sound.",
-    p24_stand: "You force yourself upright. The house goes very still, and something ancient listens.",
-
-    // Page 25
-    p25_hold: "You hold on. The fear doesn’t vanish—but it becomes fuel.",
-
-    // Page 26
-    p26_awaken: "You stop fighting what’s inside you. The manor holds its breath, waiting to see what you are.",
-
-    // Page 27
-    p27_aftermath: "In the aftermath, the silence isn’t empty. It’s the manor deciding what you’ve earned.",
-
-    // Page 28
-    p28_next: "You choose what comes next. The house shifts—subtle—rearranging doors like possibilities.",
-    p28_silent: "You stay silent. The manor seems almost pleased, as if silence is one of its native tongues.",
-
-    // Page 29
-    p29_close: "You close the journal. The ink settles, obedient, like it knows it will be read again.",
-
-    // Page 30
-    p30_end: "You leave Book I changed. The manor doesn’t say goodbye. It simply… keeps a door ready.",
-  };
-
-  const line = E[k];
-  if (!line) return "";
-
-  // Also hint at ward heat / attitude shifts (without exposing numbers)
-  const label = getManorAttitudeLabel();
-  const heat = getWardHeat();
-
-  const heatLabel = heat >= 3 ? "high" : heat === 2 ? "rising" : heat === 1 ? "low" : "calm";
-
-  return `
-    <div class="rw-choice-echo alert alert-dark border border-secondary mb-3">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <strong>Echo:</strong>
-        <span class="small text-muted">Manor: <span class="text-uppercase">${label}</span> · Wards: ${heatLabel}</span>
-      </div>
-      <div class="mt-2">${line}</div>
-    </div>
-  `;
-}
-
-function renderChoices(page) {
-  if (!elChoices) return;
-  elChoices.innerHTML = "";
-
-  const choices = Array.isArray(page.choices) ? page.choices : [];
-  choices.forEach((c) => {
-    const btn = document.createElement("button");
-    btn.className = "btn btn-outline-light";
-    btn.type = "button";
-    btn.textContent = c.text || "Continue";
-
-    btn.addEventListener("click", async () => {
-      // choice bookkeeping
-      if (c.key) {
-        BOOK_STATE.flags[c.key] = true;
-        BOOK_STATE.lastChoiceKey = c.key;
-      }
-
-      // optional roll
-      let roll = null;
-      if (c.check) {
-        roll = rollCheck(c.check);
-
-        // store success/fail flavor flags for page reactivity
-        if (c.key) {
-          BOOK_STATE.flags[`${c.key}_${roll.success ? "success" : "fail"}`] = true;
-        } else if (c.check?.flagKey) {
-          BOOK_STATE.flags[`${c.check.flagKey}_${roll.success ? "success" : "fail"}`] = true;
-        }
-      }
-
-      // optional direct attitude change (no roll)
-      if (!c.check && Number.isFinite(Number(c.deltaAttitude))) {
-        bumpManorAttitude(Number(c.deltaAttitude));
-      }
-      if (!c.check && Number.isFinite(Number(c.deltaWardHeat))) {
-        bumpWardHeat(Number(c.deltaWardHeat));
-      }
-
-      // Handle END
-      if (String(c.to).toUpperCase() === "END") {
-        window.location.href = "ravenwood.html";
-        return;
-      }
-
-      // resolve destination (supports object form)
-      let dest = c.to;
-      if (dest && typeof dest === "object") {
-        const s = !!roll?.success;
-        dest = s ? (dest.success || dest.ok) : (dest.fail || dest.no);
-      } else if (roll && (c.toSuccess || c.toFail)) {
-        dest = roll.success ? c.toSuccess : c.toFail;
-      }
-
-      await goToPage(String(dest || "1"));
-    });
-
-    elChoices.appendChild(btn);
-  });
-}
-
-      function renderPage(pageId) {
-  const page = BOOK_PAGES[pageId];
-  if (!page) return;
-
-  BOOK_STATE.currentPageId = pageId;
-
-  // Header meta (with Manor Attitude)
-  if (elMeta) {
-    const n = String(pageId).split("_")[0];
-    const label = getManorAttitudeLabel();
-    const badgeClass =
-      label === "welcoming" ? "bg-success" :
-      label === "wary" ? "bg-danger" :
-      "bg-warning text-dark";
-
-    elMeta.innerHTML = `Page ${n} · Manor: <span class="badge ${badgeClass} text-uppercase">${label}</span>`;
-  }
-
-  if (elTitle) elTitle.textContent = page.title || "";
-
-  const bodyHtml = (typeof page.body === "function") ? page.body(BOOK_STATE) : (page.body || "");
-  const echoHtml = buildChoiceEchoHtml(BOOK_STATE, pageId);
-  if (elBody) elBody.innerHTML = echoHtml + bodyHtml;
-
-  injectChoiceEchoIntoBody(pageId);
-
-  setPageImage(page.image || "");
-  showSystemMessage(page.systemMessage || "");
-
-  renderChoices(page);
-  applyAffinityBranches();
-}
-
-
-function applyDeltas(choice) {
-  if (Number.isFinite(Number(choice.deltaAttitude))) bumpManorAttitude(Number(choice.deltaAttitude));
-  if (Number.isFinite(Number(choice.deltaWardHeat))) bumpWardHeat(Number(choice.deltaWardHeat));
-}
-
-function handleChoice(choice) {
-  if (!choice) return;
-
-  // record choice
-  BOOK_STATE.lastChoiceKey = choice.key || null;
-  BOOK_STATE.flags = BOOK_STATE.flags || {};
-  if (choice.key) BOOK_STATE.flags[choice.key] = true;
-
-  // rolls (optional)
-  if (choice.check) {
-    const r = rollCheck(choice.check);
-    const key = choice.key || "choice";
-    BOOK_STATE.flags[`${key}_${r.success ? "success" : "fail"}`] = true;
-  }
-
-  // simple deltas
-  applyDeltas(choice);
-
-  // go to next page
-  const next = String(choice.to || "");
-  if (next && BOOK_PAGES[next]) renderPage(next);
-}
-
-      async function goToPage(pageId) {
-  // If user lands on a class page, persist archetype
-  if (pageId === "11_shadow") await setArchetype("shadow-witch");
-  if (pageId === "11_rune") await setArchetype("scholar-of-runes");
-  if (pageId === "11_guardian") await setArchetype("guardian-of-gates");
-  if (pageId === "11_moon") await setArchetype("seer-of-moons");
-
-  await saveBookProgress(pageId);   // ✅ ADD THIS
-
-  renderPage(pageId);
-}
-
-function handleChoice(choice) {
-  BOOK_STATE.lastChoiceKey = choice.key;
-
-  // Simple flag
-  if (choice.key) {
-    BOOK_STATE.flags[choice.key] = true;
-  }
-
-  // Skill check
-  if (choice.check) {
-    const result = rollCheck(choice.check);
-
-    BOOK_STATE.flags[`${choice.key}_${result.success ? "success" : "fail"}`] = true;
-  }
-
-  // Attitude delta without check
-  if (Number.isFinite(choice.deltaAttitude)) {
-    bumpManorAttitude(choice.deltaAttitude);
-  }
-
-  // Move to next page
-  if (choice.to) {
-    renderPage(choice.to);
-  }
-}
-
-async function setArchetype(archetype) {
-  const email = localStorage.getItem("ravenwoodEmail");
-  const sb = window.supabaseClient || null;
-  if (!email || !sb) return;
-
-  try {
-    const { error } = await sb
-      .from("data")
-      .update({ archetype })
-      .eq("email", email);
-
-    if (error) throw error;
-  } catch (e) {
-    console.warn("setArchetype failed:", e);
-  }
-}
-
-function applyAffinityBranches() {
-  const affinity =
-    BOOK_STATE.flags?.class_shadow ? "wind" :
-    BOOK_STATE.flags?.class_rune ? "water" :
-    BOOK_STATE.flags?.class_guardian ? "stone" :
-    BOOK_STATE.flags?.class_moon ? "flame" :
-    "flame";
-
-  document.querySelectorAll(".rw-awaken-branch").forEach((el) => {
-    const isMatch = el.dataset.affinity === affinity;
-    el.classList.toggle("d-none", !isMatch);
-  });
-}
-
-
-      // ----------------------------
-      // Inventory (Book view)
-      // Uses window.rwInventory + helpers from app.js
-      // ----------------------------
-      function getCurrentInventory() {
-        // Prefer Supabase-loaded memory if your app sets it; fallback to local loadInventory()
-        if (Array.isArray(window.rwInventory)) return window.rwInventory;
-        if (typeof window.loadInventory === "function") return window.loadInventory();
-        return [];
-      }
-
-      async function setCurrentInventory(items) {
-        window.rwInventory = Array.isArray(items) ? items : [];
-        if (typeof window.syncInventoryToSupabase === "function") {
-          await window.syncInventoryToSupabase(window.rwInventory);
-        }
-      }
-
-      async function saveBookProgress(pageId) {
-  const pid = String(pageId || "1");
-
-  // local fallback (so refresh works even if offline)
-  try { localStorage.setItem("rwBook1Progress", pid); } catch {}
-
-  const email = window.rwEmail || localStorage.getItem("ravenwoodEmail");
-  const sb = window.supabaseClient || null;
-  if (!email || !sb) return;
-
-  try {
-    // Preferred: store directly in data.book1_progress (text)
-    let { error } = await sb
-      .from("data")
-      .update({ book1_progress: pid })
-      .eq("email", email);
-
-    if (error) {
-      // If the row doesn't exist yet, try upsert (requires unique constraint on email)
-      const up = await sb
-        .from("data")
-        .upsert({ email, book1_progress: pid }, { onConflict: "email" });
-
-      if (up.error) throw up.error;
-    }
-  } catch (e) {
-    console.warn("saveBookProgress failed:", e);
-  }
-}
-
-
-async function loadBookProgress() {
-  const email = window.rwEmail || localStorage.getItem("ravenwoodEmail");
-  const sb = window.supabaseClient || null;
-
-  // Supabase first
-  if (email && sb) {
-    try {
-      const { data, error } = await sb
-        .from("data")
-        .select("book1_progress")
-        .eq("email", email)
-        .maybeSingle();
-
-      if (!error && data && data.book1_progress) {
-        const pid = String(data.book1_progress);
-        try { localStorage.setItem("rwBook1Progress", pid); } catch {}
-        return pid;
-      }
-    } catch (e) {
-      console.warn("loadBookProgress failed:", e);
-    }
-  }
-
-  // local fallback
-  try {
-    const raw = localStorage.getItem("rwBook1Progress");
-    return raw ? String(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-
-      function openInventory() {
-        if (!invPanel) return;
-        invPanel.classList.remove("d-none");
-        renderInventoryGrid();
-      }
-
-      function closeInventory() {
-        if (!invPanel) return;
-        invPanel.classList.add("d-none");
-      }
-
-      function renderInventoryGrid() {
-        if (!invGrid) return;
-        const inv = getCurrentInventory();
-
-        invGrid.innerHTML = "";
-
-        if (!inv.length) {
-          invGrid.innerHTML = `<div class="small text-muted p-2">Your pack is empty.</div>`;
-          return;
-        }
-
-        inv.forEach((item) => {
-          const meta = (typeof window.getItemMetadata === "function")
-            ? window.getItemMetadata(item)
-            : { title: item?.name || item?.id || "Item", description: "" };
-
-          const cell = document.createElement("button");
-          cell.type = "button";
-          cell.className = "rw-inventory-slot btn btn-sm btn-outline-light";
-          cell.style.display = "flex";
-          cell.style.flexDirection = "column";
-          cell.style.alignItems = "center";
-          cell.style.justifyContent = "center";
-          cell.style.gap = "0.25rem";
-
-          // icon (optional)
-          const iconSrc = meta.icon || item.icon || "";
-          if (iconSrc) {
-            const img = document.createElement("img");
-            img.src = iconSrc;
-            img.alt = meta.title;
-            img.style.width = "42px";
-            img.style.height = "42px";
-            img.style.objectFit = "contain";
-            img.onerror = () => img.remove();
-            cell.appendChild(img);
+    // ----------------------------------------------------
+    // Book Engine wiring
+    // ----------------------------------------------------
+    const engine = window.RWBookEngine.create({
+      pages: BOOK_PAGES,
+      startPageId: "1",
+      progressColumn: "book1_progress",
+      localStorageKey: "rwBook1Progress",
+// Handle roll outcome messages + deltas
+      onChoice: (choice, roll, S) => {
+        // Deltas that are not tied to roll
+        if (Number.isFinite(Number(choice?.deltaAttitude))) bumpManorAttitude(Number(choice.deltaAttitude));
+        if (Number.isFinite(Number(choice?.deltaWardHeat))) bumpWardHeat(Number(choice.deltaWardHeat));
+
+        if (choice?.check && roll) {
+          const msg = roll.success ? choice.check.successMsg : choice.check.failMsg;
+          if (msg) {
+            const sys = document.getElementById("rwBookSystemMessage");
+            if (sys) {
+              sys.textContent = String(msg);
+              sys.classList.remove("d-none");
+            }
           }
 
-          const label = document.createElement("div");
-          label.className = "small";
-          label.textContent = meta.title;
-          cell.appendChild(label);
+          if (roll.success && Number.isFinite(Number(choice.check?.deltaAttitudeSuccess))) bumpManorAttitude(Number(choice.check.deltaAttitudeSuccess));
+          if (!roll.success && Number.isFinite(Number(choice.check?.deltaAttitudeFail))) bumpManorAttitude(Number(choice.check.deltaAttitudeFail));
 
-          cell.addEventListener("click", () => {
-            selectedItem = item;
-            if (itemModalTitle) itemModalTitle.textContent = meta.title || "Item";
-            if (itemModalDesc) itemModalDesc.textContent = meta.description || "";
-            if (itemModal) itemModal.show();
-          });
-
-          invGrid.appendChild(cell);
-        });
-      }
-
-      async function useSelectedItem() {
-  if (!selectedItem) return;
-
-  // Health potion
-  if (selectedItem.id === "health_potion") {
-    if (typeof window.rwAdjustHP === "function") {
-      await window.rwAdjustHP(+20);
-    }
-
-    // remove ONE from inventory
-    if (typeof window.rwRemoveOneFromInventory === "function") {
-      await window.rwRemoveOneFromInventory(selectedItem.id);
-    } else {
-      
-
-  // Ravenwood Journal (quest item)
-  if (selectedItem.id === "ravenwood_journal") {
-    showSystemMessage("You open the journal. The ink stirs—like it was waiting for your attention.");
-
-    // If the main journal modal exists on this page, open it
-    try {
-      const modalEl = document.getElementById("rwJournalModal");
-      if (modalEl && window.bootstrap && bootstrap.Modal) {
-        const jm = bootstrap.Modal.getOrCreateInstance(modalEl);
-        if (typeof window.renderJournal === "function") window.renderJournal();
-        jm.show();
-      }
-    } catch {}
-
-    if (itemModal) itemModal.hide();
-    return;
-  }
-
-  showSystemMessage("You aren’t sure how to use that here… yet.");
-  if (itemModal) itemModal.hide();
-}
-
-          // remove 1 potion from inventory
-          
-          const inv = getCurrentInventory();
-const idx = inv.indexOf(selectedItem);
-if (idx >= 0) inv.splice(idx, 1);
-await setCurrentInventory(inv);
-
-          await setCurrentInventory(next);
-
-          showSystemMessage("Warmth spreads through your chest. Your breath steadies.");
-          renderInventoryGrid();
-        } else {
-          showSystemMessage("You aren’t sure how to use that here… yet.");
+          if (roll.success && Number.isFinite(Number(choice.check?.deltaWardHeatSuccess))) bumpWardHeat(Number(choice.check.deltaWardHeatSuccess));
+          if (!roll.success && Number.isFinite(Number(choice.check?.deltaWardHeatFail))) bumpWardHeat(Number(choice.check.deltaWardHeatFail));
         }
-
-        if (itemModal) itemModal.hide();
-      }
-
-      // Inventory buttons
-      if (invToggle) invToggle.addEventListener("click", openInventory);
-      if (invClose) invClose.addEventListener("click", closeInventory);
-      if (itemUseBtn) itemUseBtn.addEventListener("click", useSelectedItem);
-
-      // ----------------------------
-      // Boot
-      // ----------------------------
-    document.addEventListener("DOMContentLoaded", async () => {
-      const email = localStorage.getItem("ravenwoodEmail");
-      if (!email) {
-        window.location.href = "login.html";
-        return;
-      }
-
-      // Load last saved page from Supabase (book1_progress)
-      const saved = (typeof loadBookProgress === "function") ? await loadBookProgress() : null;
-      if (saved) BOOK_STATE.currentPageId = String(saved);
-
-      // Render the current page (defaults to "1")
-      if (typeof goToPage === "function") {
-        await goToPage(BOOK_STATE.currentPageId || "1");
-      } else if (typeof renderPage === "function") {
-        renderPage(BOOK_STATE.currentPageId || "1");
-      }
+      },
     });
 
-
-    })();
-</script>
+    engine.start();
+  })();
+  </script>
 
 </body>
 </html>
